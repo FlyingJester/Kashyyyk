@@ -80,8 +80,6 @@ char * IRC_ParamsToString(struct IRC_Message *msg){
 
     m = calloc(len, 1);
 
-    len = 0;
-
     if(msg->from!=NULL)
       strcat(m, msg->from);
 
@@ -180,6 +178,8 @@ const char *IRC_GetMessageToken(enum IRC_messageType a){
         return "366";
       case IRC_topic_num:
         return "332";
+      case IRC_no_topic_num:
+        return "333";
       default:
         return NULL;
     }
