@@ -11,6 +11,10 @@
 
 #include <stack>
 
+#ifdef _WIN32
+#undef SendMessage
+#endif
+
 namespace Kashyyyk {
 
 class SendMessage_Handler : public MessageHandler {

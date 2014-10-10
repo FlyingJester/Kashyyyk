@@ -21,8 +21,9 @@ elif ARGUMENTS.get('CC', 'none') != 'none':
   print "using CC ", ARGUMENTS.get('CC', 'none')
   environment.Replace(CC = ARGUMENTS.get('CC', 'none'))
 else:
-  PrepareCompilerGCC(environment)
-  environment.Replace(CC = 'cc')
+  if sys.platform.startswith('linux') or sys.platform == 'darwin':
+    PrepareCompilerGCC(environment)
+    environment.Replace(CC = 'cc')
 
 
 if os.getenv('CXX', 'none') != 'none':
@@ -32,11 +33,15 @@ elif ARGUMENTS.get('CXX', 'none') != 'none':
   print "using CXX ", ARGUMENTS.get('CXX', 'none')
   environment.Replace(CXX = ARGUMENTS.get('CXX', 'none'))
 else:
-  PrepareCompilerGPP(environment)
-  environment.Replace(CXX = 'c++')
+  if sys.platform.startswith('linux') or sys.platform == 'darwin':
+    PrepareCompilerGPP(environment)
+    environment.Replace(CXX = 'c++')
 
 if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
   PrepareEnvironmentUNIX(environment)
+
+if sys.platform.startswith('win'):
+  environment.Append(LIBPATH = [os.path.join(os.getcwd(), "lib")], CPPDEFINES = "WIN32")
 
 libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment'])
 libfjirc = SConscript(dirs = ['libfjirc'], exports = ['environment'])

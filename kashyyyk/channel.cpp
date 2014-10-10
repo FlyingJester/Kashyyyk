@@ -15,6 +15,10 @@
 #include <FL/Fl_Tree_Item.H>
 #include <FL/Fl_Preferences.H>
 
+#ifdef _WIN32
+#undef SendMessage
+#endif
+
 namespace Kashyyyk{
 
 static IRC_allocator Alloc;
