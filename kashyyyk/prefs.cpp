@@ -6,6 +6,7 @@
 #include <FL/Fl_Button.H>
 
 #include <FL/Fl_Preferences.H>
+#include <FL/Fl.H>
 
 /*
  const Fl_Font FL_HELVETICA              = 0;
@@ -82,6 +83,7 @@ static void Prefs_Theme_CB(Fl_Widget *w, void *p){
         Kashyyyk::GetPreferences().set("sys.appearance.theme", item->label());
         Kashyyyk::GetPreferences().flush();
         printf("Set theme to %s\n", item->label());
+        Fl::scheme(item->label());
     }
 }
 
@@ -142,7 +144,7 @@ void Kashyyyk::OpenPreferencesWindow(){
         Fl_Group *gfx_group = new Fl_Group(8, 32, 200, 128, "Appearance");
         gfx_group->box(FL_EMBOSSED_FRAME);
 
-        gfx_group->add(new Fl_Box(16, 36, 200-16, 24, "Theme (Requires Restart)"));
+        gfx_group->add(new Fl_Box(16, 36, 200-16, 24, "Theme"));
         //theme_label->box(FL_FLAT_BOX);
         Fl_Choice * theme_input = new Fl_Choice(16, 34+32, 200-16, 24);
         theme_input->callback(Prefs_Theme_CB, nullptr);
