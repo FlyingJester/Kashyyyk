@@ -9,6 +9,13 @@ def PrepareCompilerGCC(env):
 def PrepareEnvironmentUNIX(env):
   env.Append(CPPDEFINES = ["USE_BSDSOCK"])
 
+if os.getenv('CC', 'none') != 'none':
+  print "using CC ", os.environ.get('CC')
+  environment.Replace(CC = os.environ.get('CC'))
+if os.getenv('CXX', 'none') != 'none':
+  print "using CXX ", os.environ.get('CXX')
+  environment.Replace(CXX = os.environ.get('CXX'))
+
 if sys.platform.startswith('linux') or sys.platform == 'darwin' or ARGUMENTS.get('compiler', '0') == 'gcc' or ARGUMENTS.get('compiler', '0') == 'clang':
   PrepareCompilerGCC(environment)
 
