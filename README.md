@@ -1,7 +1,7 @@
 Kashyyyk
 ========
-A Full-Featured, Open Source IRC Client
-
+A Work-In-Progress, Full-Featured, Open Source IRC Client
+*****
 About Kashyyyk
 --------------
 
@@ -20,6 +20,34 @@ Kashyyyk requires a C++11 compiler and an ansi C compiler. The build scripts
 are only set up for GCC and Clang just yet. You will need FLTK 1.3, either in
 shared or static version. You need Python 2.x and SCons to build Kashyyyk.
 
+#### Checklist for Compiling
+ - FLTK 1.3
+ - GCC or Clang
+ - Python 2.x
+ - SCons
+
 Remember to initialize the TSPR submodule if you are using the git checkout.
 
 To build Kashyyyk, run `scons` in the root directory.
+
+Kashyyyk Features
+-----------------
+
+#### Implemented
+ - Multiple Window Support
+ - Command Parsing (/nick, /join, etc.)
+ - Persistent Preferences
+ - Font and Theme Selection
+ - Partial Numeric Response Support
+
+#### Planned
+ - Chat Logging
+ - Multi-Window UI
+ - SSL Support
+ - Full Numeric Response Support
+
+#### Broken
+ - User Lists on Some Channels
+
+#### Won't Add
+ - Scripting
