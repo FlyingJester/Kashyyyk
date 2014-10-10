@@ -8,6 +8,7 @@
 
 #include <cstdio>
 #include <stack>
+#include <cassert>
 
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Tree.H>
@@ -17,6 +18,9 @@
 namespace Kashyyyk {
 
 void WindowCallbacks::JoinChannel_CB(Fl_Widget *, void *p){
+
+    assert(p);
+
     Window *win = static_cast<Window *>(p);
 
     Server *server = win->last_server;
@@ -41,6 +45,9 @@ void WindowCallbacks::JoinChannel_CB(Fl_Widget *, void *p){
 
 
 void WindowCallbacks::ChangeNick_CB(Fl_Widget *, void *p){
+
+    assert(p);
+
     Window *win = static_cast<Window *>(p);
 
     Server *server = win->last_server;
@@ -55,12 +62,16 @@ void WindowCallbacks::ChangeNick_CB(Fl_Widget *, void *p){
       return;
 
     IRC_Message *msg = IRC_CreateNick(nick);
+
     win->last_server->SendMessage(msg);
     IRC_FreeMessage(msg);
 
 }
 
 void WindowCallbacks::ChannelList_CB(Fl_Widget *w, void *p){
+
+    assert(w);
+    assert(p);
 
     Fl_Tree *tree   = static_cast<Fl_Tree *>(w);
     Window *window = static_cast<Window *>(p);
@@ -106,12 +117,10 @@ try_connect:
         err = Connect_Socket(sock, server_name.c_str(), port, 10000);
         if(!err){
             Server * s = new Server(sock, server_name, window);
-            printf("%p\n", s);
             window->AddServer(s);
         }
         else{
             printf("Couldn't connect. Trying again.\n"); bool again = false;
-            //bool again = fl_ask("Could not connect to %s. Try again?", server_name.c_str());
             if(again){
                 Destroy_Socket(sock);
                 goto try_connect;
@@ -122,6 +131,9 @@ try_connect:
 };
 
 void ConnectToServer(Fl_Widget *w, void *p){
+
+    assert(p);
+
     Window *win = static_cast<Window *>(p);
     const char *str = fl_input("Enter Server Address", "");
     if(str==nullptr)
@@ -187,6 +199,8 @@ Window::~Window(){
 
 void Window::AddServer(Server *a){
 
+    assert(a);
+
     Servers.push_back(std::unique_ptr<Server>(a));
 
     AutoLocker<Server *> lock(a);
@@ -202,10 +216,16 @@ void Window::AddServer(Server *a){
 
     std::stack<void *> items;
     std::stack<std::string> labels;
+
+    unsigned n_children = a->channel_list->children();
+
     while(a->channel_list->has_children()){
         items.push(a->channel_list->next()->user_data());
         labels.push(a->channel_list->next()->label());
         a->channel_list->remove_child(a->channel_list->next());
+
+        assert(a->channel_list->children()<n_children);
+        n_children = a->channel_list->children();
     }
 
     void *d = a->channel_list->user_data();
@@ -253,6 +273,8 @@ void Window::AddServer(Server *a){
 
 void Window::RemoveChannel(Channel *a){
 
+    assert(a);
+
     std::list<Channel *>::iterator iter = Channels.begin();
     while(iter!=Channels.end()){
         if(*iter==a){
@@ -266,10 +288,11 @@ void Window::RemoveChannel(Channel *a){
 
 void Window::SetChannel(Channel *channel){
 
-    if(channel==nullptr)
-      return;
+    assert(channel);
 
     Server *new_server = channel->server();
+
+    assert(new_server);
 
     if((last_server!=nullptr) && (last_server!=new_server))
       last_server->Hide();
