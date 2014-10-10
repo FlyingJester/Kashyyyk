@@ -99,7 +99,7 @@ public:
 
         printf("I'm a Topic_Handler! Type is %s\n", IRC_GetMessageToken(msg->type));
 
-        if( !((msg->type==IRC_topic) || (msg->type==IRC_topic_num)) )
+        if( !((msg->type==IRC_topic) || (msg->type==IRC_topic_num) || (msg->type==IRC_no_topic_num)) )
           return false;
 
         std::string name = msg->parameters[1];
@@ -438,6 +438,7 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
     Handlers.push_back(std::unique_ptr<MessageHandler>(new ServerChannel_Handler<IRC_error_m>(this, channel)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Ping_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new PrivateMessage_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Topic_Handler(this)));
 
     char *nick_c = nullptr;
     char *name = nullptr;
@@ -606,7 +607,6 @@ std::shared_ptr<PromiseValue<Channel *> > Server::JoinChannel(const std::string 
 
     lock();
     Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(handler_raw)));
-    Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(new Topic_Handler(this))));
     Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(name_beg_handler)));
     Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(name_end_handler)));
     unlock();
