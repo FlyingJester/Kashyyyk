@@ -74,7 +74,7 @@ Channel::Channel(Server *s, const std::string &channel_name)
 
     topiclabel = new Fl_Output(0, 0, 64, 24);
 
-    const int column_widths[] = {128, 0};
+    static const int column_widths[] = {128, 10, 0};
 
     chatlist =  new Fl_Multi_Browser(0,  24,  64, 64);
     chatlist->textfont(font);
