@@ -21,6 +21,11 @@ void WindowCallbacks::JoinChannel_CB(Fl_Widget *, void *p){
 
     Server *server = win->last_server;
 
+    if(server==nullptr){
+        fl_alert("You need to join a server before you can join a channel.\n");
+        return;
+    }
+
     const char *channel = fl_input("Enter Channel to Join for %s", "", server->name.c_str());
 
     if(!channel)
@@ -37,7 +42,14 @@ void WindowCallbacks::JoinChannel_CB(Fl_Widget *, void *p){
 
 void WindowCallbacks::ChangeNick_CB(Fl_Widget *, void *p){
     Window *win = static_cast<Window *>(p);
-    const char *nick = fl_input("Enter New Nick for %s", "", win->last_server->name.c_str());
+
+    Server *server = win->last_server;
+    if(server==nullptr){
+        fl_alert("You need to join a server before you can set a nick.\n");
+        return;
+    }
+
+    const char *nick = fl_input("Enter New Nick for %s", "", server->name.c_str());
 
     if(!nick)
       return;
