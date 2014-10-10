@@ -1,0 +1,18 @@
+import os
+import sys
+
+Import("environment")
+
+source = [
+  "message.c",
+  "parse.c",
+  "state.c",
+  "input.c",
+  "channel.c",
+  "user.c",
+  "usermessage.c",
+]
+
+libfjirc = environment.StaticLibrary("fjirc", source)
+
+Return("libfjirc")

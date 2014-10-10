@@ -1,0 +1,8 @@
+import os
+import sys
+
+Import("environment")
+
+libfjnet = environment.StaticLibrary("fjnet", ["socket.c"])
+
+Return("libfjnet")
