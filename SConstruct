@@ -3,8 +3,13 @@ import sys
 
 environment = Environment()
 
+gcc_ccflags = "-pedantic -Werror -Wall -fstrict-enums -fno-threadsafe-statics -g "
+
+def PrepareCompilerGPP(env):
+  env.Append(CXXFLAGS = "  -Wsign-promo -fno-rtti -fno-exceptions " + gcc_ccflags, LINKFLAGS = " -g ")
+
 def PrepareCompilerGCC(env):
-  env.Append(CCFLAGS = "-pedantic -Werror -Wall -fstrict-enums -fno-threadsafe-statics -g ", CXXFLAGS = "  -Wsign-promo -fno-rtti -fno-exceptions ", CFLAGS = " -ansi ", LINKFLAGS = " -g ")
+  env.Append(CFLAGS = " -ansi "+gcc_ccflags, LINKFLAGS = " -g ")
 
 def PrepareEnvironmentUNIX(env):
   env.Append(CPPDEFINES = ["USE_BSDSOCK"])
@@ -12,12 +17,23 @@ def PrepareEnvironmentUNIX(env):
 if os.getenv('CC', 'none') != 'none':
   print "using CC ", os.environ.get('CC')
   environment.Replace(CC = os.environ.get('CC'))
+elif ARGUMENTS.get('CC', 'none') != 'none':
+  print "using CC ", ARGUMENTS.get('CC', 'none')
+  environment.Replace(CC = ARGUMENTS.get('CC', 'none'))
+else:
+  PrepareCompilerGCC(environment)
+  environment.Replace(CC = 'cc')
+
+
 if os.getenv('CXX', 'none') != 'none':
   print "using CXX ", os.environ.get('CXX')
   environment.Replace(CXX = os.environ.get('CXX'))
-
-if sys.platform.startswith('linux') or sys.platform == 'darwin' or ARGUMENTS.get('compiler', '0') == 'gcc' or ARGUMENTS.get('compiler', '0') == 'clang':
-  PrepareCompilerGCC(environment)
+elif ARGUMENTS.get('CXX', 'none') != 'none':
+  print "using CXX ", ARGUMENTS.get('CXX', 'none')
+  environment.Replace(CXX = ARGUMENTS.get('CXX', 'none'))
+else:
+  PrepareCompilerGPP(environment)
+  environment.Replace(CXX = 'c++')
 
 if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
   PrepareEnvironmentUNIX(environment)
