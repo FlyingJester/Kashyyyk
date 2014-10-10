@@ -9,8 +9,11 @@ def PrepareCompilerGCC(env):
 def PrepareEnvironmentUNIX(env):
   env.Append(CPPDEFINES = ["USE_BSDSOCK"])
 
-PrepareCompilerGCC(environment)
-PrepareEnvironmentUNIX(environment)
+if sys.platform.startswith('linux') or sys.platform == 'darwin' or ARGUMENTS.get('compiler', '0') == 'gcc' or ARGUMENTS.get('compiler', '0') == 'clang':
+  PrepareCompilerGCC(environment)
+
+if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
+  PrepareEnvironmentUNIX(environment)
 
 libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment'])
 libfjirc = SConscript(dirs = ['libfjirc'], exports = ['environment'])
