@@ -42,7 +42,7 @@ const char *ExplainError_Socket(enum WSockErr err){
 
 typedef int FJNET_SOCKET;
 
-inline void InitSock(){}
+void InitSock(){}
 
 #define MakeNonBlocking(S) fcntl(S, F_SETFL, O_NONBLOCK)
 
@@ -50,7 +50,7 @@ inline void InitSock(){}
 
 #define PRINT_LAST_ERROR perror
 
-static int GetPendingBytes(FJNET_SOCKET socket, long *len){
+static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
     unsigned int llen = sizeof(unsigned long);
 	return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);
 }
@@ -91,7 +91,7 @@ static void MakeNonBlocking(FJNET_SOCKET socket){
 
 #define CLOSE_SOCKET(S) shutdown(S, SD_SEND); closesocket(S)
 
-static int GetPendingBytes(FJNET_SOCKET socket, long *len){
+static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 	return ioctlsocket(socket, FIONREAD, len);
 }
 
