@@ -15,6 +15,10 @@
 #include <FL/Fl_Sys_Menu_Bar.H>
 #include <FL/fl_ask.H>
 
+#ifdef _WIN32
+#undef SendMessage
+#endif
+
 namespace Kashyyyk {
 
 void WindowCallbacks::JoinChannel_CB(Fl_Widget *, void *p){
