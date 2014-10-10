@@ -51,3 +51,9 @@ Kashyyyk Features
 
 #### Won't Add
  - Scripting
+
+License
+-------
+
+Kashyyyk is released under the GPL 2.0.
+A copy of the GPL 2.0 is included in the file `license.txt`.
