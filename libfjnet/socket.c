@@ -57,7 +57,7 @@ static int GetPendingBytes(FJNET_SOCKET socket, long *len){
 #if defined USE_WINSOCK
 #elif defined USE_BSDSOCK
 #endif
-	
+
 
 #elif defined (USE_WINSOCK)
 
@@ -105,7 +105,7 @@ struct WSocket{
 };
 
 struct WSocket *Create_Socket(void){
-	
+
     struct WSocket *lSock = malloc(sizeof(struct WSocket));
     lSock->sockaddr = malloc(sizeof(struct sockaddr_in));
     memset(lSock->sockaddr, 0, sizeof(struct sockaddr_in));
@@ -113,7 +113,9 @@ struct WSocket *Create_Socket(void){
 }
 
 void Destroy_Socket(struct WSocket *aSocket){
-	
+
+    assert(aSocket);
+
     free(aSocket->sockaddr);
     free(aSocket);
 }
@@ -122,8 +124,8 @@ enum WSockErr Connect_Socket(struct WSocket *aSocket, const char *aTo, unsigned 
 
     int err = 0;
     struct in_addr *lAddr = NULL;
-    assert(aTo);
-    assert(aSocket);
+    assert(aTo!=NULL);
+    assert(aSocket!=NULL);
 
 	InitSock();
 
@@ -166,7 +168,7 @@ enum WSockErr Connect_Socket(struct WSocket *aSocket, const char *aTo, unsigned 
     if(timeout<0)
       MakeNonBlocking(aSocket->sock);
 
-    if((timeout>=0) 
+    if((timeout>=0)
 #if defined USE_WINSOCK
 	&& (WSAGetLastError()==WSAEWOULDBLOCK)
 #elif defined USE_BSDSOCK
@@ -193,9 +195,9 @@ enum WSockErr Connect_Socket(struct WSocket *aSocket, const char *aTo, unsigned 
 
 
     if(err<0){
-		
+
 		PRINT_LAST_ERROR("Error occured attempting to connect");
-		
+
         CLOSE_SOCKET(aSocket->sock);
 
         switch(errno){
@@ -279,11 +281,11 @@ unsigned long Length_Socket(struct WSocket *aSocket){
     unsigned long f = 0;
 
 	int r;
-	
+
 	InitSock();
-	
+
 	r = GetPendingBytes(aSocket->sock, &len);
-	
+
     assert(aSocket!=NULL);
     assert(aSocket->sock!=0);
     if(r<0)
