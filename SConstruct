@@ -4,7 +4,7 @@ import sys
 environment = Environment()
 
 def PrepareCompilerGCC(env):
-  env.Append(CCFLAGS = "-pedantic -O2 -Werror -Wall -fstrict-enums -fno-threadsafe-statics -g ", CXXFLAGS = "  -Wsign-promo -fno-rtti -fno-exceptions ", CFLAGS = " -ansi ", LINKFLAGS = " -g ")
+  env.Append(CCFLAGS = "-pedantic -Werror -Wall -fstrict-enums -fno-threadsafe-statics -g ", CXXFLAGS = "  -Wsign-promo -fno-rtti -fno-exceptions ", CFLAGS = " -ansi ", LINKFLAGS = " -g ")
 
 def PrepareEnvironmentUNIX(env):
   env.Append(CPPDEFINES = ["USE_BSDSOCK"])

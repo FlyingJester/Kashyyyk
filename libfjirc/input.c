@@ -3,6 +3,8 @@
 #include "messageinternal.h"
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
 #include <string.h>
 
 static IRC_allocator Alloc;
@@ -26,21 +28,28 @@ static struct Keyword Keywords[] = {
 };
 
 struct IRC_Message *IRC_GenerateMessage(const char *to, const char *input){
-    const char *type_str;
+    const char *type_str, *msg_start = input;
     enum IRC_messageType type = IRC_privmsg;
     struct IRC_Message *r_msg;
 
     IRC_GetAllocators(&Alloc, &Dealloc);
 
-    if((input[0]=='!') || (input[0]=='/')){
-        const char *e = input+1, *type_start = input+1;
-        while((*e!=' ') && (*e=='\0'))
-          e++;
-        e--;
+    while(isspace(*msg_start))
+      msg_start++;
+
+    if(strnlen(msg_start, 2)==0)
+      return NULL;
+
+    if((msg_start[0]=='!') || (msg_start[0]=='/')){
+        const char *e, *type_start = msg_start+1;
+
+        e = strchr(type_start, ' ');
+        if(e==NULL)
+          e = strchr(type_start, '\0')-1;
 
         type_str = IRC_Strndup(type_start, e-type_start);
 
-        if(input[0]=='!'){
+        if(msg_start[0]=='!'){
             type = IRC_GetTokenEnum(type_str);
         }
         else{
@@ -55,17 +64,21 @@ struct IRC_Message *IRC_GenerateMessage(const char *to, const char *input){
             }
         }
 
+        printf("Processing %s (%s) message %s.\n", type_str, IRC_GetMessageToken(type), input);
+
         Dealloc((void *)type_str);
 
         if(type==IRC_mt_null)
           type = IRC_privmsg;
 
     }
+    else
+      printf("Processing %s message %s.\n", IRC_GetMessageToken(type), input);
 
 
     if((type==IRC_nick) || (type==IRC_join)){
         GENERATE_MSG(msg, 1, type);
-        SET_PARAM(msg, 1, input);
+        SET_PARAM(msg, 0, input);
         r_msg = msg;
     }
     else{

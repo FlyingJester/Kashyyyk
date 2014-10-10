@@ -17,6 +17,9 @@
 
 namespace Kashyyyk{
 
+static IRC_allocator Alloc;
+static IRC_deallocator Dealloc;
+
 void Input_CB(Fl_Widget *w, void *p){
     Fl_Input *input   = static_cast<Fl_Input *>(w);
     Channel  *channel = static_cast<Channel *> (p);
@@ -146,11 +149,17 @@ void Channel::GiveMessage(IRC_Message *msg){
 
     char *str = nullptr;
 
+    IRC_GetAllocators(&Alloc, &Dealloc);
+
     if(msg->type==IRC_error_m){
       str = IRC_MessageToString(msg);
-      str = (char *)realloc(str, strlen(str)+2);
-      memmove(str+1, str, strlen(str)+1);
-      str[0] = '\a';
+
+      std::string str_s = "\a";
+      str_s.append(str);
+
+      Dealloc(str);
+      str = IRC_Strdup(str_s.c_str());
+
     }
     else if(msg->type==IRC_privmsg){
         std::string str_s = msg->from?msg->from:"***";
@@ -160,23 +169,34 @@ void Channel::GiveMessage(IRC_Message *msg){
         str_s.push_back('\a');
         str_s+=msg->parameters[1];
 
-        str = (char *)malloc(str_s.size()+1);
+        str = (char *)Alloc(str_s.size()+1);
         strcpy(str, str_s.c_str());
 
+    }
+    else if((msg->type==IRC_join) && msg->from){
+        if(std::string(msg->from)==Parent->nick){
+            Parent->JoinChannel(msg->parameters[0]);
+        }
+        str = (char *)Alloc(2);
+        str[0] = '\a';
+        str[1] = '\0';
     }
     else{
 
       str = IRC_ParamsToString(msg);
-      str = (char *)realloc(str, strlen(str)+2);
-      memmove(str+1, str, strlen(str)+1);
-      str[0] = '\a';
+
+      std::string str_s = "\a";
+      str_s.append(str);
+
+      Dealloc(str);
+      str = IRC_Strdup(str_s.c_str());
 
     }
 
     chatlist->add(str);
     widget->redraw();
     Parent->widget->redraw();
-    free(str);
+    Dealloc(str);
 
     Highlight();
 

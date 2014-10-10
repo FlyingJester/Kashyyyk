@@ -7,7 +7,7 @@ localenv = environment.Clone()
 localenv.Append(LIBS = [libfjnet, libfjirc, 'fltk'])
 
 if not ( sys.platform == 'win32' or sys.platform.startswith('win64') ):
-  localenv.Append(CPPFLAGS = " -std=c++11 ")
+  localenv.Append(CXXFLAGS = " -std=c++11 ")
 
 if sys.platform == 'darwin':
   localenv.Append(FRAMEWORKS = "Cocoa")
@@ -15,7 +15,6 @@ if sys.platform == 'darwin':
 kashyyyk = localenv.Program("kashyyyk", ["kashyyyk.cpp", "reciever.cpp", "promise.cpp", "background.cpp", "prefs.cpp", "server.cpp", "channel.cpp", "window.cpp"])
 
 if sys.platform == 'darwin':
-
   AppDir = os.path.join(os.getcwd(), "Kashyyyk.app")
   CntDir = os.path.join(AppDir, "Contents")
   MOSDir = os.path.join(CntDir, "MacOS")
