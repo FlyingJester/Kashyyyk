@@ -17,8 +17,8 @@ Compiling Kashyyyk
 ------------------
 
 Kashyyyk requires a C++11 compiler and an ansi C compiler. The build scripts
-are only set up for GCC and Clang just yet. You will need FLTK 1.3, either in
-shared or static version. You need Python 2.x and SCons to build Kashyyyk.
+support GCC, Clang, and MSVC. You will need FLTK 1.3, either in shared or 
+static version. You need Python 2.x and SCons to build Kashyyyk.
 
 #### Checklist for Compiling
  - FLTK 1.3
