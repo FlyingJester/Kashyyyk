@@ -11,8 +11,16 @@ def PrepareCompilerGPP(env):
 def PrepareCompilerGCC(env):
   env.Append(CFLAGS = " -ansi "+gcc_ccflags, LINKFLAGS = " -g ")
 
+def PrepareCompilerMSVC(env):
+  env.Append(CFLAGS = "/O2 /EHsc /Zi /MDd")
+def PrepareCompilerMSVCpp(env):
+  env.Append(CXXFLAGS = "/O2 /EHsc /Zi /MDd")
+
 def PrepareEnvironmentUNIX(env):
   env.Append(CPPDEFINES = ["USE_BSDSOCK"])
+def PrepareEnvironmentWin(env):
+  env.Append(LIBPATH = [os.path.join(os.getcwd(), "lib")], LIBS = ["Gdi32.lib", "User32.lib", "Ole32.lib", "Advapi32.lib", "Shell32.lib", "Ws2_32.lib"], CPPDEFINES = ["WIN32"])
+  env.Append(CPPDEFINES = ["USE_WINSOCK"])
 
 if os.getenv('CC', 'none') != 'none':
   print "using CC ", os.environ.get('CC')
@@ -24,6 +32,8 @@ else:
   if sys.platform.startswith('linux') or sys.platform == 'darwin':
     PrepareCompilerGCC(environment)
     environment.Replace(CC = 'cc')
+  elif sys.platform.startswith('win'):
+    PrepareCompilerMSVC(environment)
 
 
 if os.getenv('CXX', 'none') != 'none':
@@ -36,12 +46,13 @@ else:
   if sys.platform.startswith('linux') or sys.platform == 'darwin':
     PrepareCompilerGPP(environment)
     environment.Replace(CXX = 'c++')
+  elif sys.platform.startswith('win'):
+    PrepareCompilerMSVCpp(environment)
 
 if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
   PrepareEnvironmentUNIX(environment)
-
-if sys.platform.startswith('win'):
-  environment.Append(LIBPATH = [os.path.join(os.getcwd(), "lib")], CPPDEFINES = "WIN32")
+elif sys.platform.startswith('win'):
+  PrepareEnvironmentWin(environment)
 
 libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment'])
 libfjirc = SConscript(dirs = ['libfjirc'], exports = ['environment'])
