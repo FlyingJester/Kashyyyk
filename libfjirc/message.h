@@ -21,7 +21,8 @@ char *IRC_Strndup(const char * a, unsigned long n);
 enum IRC_messageType {IRC_mt_null, IRC_error_m, IRC_ping, IRC_pong, IRC_pass,
   IRC_nick, IRC_user, IRC_oper, IRC_mode, IRC_service, IRC_quit, IRC_squit,
   IRC_join, IRC_part, IRC_topic, IRC_privmsg, IRC_notice,
-  IRC_namelist_start_num, IRC_namelist_end_num, IRC_topic_num};
+  IRC_namelist_start_num, IRC_namelist_end_num, IRC_topic_num,
+  IRC_no_topic_num};
 
 const char *IRC_GetMessageToken(enum IRC_messageType a);
 enum IRC_messageType IRC_GetTokenEnum(const char * a);
