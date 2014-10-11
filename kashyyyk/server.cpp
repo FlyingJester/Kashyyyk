@@ -8,6 +8,7 @@
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Tree_Item.H>
+#include <FL/Fl_Browser.H>
 
 #include <stack>
 
@@ -37,6 +38,39 @@ public:
         return true;
     }
 
+
+};
+
+
+
+class NickChange_Handler : public MessageHandler {
+    Server *server;
+public:
+    NickChange_Handler(Server *s)
+      : server(s){
+
+    }
+
+    bool HandleMessage(IRC_Message *msg) override {
+        if(msg->type!=IRC_nick)
+          return false;
+
+        if(msg->from==NULL)
+          return false;
+
+        assert(msg->num_parameters>0);
+        assert(msg->parameters[0]);
+
+        Server::ChannelList::iterator iter = server->Channels.begin();
+
+        while(iter!=server->Channels.end()){
+            (*iter)->GiveMessage(msg);
+            iter++;
+        }
+
+        return false;
+
+    }
 
 };
 
@@ -101,14 +135,18 @@ public:
 
     bool HandleMessage(IRC_Message *msg) override {
 
-        printf("I'm a Topic_Handler! Type is %s\n", IRC_GetMessageToken(msg->type));
-
-        if( !((msg->type==IRC_topic) || (msg->type==IRC_topic_num) || (msg->type==IRC_no_topic_num)) )
+        if((msg->type!=IRC_topic) && (msg->type!=IRC_topic_num))
           return false;
+
+        assert(msg->num_parameters>=2);
 
         std::string name = msg->parameters[1];
 
-        printf("Handling topic for %s.\n", msg->parameters[1]);
+        const char *str = IRC_MessageToString(msg);
+
+        printf("Handling topic for %s (%s) (%s).\n", msg->parameters[1], msg->parameters[2], str);
+
+        free((void *)str);
 
         Server::ChannelList::iterator iter = server->Channels.begin();
 
@@ -203,7 +241,7 @@ public:
 
                 char c = *mode;
                 std::string mode_s;
-                if((c=='=')||(c=='&')||(c=='%')||(c=='*')||(c==' ')){
+                if((c=='=')||(c=='&')||(c=='%')||(c=='*')||(c==' ')||(c=='~')){
                     mode++;
                     mode_s = std::string(first, mode);
                 }
@@ -256,7 +294,7 @@ public:
 
         Channel *channel = ChannelPromise->Finish();
 
-        std::string jointext = "Joined "; jointext+=channel_name;
+        std::string jointext = msg->from+(msg->from[0]==':'?1:0); jointext.append(" Joined "); jointext+=channel_name;
 
         IRC_Message *joinmsg = IRC_CreatePrivateMessage(channel_name.c_str(), jointext.c_str());
 
@@ -295,6 +333,7 @@ public:
 
         Fl::lock();
         Channel * channel = new Channel(server, channel_name);
+
         promise->Finalize(channel);
         server->AddChannel_l(channel);
         Fl::unlock();
@@ -443,6 +482,7 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Ping_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new PrivateMessage_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Topic_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new NickChange_Handler(this)));
 
     char *nick_c = nullptr;
     char *name = nullptr;
@@ -528,6 +568,10 @@ void Server::AddChannel_l(Channel *a){
     item->user_data(a);
 
     Parent->RedrawChannels();
+
+    Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(new ServerChannel_Handler<IRC_quit>(this, a))));
+    Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(new ServerChannel_Handler<IRC_join>(this, a))));
+
 
     printf("Added channel %s\n", a->name.c_str());
 
