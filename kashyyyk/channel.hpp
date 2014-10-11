@@ -65,7 +65,10 @@ public:
 
     inline bool HasFocus(){return focus;}
 
-    void Highlight();
+    enum HighlightLevel {Low, Medium, High};
+
+    void Highlight(HighlightLevel = Low);
+
     void FocusChanged();
 
     void GetPath(std::string &path) const;

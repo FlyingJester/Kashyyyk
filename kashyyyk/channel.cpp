@@ -130,16 +130,26 @@ Fl_Tree_Item *Channel::GetWindowItem(){
 }
 
 
-void Channel::Highlight(){
+void Channel::Highlight(HighlightLevel level){
 
     Parent->Highlight();
 
     Fl_Tree_Item *i = GetWindowItem();
 
+
     if(i)
-      i->labelcolor(FL_DARK_BLUE);
+      switch(level){
+      case High:
+      case Medium:
+        i->labelcolor(FL_DARK_RED);
+      break;
+      case Low:
+      default:
+        i->labelcolor(FL_DARK_BLUE);
+      }
 
 }
+
 
 void Channel::FocusChanged(){
     Fl_Tree_Item *i = GetWindowItem();
@@ -152,6 +162,8 @@ void Channel::FocusChanged(){
 void Channel::GiveMessage(IRC_Message *msg){
 
     char *str = nullptr;
+
+    assert(msg);
 
     IRC_GetAllocators(&Alloc, &Dealloc);
 
@@ -177,13 +189,83 @@ void Channel::GiveMessage(IRC_Message *msg){
         strcpy(str, str_s.c_str());
 
     }
-    else if((msg->type==IRC_join) && msg->from){
+    else if(msg->type==IRC_join){
         if(std::string(msg->from)==Parent->nick){
             Parent->JoinChannel(msg->parameters[0]);
+            str = (char *)Alloc(2);
+            str[0] = '\a';
+            str[1] = '\0';
         }
-        str = (char *)Alloc(2);
-        str[0] = '\a';
-        str[1] = '\0';
+        else {
+            std::string nick = msg->from;
+
+            size_t colon = nick.find(':');
+            if(colon==std::string::npos)
+              colon = 0;
+            else
+              nick = nick.substr(colon+1);
+
+            str = IRC_Strdup(((std::string("***\a")+nick.substr(0, nick.find('!'))).append(" Joined ")+name).c_str());
+        }
+
+
+
+    }
+    else if(msg->type==IRC_quit){
+
+        std::string nick   = msg->from;
+
+        size_t colon = nick.find(':');
+        if(colon==std::string::npos)
+          colon = 0;
+
+        nick = nick.substr(colon, nick.find('!'));
+
+        std::list<User>::iterator user_iter = Users.begin();
+        while(user_iter!=Users.end()){
+            if(user_iter->Name==nick)
+              break;
+
+            user_iter++;
+        }
+
+        if(user_iter==Users.end())
+          return;
+
+        RemoveUser(nick.c_str());
+
+        str = IRC_Strdup((std::string("***\a")+nick).append(" Quit (").append(msg->parameters[0]).append(")").c_str());
+
+
+    }
+    else if((msg->type==IRC_nick) && (msg->from==nullptr) && (msg->num_parameters<1)){
+
+        std::string from_nick = msg->from;
+        std::string to_nick   = msg->parameters[0];
+
+        size_t colon = from_nick.find(':');
+        if(colon==std::string::npos)
+          colon = 0;
+        from_nick = from_nick.substr(colon, from_nick.find('!'));
+
+        std::list<User>::iterator user_iter = Users.begin();
+        while(user_iter!=Users.end()){
+            if(user_iter->Name==from_nick){
+                user_iter->Name = to_nick;
+                for(int i = 0; i<userlist->size(); i++) {
+                      if(std::string(userlist->text(i))==from_nick){
+                          userlist->text(i, to_nick.c_str());
+                          break;
+                      }
+                }
+
+                break;
+            }
+            user_iter++;
+
+        }
+
+        str = IRC_Strdup((std::string("***\a")+from_nick).append(" is now knwown as ").append(to_nick).append(".").c_str());
     }
     else{
 
@@ -202,7 +284,7 @@ void Channel::GiveMessage(IRC_Message *msg){
     Parent->widget->redraw();
     Dealloc(str);
 
-    Highlight();
+    Highlight(((msg->type==IRC_privmsg)||(msg->type==IRC_notice))?Medium:Low);
 
 }
 
