@@ -46,7 +46,7 @@ class Channel : public TypedReciever<Server>{
     std::mutex mutex;
 
     // Used for aligning usernames with messages in the chat box.
-    double alignment;
+    unsigned alignment;
 
     inline void lock(){mutex.lock();}
     inline void unlock(){mutex.unlock();}

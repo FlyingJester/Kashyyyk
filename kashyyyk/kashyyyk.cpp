@@ -1,6 +1,7 @@
 #include "window.hpp"
 #include "background.hpp"
 #include "prefs.hpp"
+#include "platform/notification.h"
 
 #include <stack>
 #include <string>
@@ -9,6 +10,22 @@
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Preferences.H>
 #include <FL/Fl.H>
+
+namespace Kashyyyk {
+// SINGLETON ONLY!
+class NotificationRAII {
+public:
+    NotificationRAII(){
+        InitNotifications();
+    }
+
+    ~NotificationRAII(){
+        CloseNotifications();
+    }
+
+};
+
+}
 
 void GetDefaultServers(std::stack<std::string> &default_servers, Fl_Preferences &prefs){
 
@@ -47,6 +64,8 @@ void SetTheme(Fl_Preferences &prefs){
 }
 
 int main(int argc, char *argv[]){
+
+    Kashyyyk::NotificationRAII note_raii;
 
     Fl_Preferences &prefs = Kashyyyk::GetPreferences();
 

@@ -133,7 +133,7 @@ void Input_CB(Fl_Widget *w, void *p){
 Channel::Channel(Server *s, const std::string &channel_name)
   : TypedReciever<Server>(s)
   , widget()
-  , alignment(32.0)
+  , alignment(8)
   , name(channel_name) {
 
     Fl_Preferences &prefs = GetPreferences();
@@ -286,9 +286,10 @@ void Channel::GiveMessage(IRC_Message *msg){
         str_s = str_s.substr(str_s[0]==':'?1:0);
         str_s = str_s.substr(0, str_s.find('!'));
 
+        /*
         if(!(alignment>=str_s.size()))
           alignment=str_s.size();
-
+        */
         if(strcasestr(msg->parameters[1], Nick())){
           last_msg_type = IRC_notice;
           level = High;
@@ -302,7 +303,7 @@ void Channel::GiveMessage(IRC_Message *msg){
 
         }
 
-        str_s+=std::string(' ', alignment-str_s.size());
+        str_s+=std::string(alignment-str_s.size(), ' ');
 
         str_s.push_back('|');
         str_s+=msg->parameters[1];
@@ -314,9 +315,8 @@ void Channel::GiveMessage(IRC_Message *msg){
     else if(msg->type==IRC_join){
         if(std::string(msg->from)==Parent->nick){
             Parent->JoinChannel(msg->parameters[0]);
-            str = (char *)Alloc(2);
-            str[0] = '\a';
-            str[1] = '\0';
+            str = (char *)Alloc(1);
+            str[0] = '\0';
         }
         else {
             std::string nick = msg->from;
@@ -327,7 +327,17 @@ void Channel::GiveMessage(IRC_Message *msg){
             else
               nick = nick.substr(colon+1);
 
-            str = IRC_Strdup(((std::string("***\a")+nick.substr(0, nick.find('!'))).append(" Joined ")+name).c_str());
+
+            std::string join_s = std::string(alignment, ' ');
+            join_s[0] = '*';
+            join_s[1] = '*';
+            join_s[2] = '*';
+
+            join_s.push_back('|');
+
+            assert(join_s.size()==alignment+1);
+
+            str = IRC_Strdup(((join_s+nick.substr(0, nick.find('!'))).append(" Joined ")+name).c_str());
         }
 
 
@@ -356,7 +366,7 @@ void Channel::GiveMessage(IRC_Message *msg){
 
         RemoveUser(nick.c_str());
 
-        str = IRC_Strdup((std::string("***\a")+nick).append(" Quit (").append(msg->parameters[0]).append(")").c_str());
+        str = IRC_Strdup((std::string("***")+std::string(alignment-3, ' ').append("|")+nick).append(" Quit (").append(msg->parameters[0]).append(")").c_str());
 
 
     }
@@ -387,13 +397,14 @@ void Channel::GiveMessage(IRC_Message *msg){
 
         }
 
-        str = IRC_Strdup((std::string("***\a")+from_nick).append(" is now knwown as ").append(to_nick).append(".").c_str());
+        str = IRC_Strdup((std::string("***")+std::string(alignment-3, ' ').append("|")+from_nick).append(" is now knwown as ").append(to_nick).append(".").c_str());
     }
     else{
 
       str = IRC_ParamsToString(msg);
 
-      std::string str_s = "\a";
+      std::string str_s(alignment, ' ');
+      str_s.push_back('|');
       str_s.append(str);
 
       Dealloc(str);
@@ -447,7 +458,7 @@ void Channel::AddUser(const struct User &user){
     Users.push_back(user);
     userlist->add(user.Name.c_str());
 
-    alignment = std::max<double>(user.Name.size(), alignment);
+    alignment = std::max<unsigned>(user.Name.size(), alignment);
 
     unlock();
 
