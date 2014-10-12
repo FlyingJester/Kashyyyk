@@ -10,11 +10,6 @@ if sys.platform == 'darwin':
 else:
   platform_files += ["generic_pling.cpp"];
 
-#if ( sys.platform == 'win32' or sys.platform.startswith('win64') ):
-
-
-#else:
-
 platformlib = platformenv.StaticLibrary("kashyyyk_platform", platform_files)
 
 Return("platformlib")
