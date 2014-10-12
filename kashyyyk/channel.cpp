@@ -154,7 +154,6 @@ Channel::Channel(Server *s, const std::string &channel_name)
 
     chatlist->buffer(buffer);
     chatlist->highlight_data(stylebuffer, table.styletable, table.NumEntries, 'A', nullptr, 0);
-    chatlist->textfont(font);
     chatlist->color(FL_BACKGROUND2_COLOR);
 
     tiler->begin();
