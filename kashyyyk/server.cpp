@@ -287,11 +287,12 @@ public:
           return false;
 
 
-        if((msg->type!=IRC_namelist_end_num) || (*Started!=true) ||
+        if((msg->type!=IRC_namelist_end_num) || (!*Started) ||
            (std::string(msg->parameters[1])!=channel_name)){
             return false;
         }
 
+        /*
         Channel *channel = ChannelPromise->Finish();
 
         std::string jointext = msg->from+(msg->from[0]==':'?1:0); jointext.append(" Joined "); jointext+=channel_name;
@@ -303,6 +304,8 @@ public:
         Fl::unlock();
 
         IRC_FreeMessage(joinmsg);
+
+        */
 
         return true;
 

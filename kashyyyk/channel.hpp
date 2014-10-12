@@ -11,6 +11,8 @@
 
 class Fl_Group;
 class Fl_Browser;
+class Fl_Text_Display;
+class Fl_Text_Buffer;
 class Fl_Tree_Item;
 class Fl_Output;
 
@@ -25,17 +27,26 @@ class Server;
 
 class Channel : public TypedReciever<Server>{
 
+    struct StyleTable;
+    static struct StyleTable table;
+
     std::unique_ptr<Fl_Group> widget;
 
     Fl_Output *topiclabel;
     Fl_Browser *userlist;
-    Fl_Browser *chatlist;
+    Fl_Text_Display *chatlist;
+    Fl_Text_Buffer *buffer;
+    Fl_Text_Buffer *stylebuffer;
 
     bool focus;
+    int font, last_msg_type;
 
     Fl_Tree_Item *GetWindowItem();
 
     std::mutex mutex;
+
+    // Used for aligning usernames with messages in the chat box.
+    double alignment;
 
     inline void lock(){mutex.lock();}
     inline void unlock(){mutex.unlock();}
@@ -82,6 +93,8 @@ public:
     void RemoveUser(const char *user);
 
     const char *Nick();
+
+    static void TextModify_CB(int, int, int, int, const char*, void*);
 
 };
 

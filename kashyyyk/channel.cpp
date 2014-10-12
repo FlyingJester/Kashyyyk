@@ -10,10 +10,12 @@
 #include <FL/Fl_Input.H>
 #include <FL/Fl_Browser.H>
 #include <FL/Fl_Multi_Browser.H>
+#include <FL/Fl_Text_Display.H>
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Tree.H>
 #include <FL/Fl_Tree_Item.H>
 #include <FL/Fl_Preferences.H>
+#include <FL/Fl_ask.H>
 
 #ifdef _WIN32
 #undef SendMessage
@@ -23,6 +25,75 @@ namespace Kashyyyk{
 
 static IRC_allocator Alloc;
 static IRC_deallocator Dealloc;
+
+struct Channel::StyleTable{
+public:
+    static const int NumEntries = 5;
+
+    Fl_Text_Display::Style_Table_Entry styletable[Channel::StyleTable::NumEntries];
+
+    inline void ChangeFont(Fl_Font font){
+        for(int i = 0; i<Channel::StyleTable::NumEntries; i++)
+         styletable[i].font = font;
+    }
+
+};
+
+Channel::StyleTable Channel::table = {{
+  {FL_FOREGROUND_COLOR, FL_COURIER, FL_NORMAL_SIZE}, // A - Default
+  {FL_DARK_RED,         FL_COURIER, FL_NORMAL_SIZE}, // B - Joins
+  {FL_DARK_YELLOW,      FL_COURIER, FL_NORMAL_SIZE}, // C - Quits
+  {FL_DARK_CYAN,        FL_COURIER, FL_NORMAL_SIZE}, // D - Nick changes
+  {FL_RED,              FL_COURIER, FL_NORMAL_SIZE}, // E - Directed Messages
+}};
+
+
+// Based the FLTK.org text editor example.
+// Very much overkill, this can handle text insertions as well as deletions.
+// Which is good just in case?
+void Channel::TextModify_CB(int pos, int nInserted, int nDeleted, int nRestyled, const char* deletedText, void *p){
+
+        Channel *that = static_cast<Channel *>(p);
+        assert(that);
+
+        if ((!nInserted) && (!nDeleted)){
+            that->stylebuffer->unselect();
+            return;
+        }
+
+        if (nInserted>0) {
+          char style = 'A';
+
+          switch((IRC_messageType)(that->last_msg_type)){
+              case IRC_join:
+              style = 'B';
+              break;
+              case IRC_quit:
+              style = 'C';
+              break;
+              case IRC_nick:
+              style = 'D';
+              break;
+              case IRC_notice:
+              style = 'E';
+              break;
+              case IRC_privmsg:
+              default:
+              break;
+          }
+
+          std::string style_str(nInserted, style);
+          that->stylebuffer->replace(pos, pos+nDeleted, style_str.c_str());
+        }
+        else {
+          that->stylebuffer->remove(pos, pos+nDeleted);
+        }
+
+        // Avoids callbacks?
+        that->stylebuffer->select(pos, pos+nInserted-nDeleted);
+    }
+
+
 
 void Input_CB(Fl_Widget *w, void *p){
     Fl_Input *input   = static_cast<Fl_Input *>(w);
@@ -56,6 +127,7 @@ void Input_CB(Fl_Widget *w, void *p){
 
 }
 
+
 Channel::Channel(Server *s, const std::string &channel_name)
   : TypedReciever<Server>(s)
   , widget()
@@ -63,8 +135,8 @@ Channel::Channel(Server *s, const std::string &channel_name)
 
     Fl_Preferences &prefs = GetPreferences();
 
-    int font = 0;
     prefs.get("sys.appearance.font", font, FL_SCREEN);
+    table.ChangeFont(font);
 
     fl_font(font, fl_size());
 
@@ -74,12 +146,18 @@ Channel::Channel(Server *s, const std::string &channel_name)
 
     topiclabel = new Fl_Output(0, 0, 64, 24);
 
-    static const int column_widths[] = {128, 10, 0};
+    chatlist =  new Fl_Text_Display(0,  24,  64, 64);
 
-    chatlist =  new Fl_Multi_Browser(0,  24,  64, 64);
+    buffer = new Fl_Text_Buffer();
+    buffer->add_modify_callback(Channel::TextModify_CB, this);
+    stylebuffer = new Fl_Text_Buffer();
+
+    chatlist->buffer(buffer);
+    chatlist->highlight_data(stylebuffer, table.styletable, table.NumEntries, 'A', nullptr, 0);
     chatlist->textfont(font);
-    chatlist->column_widths(column_widths);
-    chatlist->column_char('\a');
+    chatlist->color(FL_BACKGROUND2_COLOR);
+
+    tiler->begin();
 
     Fl_Input *inputer = new Fl_Input(0, 88, 64, 24);
     inputer->textfont(font);
@@ -165,6 +243,8 @@ void Channel::GiveMessage(IRC_Message *msg){
 
     assert(msg);
 
+    last_msg_type = msg->type;
+
     IRC_GetAllocators(&Alloc, &Dealloc);
 
     if(msg->type==IRC_error_m){
@@ -184,6 +264,10 @@ void Channel::GiveMessage(IRC_Message *msg){
 
         str_s.push_back('\a');
         str_s+=msg->parameters[1];
+
+        if(strcasestr(msg->parameters[1], Nick())){
+          last_msg_type = IRC_notice;
+        }
 
         str = (char *)Alloc(str_s.size()+1);
         strcpy(str, str_s.c_str());
@@ -279,12 +363,40 @@ void Channel::GiveMessage(IRC_Message *msg){
 
     }
 
-    chatlist->add(str);
+/*
+    Fl_Output *text = new Fl_Output(0, 0, chatlist->w(), 16);
+    text->value(str);
+    text->box(FL_NO_BOX);
+*/
+    int color = FL_FOREGROUND_COLOR;
+    HighlightLevel level = Low;
+    switch(IRC_privmsg){
+      case IRC_privmsg:
+      case IRC_notice:
+        level = Medium;
+        break;
+      case IRC_join:
+        color = FL_DARK_BLUE;
+        break;
+      case IRC_quit:
+        color = FL_DARK_CYAN;
+        break;
+      case IRC_nick:
+        color = FL_DARK_YELLOW;
+        break;
+    }
+/*
+    text->textcolor(color);
+    text->textfont(font);
+*/
+    buffer->append(str);
+    buffer->append("\n");
+    chatlist->redraw();
     widget->redraw();
     Parent->widget->redraw();
     Dealloc(str);
 
-    Highlight(((msg->type==IRC_privmsg)||(msg->type==IRC_notice))?Medium:Low);
+    Highlight(level);
 
 }
 
