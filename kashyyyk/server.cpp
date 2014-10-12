@@ -555,6 +555,7 @@ void Server::AddChannel_l(Channel *a){
     Fl_Tree_Item *item = channel_list->add(tree_prefs, a->name.c_str());
     item->user_data(a);
 
+    Parent->SetChannel(a);
     Parent->RedrawChannels();
 
     Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(new ServerChannel_Handler<IRC_quit>(this, a))));
