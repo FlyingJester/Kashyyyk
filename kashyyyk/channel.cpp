@@ -215,10 +215,19 @@ void Channel::Highlight(HighlightLevel level){
     Fl_Tree_Item *i = GetWindowItem();
 
 
+    Fl_Preferences &prefs = GetPreferences();
+
+    int do_pling = 1;
+    prefs.get("sys.pling.enabled", do_pling, 1);
+
     if(i)
       switch(level){
       case High:
-        Kashyyyk_Pling();
+        i->labelcolor(FL_RED);
+        if(do_pling==1){
+          Pling(Parent->Parent->Handle());
+          break;
+        }
       case Medium:
         i->labelcolor(FL_DARK_RED);
       break;
