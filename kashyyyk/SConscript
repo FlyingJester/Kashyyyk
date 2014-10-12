@@ -12,6 +12,11 @@ if not ( sys.platform == 'win32' or sys.platform.startswith('win64') ):
 if sys.platform == 'darwin':
   localenv.Append(FRAMEWORKS = "Cocoa")
 
+platformenv = localenv.Clone()
+
+kashyyyk_platform = SConscript(dirs = ["platform"], exports = "platformenv");
+localenv.Append(LIBS=[kashyyyk_platform])
+
 kashyyyk = localenv.Program("kashyyyk", ["kashyyyk.cpp", "reciever.cpp", "promise.cpp", "background.cpp", "prefs.cpp", "server.cpp", "channel.cpp", "window.cpp"])
 
 if sys.platform == 'darwin':

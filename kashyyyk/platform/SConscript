@@ -1,0 +1,21 @@
+import os
+import sys
+
+Import("platformenv")
+
+platform_files = [];
+
+if sys.platform == 'darwin':
+  platform_files += ["cocoa_pling.m"];
+else:
+  platform_files += ["generic_pling.cpp"];
+
+#if ( sys.platform == 'win32' or sys.platform.startswith('win64') ):
+
+
+#else:
+
+platformlib = platformenv.StaticLibrary("kashyyyk_platform", platform_files)
+
+Return("platformlib")
+
