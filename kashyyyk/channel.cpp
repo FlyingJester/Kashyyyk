@@ -4,6 +4,7 @@
 #include "message.h"
 #include "input.h"
 #include "platform/pling.h"
+#include "platform/notification.h"
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Box.H>
@@ -132,6 +133,7 @@ void Input_CB(Fl_Widget *w, void *p){
 Channel::Channel(Server *s, const std::string &channel_name)
   : TypedReciever<Server>(s)
   , widget()
+  , alignment(32.0)
   , name(channel_name) {
 
     Fl_Preferences &prefs = GetPreferences();
@@ -279,16 +281,31 @@ void Channel::GiveMessage(IRC_Message *msg){
     }
     else if(msg->type==IRC_privmsg){
         std::string str_s = msg->from?msg->from:"***";
+
+
         str_s = str_s.substr(str_s[0]==':'?1:0);
         str_s = str_s.substr(0, str_s.find('!'));
 
-        str_s.push_back('\a');
-        str_s+=msg->parameters[1];
+        if(!(alignment>=str_s.size()))
+          alignment=str_s.size();
 
         if(strcasestr(msg->parameters[1], Nick())){
           last_msg_type = IRC_notice;
           level = High;
+
+          std::string str_note = "<";
+          str_note+=str_s;
+          str_note+="> ";
+          str_note+=msg->parameters[1];
+
+          Kashyyyk::GiveNotification("Private Message", str_note);
+
         }
+
+        str_s+=std::string(' ', alignment-str_s.size());
+
+        str_s.push_back('|');
+        str_s+=msg->parameters[1];
 
         str = (char *)Alloc(str_s.size()+1);
         strcpy(str, str_s.c_str());
@@ -430,17 +447,15 @@ void Channel::AddUser(const struct User &user){
     Users.push_back(user);
     userlist->add(user.Name.c_str());
 
+    alignment = std::max<double>(user.Name.size(), alignment);
+
     unlock();
 
 }
 
 
 void Channel::AddUser(const char *user, const char *mode){
-    lock();
-    Users.push_back({user, mode});
-    userlist->add(user);
-
-    unlock();
+    AddUser({user, mode});
 }
 
 
