@@ -3,6 +3,7 @@
 #include "prefs.hpp"
 #include "message.h"
 #include "input.h"
+#include "platform/pling.h"
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Box.H>
@@ -217,6 +218,7 @@ void Channel::Highlight(HighlightLevel level){
     if(i)
       switch(level){
       case High:
+        Kashyyyk_Pling();
       case Medium:
         i->labelcolor(FL_DARK_RED);
       break;
@@ -244,6 +246,16 @@ void Channel::GiveMessage(IRC_Message *msg){
 
     last_msg_type = msg->type;
 
+    HighlightLevel level;
+    switch(msg->type){
+      case IRC_notice:
+      case IRC_privmsg:
+        level = Medium;
+        break;
+      default:
+        level = Low;
+    }
+
     IRC_GetAllocators(&Alloc, &Dealloc);
 
     if(msg->type==IRC_error_m){
@@ -266,6 +278,7 @@ void Channel::GiveMessage(IRC_Message *msg){
 
         if(strcasestr(msg->parameters[1], Nick())){
           last_msg_type = IRC_notice;
+          level = High;
         }
 
         str = (char *)Alloc(str_s.size()+1);
@@ -362,32 +375,6 @@ void Channel::GiveMessage(IRC_Message *msg){
 
     }
 
-/*
-    Fl_Output *text = new Fl_Output(0, 0, chatlist->w(), 16);
-    text->value(str);
-    text->box(FL_NO_BOX);
-*/
-    int color = FL_FOREGROUND_COLOR;
-    HighlightLevel level = Low;
-    switch(IRC_privmsg){
-      case IRC_privmsg:
-      case IRC_notice:
-        level = Medium;
-        break;
-      case IRC_join:
-        color = FL_DARK_BLUE;
-        break;
-      case IRC_quit:
-        color = FL_DARK_CYAN;
-        break;
-      case IRC_nick:
-        color = FL_DARK_YELLOW;
-        break;
-    }
-/*
-    text->textcolor(color);
-    text->textfont(font);
-*/
     buffer->append(str);
     buffer->append("\n");
     chatlist->redraw();

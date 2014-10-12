@@ -292,21 +292,6 @@ public:
             return false;
         }
 
-        /*
-        Channel *channel = ChannelPromise->Finish();
-
-        std::string jointext = msg->from+(msg->from[0]==':'?1:0); jointext.append(" Joined "); jointext+=channel_name;
-
-        IRC_Message *joinmsg = IRC_CreatePrivateMessage(channel_name.c_str(), jointext.c_str());
-
-        Fl::lock();
-        channel->GiveMessage(joinmsg);
-        Fl::unlock();
-
-        IRC_FreeMessage(joinmsg);
-
-        */
-
         return true;
 
     }
