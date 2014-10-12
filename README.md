@@ -22,7 +22,7 @@ static version. You need Python 2.x and SCons to build Kashyyyk.
 
 #### Checklist for Compiling
  - FLTK 1.3
- - GCC or Clang
+ - MSVC 2013, GCC, or Clang
  - Python 2.x
  - SCons
 
@@ -39,6 +39,7 @@ Kashyyyk Features
  - Persistent Preferences
  - Font and Theme Selection
  - Partial Numeric Response Support
+ - Notification Center Support
 
 #### Planned
  - Chat Logging
