@@ -6,6 +6,8 @@
 #include <Fl/Fl_Scroll.H>
 #include <Fl/Fl.H>
 #include <memory>
+#include <list>
+#include <utility>
 #include <cstdlib>
 
 namespace Kashyyyk {
@@ -13,8 +15,10 @@ namespace Kashyyyk {
 template <class T = Fl_Pack, class I = Fl_Input, int H = 16>
 class EditList : public Fl_Group {
 public:
-    typedef void(*ItemCallback)(I *in, EditList<T, I, H> *that);
+    typedef EditList<T, I, H> this_type;
+    typedef void(*ItemCallback)(I *in, this_type *that);
 protected:
+
 
     int pad;
 
@@ -29,24 +33,47 @@ protected:
     ItemCallback AddCallback;
     ItemCallback DelCallback;
 
-    static void Add_CB(Fl_Widget *w, void *p){
-        EditList<T, I, H> *that = static_cast<EditList<T, I, H> *>(p);
+    Fl_Callback *ListCallback;
 
-        that->list.resize(that->x()+1, that->y()+1,
-                          that->w()-2-that->scroller.scrollbar_size(),
-                          that->h()-H-2-that->pad);
+    static void ListCallback_Wrappers(Fl_Widget *w, void *p){
+        this_type *that = static_cast<this_type *>(p);
+
+        if(that->last_item){
+          that->last_item->color(FL_YELLOW);
+          that->last_item->position(0, 0);
+        }
+
+        printf("Old %s, new %s\n",
+            (that->last_item)?that->last_item->value():"NULL",
+            static_cast<I *>(w)->value());
+
+        that->last_item = static_cast<I *>(w);
+        w->color(FL_RED);
+
+        if(that->ListCallback)
+          that->ListCallback(w, p);
+
+        that->list.redraw();
+
+    }
+
+    static void Add_CB(Fl_Widget *w, void *p){
+        this_type *that = static_cast<this_type *>(p);
 
         I *i = new I(0, 0, that->list.w(), H);
 
         i->box(FL_FLAT_BOX);
         i->color(FL_BACKGROUND2_COLOR);
 
+        i->callback(ListCallback_Wrappers, that);
+
+        i->when(FL_WHEN_NOT_CHANGED|FL_WHEN_CHANGED|FL_WHEN_RELEASE_ALWAYS|FL_WHEN_ENTER_KEY_ALWAYS);
+
         if(that->AddCallback)
           that->AddCallback(i, that);
 
         that->list.add(i);
         that->list.redraw();
-        that->redraw();
 
         that->last_item = i;
 
@@ -54,7 +81,7 @@ protected:
 
     static void Del_CB(Fl_Widget *w, void *p){
 
-        EditList<T, I, H> *that = static_cast<EditList<T, I, H> *>(p);
+        this_type *that = static_cast<this_type *>(p);
 
         if(!that->last_item)
           return;
@@ -62,12 +89,22 @@ protected:
         if(that->DelCallback)
           that->DelCallback(that->last_item, that);
 
-        that->list.remove(that->last_item);
+        int i = that->list.find(that->last_item);
+
+        that->list.remove(i);
         that->list.redraw();
-        that->redraw();
 
         delete that->last_item;
-        that->last_item = nullptr;
+
+        if(that->list.children()==0){
+            that->last_item = nullptr;
+            return;
+        }
+
+        i = std::max<int>(i-1, 0);
+        i = std::min<int>(i, that->list.children());
+
+        that->last_item = static_cast<Fl_Input *>(that->list.array()[i]);
 
     }
 
@@ -78,19 +115,27 @@ public:
       , pad(p)
       , AddButton(x+pad, h+pad, (w-(pad*2))/2, H, "Add New")
       , DelButton(((w-pad)/2)+x+pad, h+pad, (w-(pad*2))/2, H, "Remove")
-      , scroller(x+1, y+1, w-2, h-H-2-pad)
-      , list(x+1, y+1, w-2, h-H-2-pad)
+      , scroller(x+pad, y+pad, w-(pad*2), h-H-2-(pad*2))
+      , list(x+pad, y+pad, w-(pad*2), h-H-2-(pad*2)-2)
       , last_item(nullptr)
       , AddCallback(nullptr)
-      , DelCallback(nullptr) {
+      , DelCallback(nullptr)
+      , ListCallback(nullptr) {
 
+        // Set the appearance as if the entire widget, except for
+        // the add and del buttons, is a single big box.
         box(FL_DOWN_BOX);
-        list.box(FL_DOWN_FRAME);
+        list.box(FL_NO_BOX);
         list.color(FL_BACKGROUND2_COLOR);
+        scroller.box(FL_DOWN_BOX);
+        scroller.color(FL_BACKGROUND2_COLOR);
 
+        // Setup the scroller to always have a scroll bar, and resize
+        // the T to make room for the scroll bar.
         scroller.scrollbar_size(Fl::scrollbar_size());
         scroller.type(Fl_Scroll::VERTICAL_ALWAYS);
-        list.resize(x+1, y+1, w-2-scroller.scrollbar_size(), h-H-2-pad);
+        list.resize(x+pad, y+pad+1, w-scroller.scrollbar_size()-(pad*2), h-H-(pad*4));
+        list.spacing(pad>>2);
 
         AddButton.callback(Add_CB, this);
         DelButton.callback(Del_CB, this);
