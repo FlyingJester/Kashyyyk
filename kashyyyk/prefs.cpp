@@ -9,6 +9,8 @@
 #include <FL/Fl.H>
 #include <FL/Fl_Color_Chooser.H>
 
+#include "platform/paths.h"
+
 #define ADD_FONT_ITEM(TO, NAME, VALUE)\
 {\
   int _i = TO->add(NAME);\
@@ -117,7 +119,8 @@ void Prefs_color_CB(Fl_Widget *w, void *p){
 
 
 Fl_Preferences &Kashyyyk::GetPreferences(){
-    static Fl_Preferences prefs("conf", "FlyingJester", "Kashyyyk");
+    printf("Using config directory %s.\n", Kashyyyk_ConfigDirectory());
+    static Fl_Preferences prefs(Kashyyyk_ConfigDirectory(), "FlyingJester", "Kashyyyk");
     return prefs;
 }
 

@@ -19,6 +19,7 @@ typedef Fl_Window void;
 #endif
 
 HWND Kashyyyk_Win32_GetWindow(Fl_Window *);
+HWND Kashyyyk_Win32_GetAnyWindow();
 
 #ifdef __cplusplus
 }

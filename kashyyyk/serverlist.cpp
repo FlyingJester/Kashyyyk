@@ -168,6 +168,7 @@ void ServerList(Fl_Widget *w, void *p){
             char *real = nullptr;
 
             prefs.get("server.identity.use_globals", global, global);
+            prefs.set("server.identity.use_globals", global);
 
             if(global){
                 prefs.get("sys.identity.nickname", nick, "KashyyykUser");

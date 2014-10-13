@@ -8,15 +8,25 @@ platform_files = [];
 if sys.platform == 'darwin':
   platform_files += ["cocoa_pling.m"];
   platform_files += ["cocoa_notification.m"];
+#  platform_files += ["cocoa_paths.m"];
+  platform_files += ["unix_paths.c"];
   platformenv.Append(FRAMEWORKS = ["Foundation"])
 
 elif sys.platform.startswith('win'):
   platform_files += ["win32_getwindow.cpp"];
   platform_files += ["win32_pling.c"];
   platform_files += ["generic_notification.c"];
+  platform_files += ["generic_paths.c"];
+
+elif os.name == 'posix':
+  platform_files += ["generic_pling.cpp"];
+  platform_files += ["generic_notification.c"];
+  platform_files += ["unix_paths.c"];
+
 else:
   platform_files += ["generic_pling.cpp"];
   platform_files += ["generic_notification.c"];
+  platform_files += ["generic_paths.c"];
 
 platformlib = platformenv.StaticLibrary("kashyyyk_platform", platform_files)
 
