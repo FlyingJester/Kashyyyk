@@ -44,21 +44,30 @@ protected:
         int i = that->list.value();
 
         const char *c = fl_input("Rename Server %s", that->list.text(i), that->list.text(i));
-        if(c)
-          that->list.text(i, c);
+        if(!c)
+          return;
+
+        that->list.text(i, c);
 
     }
 
     static void Add_CB(Fl_Widget *w, void *p){
         this_type *that = static_cast<this_type *>(p);
 
-        ItemType t = {"New Item", nullptr};
+        char *n_text = strdup("New Item");
 
+        ItemType proto = {n_text, nullptr};
         if(that->AddCallback)
-          t = that->AddCallback(t);
+          proto = that->AddCallback(proto);
 
-        that->list.add(t.first, t.second);
+        if((proto.first==nullptr) && (proto.second==nullptr)){
+            return;
+        }
+
+        that->list.add(proto.first, proto.second);
         that->list.redraw();
+
+        free((void *)proto.first);
 
         that->NumItemsChanged();
 

@@ -6,6 +6,7 @@
 #include "socket.h"
 #include "message.h"
 #include "serverlist.hpp"
+#include "doubleinput.hpp"
 
 #include <cstdio>
 #include <stack>
@@ -125,6 +126,7 @@ public:
     void Run() override {
         promise.Finalize(fl_choice("Could not connect to %s. Try again?", fl_no, fl_yes, nullptr, name.c_str()));
         promise.SetReady();
+        Fl::awake();
     }
 
 };
@@ -167,7 +169,7 @@ try_connect:
 
             Fl::awake();
 
-            while(!promise.IsReady());
+            while(!promise.IsReady()){}
 
             bool again = (promise.Finish()==1);
             if(again){
@@ -184,24 +186,23 @@ void ConnectToServer(Fl_Widget *w, void *p){
     assert(p);
 
     Window *win = static_cast<Window *>(p);
-    const char *str = fl_input("Enter Server Address", "");
-    if(str==nullptr)
+
+    DoubleInput_Return r = DoubleInput("Enter Server Address", "URL", "", "Port", "6667");
+
+    std::unique_ptr<void, void(*)(void *)> rone((void *)r.one, free);
+    std::unique_ptr<void, void(*)(void *)> rtwo((void *)r.two, free);
+
+    if(r.value==0)
       return;
-    std::string inp = str;
-    long port = 6667;
+    std::string inp = r.one;
+    long port = atol(r.two);
+    if(!port)
+      port = 6667;
+
+    printf("%s %s %ld\n", r.one, r.two, port);
 
     if(inp.empty())
       return;
-
-    size_t del_at = inp.find(':');
-
-    if(del_at!=std::string::npos){
-        std::string port_str = inp.substr(del_at+1);
-        port = std::stoul(port_str);
-
-        inp = inp.substr(0, del_at);
-
-    }
 
     AddLongRunningTask(new ConnectToServer_Task(win, inp.c_str(), port));
 }

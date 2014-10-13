@@ -473,21 +473,39 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
     Handlers.push_back(std::unique_ptr<MessageHandler>(new NickChange_Handler(this)));
 
     char *nick_c = nullptr;
-    char *name = nullptr;
-    char *real = nullptr;
+    char *name_c = nullptr;
+    char *real_c = nullptr;
 
-    prefs.get("sys.identity.nickname", nick_c, "KashyyykUser");
-    prefs.get("sys.identity.fullname", name, "KashyyykName");
-    prefs.get("sys.identity.realname", real, "KashyyykReal");
+    std::string server_ident("server.");
+    server_ident += name + ".identity.";
 
-    IRC_Message *msg_name = IRC_CreateUser(name, "falcon", "millenium", real);
+    int global = 1;
+
+    prefs.get((server_ident+"use_globals").c_str(), global, global);
+
+    if(!global){
+        prefs.get((server_ident+"nickname").c_str(), nick_c, "KashyyykUser");
+        prefs.get((server_ident+"fullname").c_str(), name_c, "KashyyykName");
+        prefs.get((server_ident+"realname").c_str(), real_c, "KashyyykReal");
+    }
+    else{
+
+        prefs.set((server_ident+"use_globals").c_str(), global);
+
+        prefs.get("sys.identity.nickname", nick_c, "KashyyykUser");
+        prefs.get("sys.identity.fullname", name_c, "KashyyykName");
+        prefs.get("sys.identity.realname", real_c, "KashyyykReal");
+
+    }
+
+    IRC_Message *msg_name = IRC_CreateUser(name_c, "falcon", "millenium", real_c);
     IRC_Message *msg_nick = IRC_CreateNick(nick_c);
 
     nick = nick_c;
 
     free(nick_c);
-    free(name);
-    free(real);
+    free(name_c);
+    free(real_c);
 
 
     Handlers.push_back(std::unique_ptr<MessageHandler>(new SendMessage_Handler(this, msg_name)));

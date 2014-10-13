@@ -2,6 +2,7 @@
 #include "window.hpp"
 #include "editlist.hpp"
 #include "prefs.hpp"
+#include "doubleinput.hpp"
 #include <cassert>
 #include <cstdio>
 #include <string>
@@ -68,6 +69,27 @@ void GlobalCheckboxCallback(Fl_Widget *w, void *p){
 
 }
 
+EditList<>::ItemType ServerListAddCallback(EditList<>::ItemType item){
+
+    DoubleInput_Return r = DoubleInput("Add a New Server", "Server Name", item.first, "Server Address", "", nullptr);
+
+    if(r.value==0){
+        free((void *)r.one);
+        free((void *)r.two);
+        return {nullptr, nullptr};
+    }
+
+    ServerData *data = new ServerData();
+    data->Name = r.two;
+
+    free((void *)item.first);
+
+    item.first  = r.one;
+    item.second = data;
+
+    return item;
+}
+
 void ServerListNumCallback(int i, void *p) {
     ServerPrefItems *pref_items = static_cast<ServerPrefItems *>(p);
 
@@ -97,7 +119,11 @@ EditList<>::ItemType ServerListSelCallback(EditList<>::ItemType in, void *p) {
 
     int global = 1;
 
-    prefs.get("server.identity.use_globals", global, global);
+    std::string server_ident("server.");
+    server_ident += data->Name;
+    server_ident += ".identity.";
+
+    prefs.get((server_ident+"use_globals").c_str(), global, global);
 
     if(global){
         prefs.get("sys.identity.nickname", nick, "KashyyykUser");
@@ -105,10 +131,6 @@ EditList<>::ItemType ServerListSelCallback(EditList<>::ItemType in, void *p) {
         prefs.get("sys.identity.realname", real, "KashyyykReal");
     }
     else{
-        std::string server_ident("server.");
-        server_ident += data->Name;
-        server_ident += "identity.";
-
         prefs.get((server_ident+"nickname").c_str(), nick, "KashyyykUser");
         prefs.get((server_ident+"fullname").c_str(), name, "KashyyykName");
         prefs.get((server_ident+"realname").c_str(), real, "KashyyykReal");
@@ -210,6 +232,7 @@ void ServerList(Fl_Widget *w, void *p){
         pref_items->AutoJoin = editlist;
 
         servers->SetNumCallback(ServerListNumCallback, pref_items);
+        servers->SetAddCallback(ServerListAddCallback, nullptr);
 
         if(servers->GetNumItems()==0){
             editlist->Deactivate();
