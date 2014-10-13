@@ -7,25 +7,7 @@
 
 #include <FL/Fl_Preferences.H>
 #include <FL/Fl.H>
-
-/*
- const Fl_Font FL_HELVETICA              = 0;
- const Fl_Font FL_HELVETICA_BOLD         = 1;
- const Fl_Font FL_HELVETICA_ITALIC       = 2;
- const Fl_Font FL_HELVETICA_BOLD_ITALIC  = 3;
- const Fl_Font FL_COURIER                = 4;
- const Fl_Font FL_COURIER_BOLD           = 5;
- const Fl_Font FL_COURIER_ITALIC         = 6;
- const Fl_Font FL_COURIER_BOLD_ITALIC    = 7;
- const Fl_Font FL_TIMES                  = 8;
- const Fl_Font FL_TIMES_BOLD             = 9;
- const Fl_Font FL_TIMES_ITALIC           = 10;
- const Fl_Font FL_TIMES_BOLD_ITALIC      = 11;
- const Fl_Font FL_SYMBOL                 = 12;
- const Fl_Font FL_SCREEN                 = 13;
- const Fl_Font FL_SCREEN_BOLD            = 14;
- const Fl_Font FL_ZAPF_DINGBATS          = 15;
-*/
+#include <FL/Fl_Color_Chooser.H>
 
 #define ADD_FONT_ITEM(TO, NAME, VALUE)\
 {\
@@ -119,6 +101,20 @@ static void Prefs_Font_CB(Fl_Widget *w, void *p){
 
 }
 
+template<void(*func)(uchar, uchar, uchar)>
+void Prefs_color_CB(Fl_Widget *w, void *p){
+    static uchar r, g, b;
+    int a = fl_color_chooser("Select a Color", r, g, b);
+
+    if(a==0)
+      return;
+
+    func(r, g, b);
+
+    Fl::flush();
+
+}
+
 
 Fl_Preferences &Kashyyyk::GetPreferences(){
     static Fl_Preferences prefs("conf", "FlyingJester", "Kashyyyk");
@@ -141,12 +137,12 @@ void Kashyyyk::OpenPreferencesWindow(){
         OK->callback(Prefs_OKButton_CB, window);
         window->add(OK);
 
-        Fl_Group *gfx_group = new Fl_Group(8, 32, 200, 128, "Appearance");
+        Fl_Pack *gfx_group = new Fl_Pack(8, 32, 200, 128, "Appearance");
         gfx_group->box(FL_EMBOSSED_FRAME);
 
-        gfx_group->add(new Fl_Box(16, 36, 200-16, 24, "Theme"));
+        gfx_group->add(new Fl_Box(0, 0, 0, 24, "Theme"));
         //theme_label->box(FL_FLAT_BOX);
-        Fl_Choice * theme_input = new Fl_Choice(16, 34+32, 200-16, 24);
+        Fl_Choice * theme_input = new Fl_Choice(0, 0, 0, 24);
         theme_input->callback(Prefs_Theme_CB, nullptr);
         theme_input->add("none");
         theme_input->add("gtk+");
@@ -162,8 +158,9 @@ void Kashyyyk::OpenPreferencesWindow(){
 
         }
 
-        gfx_group->add(new Fl_Box(16, 34+32+24, 200-16, 24, "Font (Requires Restart)"));
-        Fl_Choice * font_input = new Fl_Choice(16, 34+32+48, 200-16, 24);
+        new Fl_Box(0, 0, 0, 24, "Font (Requires Restart)");
+        Fl_Choice * font_input = new Fl_Choice(0, 0, 0, 24);
+        font_input->callback(Prefs_Font_CB, nullptr);
         font_input->callback(Prefs_Font_CB, nullptr);
 
         ADD_FONT_ITEM(font_input, fontNames[0], FL_HELVETICA);
@@ -184,6 +181,25 @@ void Kashyyyk::OpenPreferencesWindow(){
 
         }
 
+        {
+            new Fl_Box(0, 0, 0, 24);
+            new Fl_Pack(0, 0, 1, 24, "Color Scheme");
+
+            Fl_Button * bkg1 = new Fl_Button(0, 0, 1, 24, "Background 1");
+            bkg1->callback(Prefs_color_CB<Fl::background>, nullptr);
+            bkg1->color(FL_BACKGROUND_COLOR);
+
+            Fl_Button * bkg2 = new Fl_Button(0, 0, 1, 24, "Background 2");
+            bkg2->callback(Prefs_color_CB<Fl::background2>, nullptr);
+            bkg2->color(FL_BACKGROUND2_COLOR);
+
+            Fl_Button * fgnd = new Fl_Button(0, 0, 1, 24, "Foreground");
+            fgnd->callback(Prefs_color_CB<Fl::foreground>, nullptr);
+            fgnd->color(FL_FOREGROUND_COLOR);
+            fgnd->labelcolor(FL_BACKGROUND2_COLOR);
+
+            gfx_group->begin();
+        }
         gfx_group->end();
         window->add(gfx_group);
 

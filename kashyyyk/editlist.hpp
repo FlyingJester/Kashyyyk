@@ -38,6 +38,9 @@ protected:
 
         I *i = new I(0, 0, that->list.w(), H);
 
+        i->box(FL_FLAT_BOX);
+        i->color(FL_BACKGROUND2_COLOR);
+
         if(that->AddCallback)
           that->AddCallback(i, that);
 
@@ -83,6 +86,7 @@ public:
 
         box(FL_DOWN_BOX);
         list.box(FL_DOWN_FRAME);
+        list.color(FL_BACKGROUND2_COLOR);
 
         scroller.scrollbar_size(Fl::scrollbar_size());
         scroller.type(Fl_Scroll::VERTICAL_ALWAYS);
