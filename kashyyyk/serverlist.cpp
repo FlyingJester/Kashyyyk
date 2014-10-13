@@ -17,16 +17,6 @@ namespace Kashyyyk {
 static std::unique_ptr<Fl_Window> serverlist_window;
 static Window *serverlist_associated_window;
 
-static void Nullify(Fl_Input *in, EditList<> *){
-
-  static int i = 0;
-  in->value((std::string("Nothing!")+std::to_string(i)).c_str());
-  printf("%s\n", (std::string("Nothing!")+std::to_string(i)).c_str());
-
-  i++;
-
-}
-
 void ServerList(Fl_Widget *w, void *p){
 
     assert(p);
@@ -42,8 +32,7 @@ void ServerList(Fl_Widget *w, void *p){
         Fl_Window *serverlist = new Fl_Window((256*2)+(8*3), H);
         serverlist_window.reset(serverlist);
 
-        EditList<> *list = new EditList<>(8, 24, 256, H-32, "Servers");
-        list->SetAddCallback(Nullify);
+        new EditList<>(8, 24, 256, H-32, "Servers");
 
     }
 

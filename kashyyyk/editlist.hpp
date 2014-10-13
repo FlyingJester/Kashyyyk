@@ -1,22 +1,22 @@
 #pragma once
 #include <Fl/Fl_Group.H>
-#include <Fl/Fl_Pack.H>
+#include <Fl/Fl_Hold_Browser.H>
 #include <Fl/Fl_Button.H>
 #include <Fl/Fl_Input.H>
-#include <Fl/Fl_Scroll.H>
 #include <Fl/Fl.H>
+#include <Fl/fl_ask.H>
 #include <memory>
-#include <list>
 #include <utility>
 #include <cstdlib>
 
 namespace Kashyyyk {
 
-template <class T = Fl_Pack, class I = Fl_Input, int H = 16>
+template <class T = Fl_Hold_Browser, int H = 16>
 class EditList : public Fl_Group {
 public:
-    typedef EditList<T, I, H> this_type;
-    typedef void(*ItemCallback)(I *in, this_type *that);
+    typedef EditList<T, H> this_type;
+    typedef std::pair<const char *, void *> ItemType;
+    typedef ItemType(*ItemCallback)(ItemType in);
 protected:
 
 
@@ -24,58 +24,38 @@ protected:
 
     Fl_Button AddButton;
     Fl_Button DelButton;
+    Fl_Button EdtButton;
 
-    Fl_Scroll scroller;
     T list;
-
-    I *last_item;
 
     ItemCallback AddCallback;
     ItemCallback DelCallback;
 
-    Fl_Callback *ListCallback;
-
-    static void ListCallback_Wrappers(Fl_Widget *w, void *p){
+    static void Edt_CB(Fl_Widget *w, void *p){
         this_type *that = static_cast<this_type *>(p);
 
-        if(that->last_item){
-          that->last_item->color(FL_YELLOW);
-          that->last_item->position(0, 0);
-        }
+        int i = that->list.value();
 
-        printf("Old %s, new %s\n",
-            (that->last_item)?that->last_item->value():"NULL",
-            static_cast<I *>(w)->value());
-
-        that->last_item = static_cast<I *>(w);
-        w->color(FL_RED);
-
-        if(that->ListCallback)
-          that->ListCallback(w, p);
-
-        that->list.redraw();
+        const char *c = fl_input("Rename Server %s", that->list.text(i), that->list.text(i));
+        if(c)
+          that->list.text(i, c);
 
     }
 
     static void Add_CB(Fl_Widget *w, void *p){
         this_type *that = static_cast<this_type *>(p);
 
-        I *i = new I(0, 0, that->list.w(), H);
-
-        i->box(FL_FLAT_BOX);
-        i->color(FL_BACKGROUND2_COLOR);
-
-        i->callback(ListCallback_Wrappers, that);
-
-        i->when(FL_WHEN_NOT_CHANGED|FL_WHEN_CHANGED|FL_WHEN_RELEASE_ALWAYS|FL_WHEN_ENTER_KEY_ALWAYS);
+        ItemType t = {"New Item", nullptr};
 
         if(that->AddCallback)
-          that->AddCallback(i, that);
+          t = that->AddCallback(t);
 
-        that->list.add(i);
+        that->list.add(t.first, t.second);
+
+        if(that->list.size()==1)
+          that->list.select(1);
+
         that->list.redraw();
-
-        that->last_item = i;
 
     }
 
@@ -83,28 +63,21 @@ protected:
 
         this_type *that = static_cast<this_type *>(p);
 
-        if(!that->last_item)
-          return;
+        int sel = that->list.value();
 
-        if(that->DelCallback)
-          that->DelCallback(that->last_item, that);
-
-        int i = that->list.find(that->last_item);
-
-        that->list.remove(i);
-        that->list.redraw();
-
-        delete that->last_item;
-
-        if(that->list.children()==0){
-            that->last_item = nullptr;
-            return;
+        if(that->DelCallback){
+            that->DelCallback({that->list.text(sel), that->list.data(sel)});
         }
 
-        i = std::max<int>(i-1, 0);
-        i = std::min<int>(i, that->list.children());
+        that->list.remove(sel);
+        that->list.redraw();
 
-        that->last_item = static_cast<Fl_Input *>(that->list.array()[i]);
+        if(that->list.size()==0)
+          return;
+
+        sel = std::min<int>(sel, that->list.size());
+
+        that->list.select(sel);
 
     }
 
@@ -113,32 +86,22 @@ public:
     EditList(int x, int y, int w, int h, const char *label = 0, int p = 4)
       : Fl_Group(x, y, w, h, label)
       , pad(p)
-      , AddButton(x+pad, h+pad, (w-(pad*2))/2, H, "Add New")
-      , DelButton(((w-pad)/2)+x+pad, h+pad, (w-(pad*2))/2, H, "Remove")
-      , scroller(x+pad, y+pad, w-(pad*2), h-H-2-(pad*2))
+      , AddButton(x+pad, h+pad, (w-(pad*3))/3, H, "Add New")
+      , DelButton(((w-pad)/3)+x+pad, h+pad, (w-(pad*3))/3, H, "Remove")
+      , EdtButton(((w-pad)*2/3)+x+pad, h+pad, (w-(pad*3))/3, H, "Edit")
       , list(x+pad, y+pad, w-(pad*2), h-H-2-(pad*2)-2)
-      , last_item(nullptr)
       , AddCallback(nullptr)
-      , DelCallback(nullptr)
-      , ListCallback(nullptr) {
+      , DelCallback(nullptr) {
 
         // Set the appearance as if the entire widget, except for
         // the add and del buttons, is a single big box.
         box(FL_DOWN_BOX);
         list.box(FL_NO_BOX);
         list.color(FL_BACKGROUND2_COLOR);
-        scroller.box(FL_DOWN_BOX);
-        scroller.color(FL_BACKGROUND2_COLOR);
-
-        // Setup the scroller to always have a scroll bar, and resize
-        // the T to make room for the scroll bar.
-        scroller.scrollbar_size(Fl::scrollbar_size());
-        scroller.type(Fl_Scroll::VERTICAL_ALWAYS);
-        list.resize(x+pad, y+pad+1, w-scroller.scrollbar_size()-(pad*2), h-H-(pad*4));
-        list.spacing(pad>>2);
 
         AddButton.callback(Add_CB, this);
         DelButton.callback(Del_CB, this);
+        EdtButton.callback(Edt_CB, this);
 
     }
 
@@ -152,15 +115,9 @@ public:
         DelCallback = a;
     }
 
-    size_t GetNumItems(){
-        return list.children();
-    }
-
-    const I *GetItems(){
-        return list.array();
-    }
-    const I *GetItem(size_t index){
-        return list.child(index);
+    const ItemType GetItem(){
+        const int sel = list->selected();
+        return {list->text(sel), list->data(sel)};
     }
 
 };
