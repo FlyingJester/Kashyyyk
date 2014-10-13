@@ -29,6 +29,7 @@ public:
   };
 
   class Window {
+protected:
 
       std::unique_ptr<Fl_Window> widget;
       std::unique_ptr<Fl_Group>  chat_holder;
@@ -71,6 +72,10 @@ public:
       void Redraw();
 
       Fl_Tree_Item *FindChannel(const char *);
+
+      inline const Fl_Window *Handle(){
+          return widget.get();
+      }
 
   };
 

@@ -5,6 +5,7 @@
 #include "prefs.hpp"
 #include "socket.h"
 #include "message.h"
+#include "serverlist.hpp"
 
 #include <cstdio>
 #include <stack>
@@ -34,10 +35,19 @@ void WindowCallbacks::JoinChannel_CB(Fl_Widget *, void *p){
         return;
     }
 
-    const char *channel = fl_input("Enter Channel to Join for %s", "", server->name.c_str());
+    const char * const channel = fl_input("Enter Channel to Join for %s", "", server->name.c_str());
 
     if(!channel)
       return;
+
+    Server::ChannelList::iterator iter = server->Channels.begin();
+
+    while(iter!=server->Channels.end()){
+        if(std::string(channel)==iter->get()->name)
+          return;
+
+        iter++;
+    }
 
     IRC_Message *msg = IRC_CreateJoin(1, channel);
     server->SendMessage(msg);
@@ -124,7 +134,9 @@ try_connect:
             window->AddServer(s);
         }
         else{
-            printf("Couldn't connect. Trying again.\n"); bool again = false;
+            printf("Couldn't connect. Asking if we should try again.\n");
+            int a = 0;//fl_choice("Could not connect to %s. Try again?", fl_no, fl_yes, nullptr, server_name.c_str());
+            bool again = (a==1);
             if(again){
                 Destroy_Socket(sock);
                 goto try_connect;
@@ -181,7 +193,7 @@ Window::Window(int w, int h, bool osx)
     Fl_Menu_Bar *menubar = (osx)?new Fl_Sys_Menu_Bar(-2, 0, w+4, 24):new Fl_Menu_Bar(-2, 0, w+4, 24);
 
     menubar->add("File/Connect To...", 0, ConnectToServer, this);
-    menubar->add("File/Quit", 0, ConnectToServer, this);
+    menubar->add("File/Server List", 0, ServerList, this);
     menubar->add("Edit/Preferences", 0, OpenPreferencesWindow_CB, this);
     menubar->add("Server/Change Nick", 0, WindowCallbacks::ChangeNick_CB, this);
     menubar->add("Server/Join Channel", 0, WindowCallbacks::JoinChannel_CB, this);
