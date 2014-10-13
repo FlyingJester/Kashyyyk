@@ -27,6 +27,10 @@ struct ServerPrefItems {
     Fl_Input_ *Real;
     Fl_Button *Global;
     EditList<> *AutoJoin;
+    std::string server;
+    std::string server_nickname;
+    std::string server_fullname;
+    std::string server_realname;
 };
 
 // The window is associated with the last window passed as `p' into ServerList.
@@ -52,7 +56,18 @@ inline std::pair<Fl_Pack *, T *> CreatePackWidget(const char *title, ValueT valu
     return {pack, i};
 }
 
-void GlobalCheckboxCallback(Fl_Widget *w, void *p){
+static void InputCallback(Fl_Widget *w, void *p){
+
+    Fl_Preferences &prefs = GetPreferences();
+
+    const char *pref_name = static_cast<std::string *>(p)->c_str();
+    const Fl_Input *input = static_cast<Fl_Input *>(w);
+
+    prefs.set(pref_name, input->value());
+
+}
+
+static void GlobalCheckboxCallback(Fl_Widget *w, void *p){
     struct ServerPrefItems *pref_items = static_cast<struct ServerPrefItems *>(p);
     Fl_Button *button = static_cast<Fl_Check_Button *>(w);
 
@@ -67,9 +82,17 @@ void GlobalCheckboxCallback(Fl_Widget *w, void *p){
         pref_items->Real->activate();
     }
 
+    std::string server_ident("server.");
+    server_ident += pref_items->server;
+    server_ident += ".identity.";
+
+    Fl_Preferences &prefs = GetPreferences();
+
+    prefs.set((server_ident+"use_globals").c_str(), button->value());
+
 }
 
-EditList<>::ItemType ServerListAddCallback(EditList<>::ItemType item){
+static EditList<>::ItemType ServerListAddCallback(EditList<>::ItemType item, void *){
 
     DoubleInput_Return r = DoubleInput("Add a New Server", "Server Name", item.first, "Server Address", "", nullptr);
 
@@ -90,7 +113,7 @@ EditList<>::ItemType ServerListAddCallback(EditList<>::ItemType item){
     return item;
 }
 
-void ServerListNumCallback(int i, void *p) {
+static void ServerListNumCallback(int i, void *p) {
     ServerPrefItems *pref_items = static_cast<ServerPrefItems *>(p);
 
       if(i==0){
@@ -105,7 +128,7 @@ void ServerListNumCallback(int i, void *p) {
       }
 }
 
-EditList<>::ItemType ServerListSelCallback(EditList<>::ItemType in, void *p) {
+static EditList<>::ItemType ServerListSelCallback(EditList<>::ItemType in, void *p) {
 
     struct ServerData *data = static_cast<struct ServerData *>(in.second);
 
@@ -123,6 +146,11 @@ EditList<>::ItemType ServerListSelCallback(EditList<>::ItemType in, void *p) {
     server_ident += data->Name;
     server_ident += ".identity.";
 
+    pref_items->server = data->Name;
+    pref_items->server_nickname = server_ident+"nickname";
+    pref_items->server_fullname = server_ident+"fullname";
+    pref_items->server_realname = server_ident+"realname";
+
     prefs.get((server_ident+"use_globals").c_str(), global, global);
 
     if(global){
@@ -131,14 +159,18 @@ EditList<>::ItemType ServerListSelCallback(EditList<>::ItemType in, void *p) {
         prefs.get("sys.identity.realname", real, "KashyyykReal");
     }
     else{
-        prefs.get((server_ident+"nickname").c_str(), nick, "KashyyykUser");
-        prefs.get((server_ident+"fullname").c_str(), name, "KashyyykName");
-        prefs.get((server_ident+"realname").c_str(), real, "KashyyykReal");
+        prefs.get(pref_items->server_nickname.c_str(), nick, "KashyyykUser");
+        prefs.get(pref_items->server_fullname.c_str(), name, "KashyyykName");
+        prefs.get(pref_items->server_realname.c_str(), real, "KashyyykReal");
     }
 
     pref_items->Nick->value(nick);
     pref_items->Name->value(name);
     pref_items->Real->value(real);
+
+    pref_items->Nick->callback(InputCallback, &(pref_items->server_nickname));
+    pref_items->Name->callback(InputCallback, &(pref_items->server_fullname));
+    pref_items->Real->callback(InputCallback, &(pref_items->server_realname));
 
     free(nick);
     free(name);
@@ -189,6 +221,14 @@ void ServerList(Fl_Widget *w, void *p){
             char *name = nullptr;
             char *real = nullptr;
 
+
+            std::string server_ident("sys.identity.");
+            pref_items->server_nickname = server_ident+"nickname";
+            pref_items->server_fullname = server_ident+"fullname";
+            pref_items->server_realname = server_ident+"realname";
+
+            prefs.get((server_ident+"use_globals").c_str(), global, global);
+
             prefs.get("server.identity.use_globals", global, global);
             prefs.set("server.identity.use_globals", global);
 
@@ -198,22 +238,25 @@ void ServerList(Fl_Widget *w, void *p){
                 prefs.get("sys.identity.realname", real,   "KashyyykReal");
             }
             else{
-                prefs.get("server.identity.nickname", nick, "KashyyykUser");
-                prefs.get("server.identity.fullname", name, "KashyyykName");
-                prefs.get("server.identity.realname", real, "KashyyykReal");
+                prefs.get(pref_items->server_nickname.c_str(), nick, "KashyyykUser");
+                prefs.get(pref_items->server_fullname.c_str(), name, "KashyyykName");
+                prefs.get(pref_items->server_realname.c_str(), real, "KashyyykReal");
             }
 
             auto NickWidget = CreatePackWidget("Nick", nick);
             propertypack->add(NickWidget.first);
             pref_items->Nick = NickWidget.second;
+            NickWidget.first->callback(InputCallback, &(pref_items->server_nickname));
 
             auto NameWidget = CreatePackWidget("Name", name);
             propertypack->add(NameWidget.first);
             pref_items->Name = NameWidget.second;
+            NameWidget.first->callback(InputCallback, &(pref_items->server_fullname));
 
             auto RealWidget = CreatePackWidget("Real", real);
             propertypack->add(RealWidget.first);
             pref_items->Real = RealWidget.second;
+            RealWidget.first->callback(InputCallback, &(pref_items->server_realname));
 
             free(nick);
             free(name);
@@ -231,8 +274,11 @@ void ServerList(Fl_Widget *w, void *p){
         EditList<> *editlist = new EditList<>(8, 24, 256, 156, "AutoJoin Channels");
         pref_items->AutoJoin = editlist;
 
+        printf("AutoJoin: %p\n", editlist);
+
         servers->SetNumCallback(ServerListNumCallback, pref_items);
         servers->SetAddCallback(ServerListAddCallback, nullptr);
+        servers->SetSelCallback(ServerListSelCallback, pref_items);
 
         if(servers->GetNumItems()==0){
             editlist->Deactivate();

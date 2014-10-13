@@ -16,8 +16,8 @@ class EditList : public Fl_Group {
 public:
     typedef EditList<T, H> this_type;
     typedef std::pair<const char *, void *> ItemType;
-    typedef ItemType(*ItemCallback)(ItemType in);
-    typedef void(*NumCallbackT)(int, void *);
+    typedef ItemType(*ItemCallback)(ItemType in, void *arg);
+    typedef void(*NumCallbackT)(int n, void *arg);
 protected:
 
 
@@ -53,12 +53,13 @@ protected:
 
     static void Add_CB(Fl_Widget *w, void *p){
         this_type *that = static_cast<this_type *>(p);
+        assert(that);
 
         char *n_text = strdup("New Item");
 
         ItemType proto = {n_text, nullptr};
         if(that->AddCallback)
-          proto = that->AddCallback(proto);
+          proto = that->AddCallback(proto, that->AddCallbackArg);
 
         if((proto.first==nullptr) && (proto.second==nullptr)){
             return;
@@ -83,7 +84,7 @@ protected:
         int sel = that->list.value();
 
         if(that->DelCallback){
-            that->DelCallback({that->list.text(sel), that->list.data(sel)});
+            that->DelCallback({that->list.text(sel), that->list.data(sel)}, that->DelCallbackArg);
         }
 
         that->list.remove(sel);
@@ -106,8 +107,11 @@ protected:
 
         int sel = that->list.value();
 
+        if(sel==0)
+          return;
+
         if(that->SelCallback)
-            that->SelCallback({that->list.text(sel), that->list.data(sel)});
+            that->SelCallback({that->list.text(sel), that->list.data(sel)}, that->SelCallbackArg);
 
     }
 
@@ -151,6 +155,8 @@ public:
         list.box(FL_NO_BOX);
         list.color(FL_BACKGROUND2_COLOR);
 
+        assert(this);
+
         AddButton.callback(Add_CB, this);
         DelButton.callback(Del_CB, this);
         EdtButton.callback(Edt_CB, this);
@@ -165,24 +171,24 @@ public:
 
     virtual ~EditList(){}
 
-    inline void SetAddCallback(ItemCallback a, void *b){
-        AddCallback = a;
-        AddCallbackArg = b;
+    inline void SetAddCallback(ItemCallback cb, void *arg = nullptr){
+        AddCallback = cb;
+        AddCallbackArg = arg;
     }
 
-    inline void SetDelCallback(ItemCallback a, void *b){
-        DelCallback = a;
-        DelCallbackArg = b;
+    inline void SetDelCallback(ItemCallback cb, void *arg = nullptr){
+        DelCallback = cb;
+        DelCallbackArg = arg;
     }
 
-    inline void SetSelCallback(ItemCallback a, void *b){
-        SelCallback = a;
-        SelCallbackArg = b;
+    inline void SetSelCallback(ItemCallback cb, void *arg = nullptr){
+        SelCallback = cb;
+        SelCallbackArg = arg;
     }
 
-    inline void SetNumCallback(NumCallbackT a, void *b){
-        NumCallback = a;
-        NumCallbackArg = b;
+    inline void SetNumCallback(NumCallbackT cb, void *arg = nullptr){
+        NumCallback = cb;
+        NumCallbackArg = arg;
     }
 
     inline int GetNumItems(){
