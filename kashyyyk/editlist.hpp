@@ -17,6 +17,7 @@ public:
     typedef EditList<T, H> this_type;
     typedef std::pair<const char *, void *> ItemType;
     typedef ItemType(*ItemCallback)(ItemType in);
+    typedef void(*NumCallbackT)(int, void *);
 protected:
 
 
@@ -29,7 +30,13 @@ protected:
     T list;
 
     ItemCallback AddCallback;
+    void *AddCallbackArg;
     ItemCallback DelCallback;
+    void *DelCallbackArg;
+    ItemCallback SelCallback;
+    void *SelCallbackArg;
+    NumCallbackT  NumCallback;
+    void *NumCallbackArg;
 
     static void Edt_CB(Fl_Widget *w, void *p){
         this_type *that = static_cast<this_type *>(p);
@@ -51,11 +58,12 @@ protected:
           t = that->AddCallback(t);
 
         that->list.add(t.first, t.second);
+        that->list.redraw();
+
+        that->NumItemsChanged();
 
         if(that->list.size()==1)
           that->list.select(1);
-
-        that->list.redraw();
 
     }
 
@@ -72,12 +80,41 @@ protected:
         that->list.remove(sel);
         that->list.redraw();
 
+        that->NumItemsChanged();
+
         if(that->list.size()==0)
           return;
 
         sel = std::min<int>(sel, that->list.size());
 
         that->list.select(sel);
+
+    }
+
+    static void Sel_CB(Fl_Widget *w, void *p){
+
+        this_type *that = static_cast<this_type *>(p);
+
+        int sel = that->list.value();
+
+        if(that->SelCallback)
+            that->SelCallback({that->list.text(sel), that->list.data(sel)});
+
+    }
+
+    void NumItemsChanged(){
+
+        if(list.size()==0){
+            DelButton.deactivate();
+            EdtButton.deactivate();
+        }
+        else{
+            DelButton.activate();
+            EdtButton.activate();
+        }
+
+        if(NumCallback)
+          NumCallback(list.size(), NumCallbackArg);
 
     }
 
@@ -91,7 +128,13 @@ public:
       , EdtButton(((w-pad)*2/3)+x+pad, h+pad, (w-(pad*3))/3, H, "Edit")
       , list(x+pad, y+pad, w-(pad*2), h-H-2-(pad*2)-2)
       , AddCallback(nullptr)
-      , DelCallback(nullptr) {
+      , AddCallbackArg(nullptr)
+      , DelCallback(nullptr)
+      , DelCallbackArg(nullptr)
+      , SelCallback(nullptr)
+      , SelCallbackArg(nullptr)
+      , NumCallback(nullptr)
+      , NumCallbackArg(nullptr) {
 
         // Set the appearance as if the entire widget, except for
         // the add and del buttons, is a single big box.
@@ -103,21 +146,97 @@ public:
         DelButton.callback(Del_CB, this);
         EdtButton.callback(Edt_CB, this);
 
+        list.callback(Sel_CB, this);
+
+        NumItemsChanged();
+
+        begin();
+
     }
 
     virtual ~EditList(){}
 
-    void SetAddCallback(ItemCallback a){
+    inline void SetAddCallback(ItemCallback a, void *b){
         AddCallback = a;
+        AddCallbackArg = b;
     }
 
-    void SetDelCallback(ItemCallback a){
+    inline void SetDelCallback(ItemCallback a, void *b){
         DelCallback = a;
+        DelCallbackArg = b;
     }
 
-    const ItemType GetItem(){
+    inline void SetSelCallback(ItemCallback a, void *b){
+        SelCallback = a;
+        SelCallbackArg = b;
+    }
+
+    inline void SetNumCallback(NumCallbackT a, void *b){
+        NumCallback = a;
+        NumCallbackArg = b;
+    }
+
+    inline int GetNumItems(){
+        return list.size();
+    }
+
+    inline const ItemType GetItem(){
         const int sel = list->selected();
         return {list->text(sel), list->data(sel)};
+    }
+
+    inline void AddItem(ItemType item){
+        list->add(item.first, item.second);
+        NumItemsChanged();
+    }
+
+    // If one of the parts of `item' is NULL, then only the other item is
+    // looked up.
+    // Returns true if the item actually was found.
+    inline bool RemoveItem(ItemType item){
+        bool found = false;
+
+        for(int i = 1; i<list.size(); i++){
+
+            if((item.first==nullptr) && (item.second==nullptr))
+              break;
+
+            if(((item.first==nullptr) || (strcmp(list.text(i), item.first)==0))
+               && ((item.second==nullptr) || (item.second==list.data(i)))){
+                  found = true;
+                  list.remove(i);
+                  break;
+               }
+        }
+
+        NumItemsChanged();
+        return found;
+    }
+
+    inline void Deactivate(){
+
+        AddButton.deactivate();
+        DelButton.deactivate();
+        EdtButton.deactivate();
+        list.deactivate();
+    }
+
+    inline void Activate(){
+
+        AddButton.activate();
+
+        if(list.size()>0){
+            DelButton.activate();
+            EdtButton.activate();
+        }
+
+        list.activate();
+
+    }
+
+    inline void Clear(){
+        list.clear();
+        NumItemsChanged();
     }
 
 };
