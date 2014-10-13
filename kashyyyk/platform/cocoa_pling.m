@@ -4,5 +4,5 @@
 
 void Kashyyyk_Pling(void * a){
     NSApplication *NSApp = [NSApplication sharedApplication];
-    [NSApp requestUserAttention:NSCriticalRequest];
+    [NSApp requestUserAttention:NSInformationalRequest];
 }
