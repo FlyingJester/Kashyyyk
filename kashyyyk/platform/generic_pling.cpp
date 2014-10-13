@@ -9,7 +9,7 @@ inline void GenericPling(void){
 
 // For when we don't know where we are.
 
-void Kashyyyk_Pling(void){
+void Kashyyyk_Pling(const Fl_Window *){
     printf("\nPLINGING!\n\n");
     GenericPling();
 }
