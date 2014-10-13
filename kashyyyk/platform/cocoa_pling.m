@@ -1,7 +1,8 @@
-#include "pling.h"
 #include <AppKit/NSApplication.h>
 
-void Kashyyyk_Pling(void){
+#include "cocoa_guard.h"
+
+void Kashyyyk_Pling(void * a){
     NSApplication *NSApp = [NSApplication sharedApplication];
     [NSApp requestUserAttention:NSCriticalRequest];
 }

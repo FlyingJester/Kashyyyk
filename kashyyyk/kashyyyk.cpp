@@ -74,12 +74,18 @@ int main(int argc, char *argv[]){
     GetDefaultServers(default_servers, prefs);
     SetTheme(prefs);
 
-    Kashyyyk::Window window(1024, 600);
+    std::unique_ptr<Kashyyyk::TaskGroup, void(*)(Kashyyyk::TaskGroup*)> group(Kashyyyk::CreateTaskGroup(), Kashyyyk::DestroyTaskGroup);
+
+    Kashyyyk::Window window(1024, 600, group.get());
 
     Fl::lock();
 
     Kashyyyk::Thread thread1(Kashyyyk::Thread::GetShortThreadPool());
-    Kashyyyk::Thread thread2(Kashyyyk::Thread::GetLongThreadPool());
 
-    Fl::run();
+    Kashyyyk::Thread thread2(Kashyyyk::Thread::GetLongThreadPool());
+    Kashyyyk::Thread thread3(Kashyyyk::Thread::GetLongThreadPool());
+
+    while(Fl::wait()){
+        PerformTask(group.get());
+    }
 }

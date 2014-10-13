@@ -4,18 +4,25 @@
  On OS X, the app icon will jump once.
 */
 #ifdef __cplusplus
+
+class Fl_Window;
+
 extern "C" {
+#else
+
+typedef void Fl_Window;
+
 #endif
 
-void Kashyyyk_Pling(void);
+void Kashyyyk_Pling(const Fl_Window *);
 
 #ifdef __cplusplus
 }
 
 namespace Kashyyyk {
 
-inline void Pling(void){
-    void Kashyyyk_Pling();
+inline void Pling(const Fl_Window *window){
+    Kashyyyk_Pling(window);
 }
 
 }

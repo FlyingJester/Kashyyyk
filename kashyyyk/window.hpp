@@ -18,6 +18,7 @@ namespace Kashyyyk {
 
   class Server;
   class Channel;
+  class TaskGroup;
 
   class WindowCallbacks{
 public:
@@ -29,6 +30,9 @@ public:
   };
 
   class Window {
+public:
+      TaskGroup *task_group;
+
 protected:
 
       std::unique_ptr<Fl_Window> widget;
@@ -51,7 +55,7 @@ public:
       friend class WindowCallbacks;
 
       Window();
-      Window(int w, int h, bool osx = false);
+      Window(int w, int h, TaskGroup *g, bool osx = false);
       ~Window();
 
       std::list<Channel *> Channels;

@@ -27,7 +27,7 @@ void Task::Run(){
 }
 
 
-class ThreadPool{
+class TaskGroup{
   public:
     concurrent_queue<Task *> queue;
 };
@@ -67,15 +67,15 @@ static void ThreadFunction(Thread::Thread_Impl *thimble){
 }
 
 
-ThreadPool *Thread::GetShortThreadPool(){
-    static ThreadPool pool;
-    return &pool;
+TaskGroup *Thread::GetShortThreadPool(){
+    static TaskGroup group;
+    return &group;
 }
 
 
-ThreadPool *Thread::GetLongThreadPool(){
-    static ThreadPool pool;
-    return &pool;
+TaskGroup *Thread::GetLongThreadPool(){
+    static TaskGroup group;
+    return &group;
 }
 
 
@@ -89,9 +89,9 @@ void AddShortRunningTask(Task *task){
 }
 
 
-Thread::Thread(ThreadPool *pool)
+Thread::Thread(TaskGroup *group)
   : guts(new Thread::Thread_Impl()){
-    guts->queue = &(pool->queue);
+    guts->queue = &(group->queue);
     guts->live = true;
     guts->thread = new std::thread((void(*)(Thread::Thread_Impl *))ThreadFunction, guts.get());
 
@@ -102,6 +102,32 @@ Thread::~Thread(){
     guts->live = false;
     guts->thread->join();
     delete guts->thread;
+}
+
+void AddTask(TaskGroup *pool, Task *task){
+    pool->queue.push(task);
+}
+
+void PerformTask(TaskGroup *pool){
+    while(true){
+        Task * task;
+        if(!pool->queue.try_pop(task))
+          break;
+
+        task->Run();
+
+        if(task->repeating)
+          pool->queue.push(task);
+        else
+          delete task;
+    }
+}
+
+TaskGroup *CreateTaskGroup(){
+    return new TaskGroup();
+}
+void DestroyTaskGroup(TaskGroup *a){
+    delete a;
 }
 
 }

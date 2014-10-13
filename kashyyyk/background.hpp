@@ -14,20 +14,26 @@ public:
 
 };
 
+class TaskGroup;
+
+void AddTask(TaskGroup *, Task *);
+void PerformTask(TaskGroup *);
+
 void AddLongRunningTask(Task *);
 void AddShortRunningTask(Task *);
 
-class ThreadPool;
+TaskGroup *CreateTaskGroup();
+void DestroyTaskGroup(TaskGroup *);
 
 class Thread{
 public:
 
-  Thread(ThreadPool *);
+  Thread(TaskGroup *);
   ~Thread();
 
 
-  static ThreadPool *GetShortThreadPool();
-  static ThreadPool *GetLongThreadPool();
+  static TaskGroup *GetShortThreadPool();
+  static TaskGroup *GetLongThreadPool();
 
   struct Thread_Impl;
   std::unique_ptr<Thread_Impl> guts;

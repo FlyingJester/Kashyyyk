@@ -107,6 +107,29 @@ void WindowCallbacks::ChannelList_CB(Fl_Widget *w, void *p){
 
 }
 
+
+class AskToConnectAgain_Task : public Task {
+    PromiseValue<int> &promise;
+    const std::string &name;
+public:
+    AskToConnectAgain_Task(PromiseValue<int> &p, const std::string &n)
+      : promise(p)
+      , name(n) {
+
+    }
+
+    virtual ~AskToConnectAgain_Task(){
+
+    }
+
+    void Run() override {
+        promise.Finalize(fl_choice("Could not connect to %s. Try again?", fl_no, fl_yes, nullptr, name.c_str()));
+        promise.SetReady();
+    }
+
+};
+
+
 // Considered a long-running task.
 class ConnectToServer_Task : public Task {
     Window *window;
@@ -119,7 +142,7 @@ public:
         port = p;
     }
 
-    ~ConnectToServer_Task(){
+    virtual ~ConnectToServer_Task(){
 
     }
 
@@ -135,8 +158,18 @@ try_connect:
         }
         else{
             printf("Couldn't connect. Asking if we should try again.\n");
-            int a = 0;//fl_choice("Could not connect to %s. Try again?", fl_no, fl_yes, nullptr, server_name.c_str());
-            bool again = (a==1);
+
+            PromiseValue<int> promise(0);
+
+            Task *task = new AskToConnectAgain_Task(promise, server_name);
+
+            AddTask(window->task_group, task);
+
+            Fl::awake();
+
+            while(!promise.IsReady());
+
+            bool again = (promise.Finish()==1);
             if(again){
                 Destroy_Socket(sock);
                 goto try_connect;
@@ -177,8 +210,9 @@ Window::Window(){
 
 }
 
-Window::Window(int w, int h, bool osx)
-  : widget(new Fl_Window(w, h, "Kashyyyk IRC Client"))
+Window::Window(int w, int h, TaskGroup *g, bool osx)
+  : task_group(g)
+  , widget(new Fl_Window(w, h, "Kashyyyk IRC Client"))
   , chat_holder(new Fl_Group(128+8, 8+(osx?0:24), w-128-16, h-16-(osx?0:24)))
   , channel_list(new Fl_Tree(8, 8+(osx?0:24), 128-16, h-16-(osx?0:24)))
   , last_server(nullptr)
