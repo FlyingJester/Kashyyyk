@@ -56,7 +56,8 @@ elif sys.platform.startswith('win'):
 
 libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment'])
 libfjirc = SConscript(dirs = ['libfjirc'], exports = ['environment'])
+libfjcsv = SConscript(dirs = ['libfjcsv'], exports = ['environment'])
 
-environment.Append(CPPPATH = [os.path.join(os.getcwd(), 'libfjirc'), os.path.join(os.getcwd(), 'libfjnet'), os.getcwd()])
+environment.Append(CPPPATH = [os.path.join(os.getcwd(), 'libfjirc'), os.path.join(os.getcwd(), 'libfjnet'), os.getcwd(), os.path.join(os.getcwd(), 'libfjcsv'), os.getcwd()])
 
-SConscript(dirs = ['kashyyyk'], exports = ['environment', 'libfjirc', 'libfjnet'])
+SConscript(dirs = ['kashyyyk'], exports = ['environment', 'libfjirc', 'libfjnet', 'libfjcsv'])

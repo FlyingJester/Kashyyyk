@@ -272,7 +272,7 @@ void Channel::GiveMessage(IRC_Message *msg){
     if(msg->type==IRC_error_m){
       str = IRC_MessageToString(msg);
 
-      std::string str_s = "\a";
+      std::string str_s;
       str_s.append(str);
 
       Dealloc(str);
@@ -302,6 +302,8 @@ void Channel::GiveMessage(IRC_Message *msg){
           Kashyyyk::GiveNotification("Private Message", str_note);
 
         }
+
+        alignment = std::max<unsigned>(alignment, str_s.size());
 
         str_s+=std::string(alignment-str_s.size(), ' ');
 

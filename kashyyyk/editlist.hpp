@@ -65,8 +65,7 @@ protected:
             return;
         }
 
-        that->list.add(proto.first, proto.second);
-        that->list.redraw();
+        that->AddItem(proto);
 
         free((void *)proto.first);
 
@@ -116,6 +115,7 @@ protected:
     }
 
     void NumItemsChanged(){
+        list.redraw();
 
         if(list.size()==0){
             DelButton.deactivate();
@@ -201,7 +201,11 @@ public:
     }
 
     inline void AddItem(ItemType item){
-        list->add(item.first, item.second);
+        list.add(item.first, item.second);
+        if(list.size()==1){
+            list.value(1);
+            list.do_callback();
+        }
         NumItemsChanged();
     }
 
@@ -252,6 +256,10 @@ public:
     inline void Clear(){
         list.clear();
         NumItemsChanged();
+    }
+
+    inline void SetFocusCallback(Fl_Callback cb, void *arg = nullptr){
+        list.callback(cb, arg);
     }
 
 };

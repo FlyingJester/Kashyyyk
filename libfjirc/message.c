@@ -180,6 +180,10 @@ const char *IRC_GetMessageToken(enum IRC_messageType a){
         return "332";
       case IRC_no_topic_num:
         return "333";
+      case IRC_not_registered_num:
+        return "451";
+      case IRC_welcome_num:
+        return "001";
       default:
         return NULL;
     }

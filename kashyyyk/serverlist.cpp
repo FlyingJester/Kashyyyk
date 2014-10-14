@@ -3,6 +3,7 @@
 #include "editlist.hpp"
 #include "prefs.hpp"
 #include "doubleinput.hpp"
+#include "csv.h"
 #include <cassert>
 #include <cstdio>
 #include <string>
@@ -58,12 +59,36 @@ inline std::pair<Fl_Pack *, T *> CreatePackWidget(const char *title, ValueT valu
 
 static void InputCallback(Fl_Widget *w, void *p){
 
-    Fl_Preferences &prefs = GetPreferences();
-
     const char *pref_name = static_cast<std::string *>(p)->c_str();
     const Fl_Input *input = static_cast<Fl_Input *>(w);
 
-    prefs.set(pref_name, input->value());
+    GetPreferences().set(pref_name, input->value());
+
+}
+
+static void AutoJoinFocusCallback(Fl_Widget *w, void *p){
+
+    struct ServerPrefItems *pref_items = static_cast<struct ServerPrefItems *>(p);
+    Fl_Browser *browser = static_cast<Fl_Browser *>(w);
+
+    std::vector<const char *> values; values.reserve(browser->size()+1);
+
+    for(int i = 1; i<=browser->size(); i++){
+        values.push_back(browser->text(i));
+        printf("AutoJoin: %s\n", values.back());
+    }
+
+    values.push_back(nullptr);
+
+    const char *value = CSV_ConstructString(&values.front());
+
+    std::string pref_name = std::string("server.") + pref_items->server + ".autojoin";
+
+    GetPreferences().set(pref_name.c_str(), value);
+
+    printf("AutoJoin: %s\n", value);
+
+    free((void *)value);
 
 }
 
@@ -223,6 +248,7 @@ void ServerList(Fl_Widget *w, void *p){
 
 
             std::string server_ident("sys.identity.");
+            pref_items->server = "null";
             pref_items->server_nickname = server_ident+"nickname";
             pref_items->server_fullname = server_ident+"fullname";
             pref_items->server_realname = server_ident+"realname";
@@ -235,7 +261,7 @@ void ServerList(Fl_Widget *w, void *p){
             if(global){
                 prefs.get("sys.identity.nickname", nick, "KashyyykUser");
                 prefs.get("sys.identity.fullname", name, "KashyyykName");
-                prefs.get("sys.identity.realname", real,   "KashyyykReal");
+                prefs.get("sys.identity.realname", real, "KashyyykReal");
             }
             else{
                 prefs.get(pref_items->server_nickname.c_str(), nick, "KashyyykUser");
@@ -271,20 +297,21 @@ void ServerList(Fl_Widget *w, void *p){
 
         propertypack->add(new Fl_Box(0, 0, 0, 8));
 
-        EditList<> *editlist = new EditList<>(8, 24, 256, 156, "AutoJoin Channels");
-        pref_items->AutoJoin = editlist;
+        EditList<> *autojoin = new EditList<>(8, 24, 256, 156, "AutoJoin Channels");
+        pref_items->AutoJoin = autojoin;
 
-        printf("AutoJoin: %p\n", editlist);
+        printf("AutoJoin: %p\n", autojoin);
 
         servers->SetNumCallback(ServerListNumCallback, pref_items);
         servers->SetAddCallback(ServerListAddCallback, nullptr);
         servers->SetSelCallback(ServerListSelCallback, pref_items);
+        autojoin->SetFocusCallback(AutoJoinFocusCallback, pref_items);
 
         if(servers->GetNumItems()==0){
-            editlist->Deactivate();
+            autojoin->Deactivate();
             pref_items->Global->deactivate();
         }
-        propertypack->add(editlist);
+        propertypack->add(autojoin);
 
 
 

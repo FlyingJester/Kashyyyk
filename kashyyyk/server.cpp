@@ -5,6 +5,7 @@
 #include "socket.h"
 #include "message.h"
 #include "parse.h"
+#include "csv.h"
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Tree_Item.H>
@@ -18,26 +19,65 @@
 
 namespace Kashyyyk {
 
-class SendMessage_Handler : public MessageHandler {
+template<IRC_messageType type>
+class OnMsgType {
+public:
+    bool operator() (IRC_Message *msg){
+        if(msg->type==type)
+          return true;
+        return false;
+    }
+};
+
+class OnMsgAlways{
+public:
+    bool operator() (IRC_Message *msg){
+      return true;
+    }
+
+};
+
+// Honds onto a message until a message that causes T::(msg) to return true.
+// It then sends the message, frees the message, and dies.
+template <class T>
+class SendMessageOn_Handler : public MessageHandler {
 Server *server;
 IRC_Message *r_msg;
-
+T t;
 public:
-    SendMessage_Handler(Server *s, IRC_Message *m)
+    SendMessageOn_Handler(Server *s, IRC_Message *m)
       : server(s)
       , r_msg(m) {
 
     }
 
-    virtual ~SendMessage_Handler(){
+    virtual ~SendMessageOn_Handler(){
         IRC_FreeMessage(r_msg);
     }
 
     bool HandleMessage(IRC_Message *msg) override {
-        server->SendMessage(r_msg);
-        return true;
+        if(t(msg)){
+            server->SendMessage(r_msg);
+            return true;
+        }
+        return false;
     }
 
+};
+
+// Sends the message in response to any message at all.
+// A SendMessageOn with a T::(msg) that always returns true.
+class SendMessage_Handler : public SendMessageOn_Handler<OnMsgAlways> {
+
+public:
+    SendMessage_Handler(Server *s, IRC_Message *m)
+      : SendMessageOn_Handler<OnMsgAlways>(s, m){
+
+    }
+
+    virtual ~SendMessage_Handler(){
+
+    }
 
 };
 
@@ -507,9 +547,31 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
     free(name_c);
     free(real_c);
 
-
     Handlers.push_back(std::unique_ptr<MessageHandler>(new SendMessage_Handler(this, msg_name)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new SendMessage_Handler(this, msg_nick)));
+
+    char *autojoin;
+
+    if(prefs.get((std::string("server.")+name+".autojoin").c_str(), autojoin, "")!=0){
+        const char **channels = FJ::CSV::ParseString(autojoin);
+        const char *iter = channels[0];
+        int i = 0;
+        while(iter!=nullptr){
+
+            printf("Joining %s.\n", iter);
+
+            IRC_Message *msg = IRC_CreateJoin(1, iter);
+            SendMessage(msg);
+            JoinChannel(iter);
+            Handlers.push_back(std::unique_ptr<MessageHandler>(new SendMessageOn_Handler<OnMsgType<IRC_welcome_num> >(this, msg)));
+            iter = channels[++i];
+        }
+
+        FJ::CSV::FreeParse(channels);
+
+    }
+
+    free(autojoin);
 
     printf("Creating Server.\n");
 

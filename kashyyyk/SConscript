@@ -1,10 +1,10 @@
 import os
 import sys
 
-Import("environment libfjirc libfjnet")
+Import("environment libfjirc libfjnet libfjcsv")
 
 localenv = environment.Clone()
-localenv.Append(LIBS = [libfjnet, libfjirc, 'fltk'])
+localenv.Append(LIBS = [libfjnet, libfjirc, libfjcsv, 'fltk'])
 
 if not ( sys.platform == 'win32' or sys.platform.startswith('win64') ):
   localenv.Append(CXXFLAGS = " -std=c++11 ")
