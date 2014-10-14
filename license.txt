@@ -280,7 +280,8 @@ POSSIBILITY OF SUCH DAMAGES.
                      END OF TERMS AND CONDITIONS
 
 Additionally, Kashyyyk contains the file kashyyyk/platform/strcasestr.c,
-which is licensed as follows:
+kashyyyk/platform/strncasecmp.c, and kashyyyk/platform/str-two-way.h,
+which are licensed as follows:
 
 
  Copyright (c) 1990, 1993

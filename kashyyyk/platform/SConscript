@@ -17,6 +17,7 @@ elif sys.platform.startswith('win'):
   platform_files += ["generic_notification.c"];
   platform_files += ["generic_paths.c"];
   platform_files += ["strcasestr.c"];
+  platform_files += ["strncasecmp.c"];
 
 elif os.name == 'posix':
   platform_files += ["generic_pling.cpp"];

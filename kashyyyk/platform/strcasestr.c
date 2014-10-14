@@ -72,8 +72,9 @@ QUICKREF
  * software is freely granted, provided that this notice is preserved.
  */
 
+/*
 #include <sys/cdefs.h>
-
+*/
 #include <ctype.h>
 #include <string.h>
 int strncasecmp(const char *s1, const char *s2, size_t n);
