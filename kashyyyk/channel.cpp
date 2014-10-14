@@ -325,6 +325,11 @@ void Channel::GiveMessage(IRC_Message *msg){
             str[0] = '\0';
         }
         else {
+
+            // Not for this channel.
+            if(name!=std::string(msg->parameters[0]))
+              return;
+
             std::string nick = msg->from;
 
             size_t colon = nick.find(':');
@@ -349,7 +354,7 @@ void Channel::GiveMessage(IRC_Message *msg){
     }
     else if(msg->type==IRC_quit){
 
-        std::string nick   = msg->from;
+        std::string nick = msg->from;
 
         size_t colon = nick.find(':');
         if(colon==std::string::npos)
@@ -374,7 +379,8 @@ void Channel::GiveMessage(IRC_Message *msg){
 
 
     }
-    else if((msg->type==IRC_nick) && (msg->from==nullptr) && (msg->num_parameters<1)){
+    else if((msg->type==IRC_nick) && (msg->from==nullptr) && (msg->num_parameters>0)){
+
 
         std::string from_nick = msg->from;
         std::string to_nick   = msg->parameters[0];
@@ -400,6 +406,9 @@ void Channel::GiveMessage(IRC_Message *msg){
             user_iter++;
 
         }
+
+        if(user_iter==Users.end())
+          return;
 
         str = IRC_Strdup((std::string("***")+std::string(alignment-3, ' ').append("|")+from_nick).append(" is now knwown as ").append(to_nick).append(".").c_str());
     }

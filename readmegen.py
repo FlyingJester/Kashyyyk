@@ -10,10 +10,11 @@ gradient_types =[
 
 gradient_from = "black"
 gradient_to = "#222233"
+css_file = "yyyk.css"
 
 gradient = gradient_from+" 0px, "+gradient_to+"  calc(50% - ( 928px / 2 ) ), "+gradient_to+"  calc( 50% + ( 928px / 2 ) ), "+gradient_from+" 100%);"
 
-css = open("kashyyyk.css", "w")
+css = open(css_file, "w")
 css.write("body {"
 "align: center;"
 "margin: 0px auto;"
@@ -49,8 +50,8 @@ css.close()
 
 def generate():
   try:
-    subprocess.call(["pandoc", "--reference-links", "README.md", "--css=kashyyyk.css", "-o", "kashyyyk.html"])
-    subprocess.call(["pandoc", "--reference-links", "license.txt", "--css=kashyyyk.css",  "-o", "license.html"])
+    subprocess.call(["pandoc", "--reference-links", "README.md", "--css="+css_file, "-o", "kashyyyk.html"])
+    subprocess.call(["pandoc", "--reference-links", "license.txt", "--css="+css_file,  "-o", "license.html"])
   except OSError as e:
     print "pandoc was not installed. Not generating HTML readme."
 
