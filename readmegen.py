@@ -8,7 +8,10 @@ gradient_types =[
  "-moz-linear-gradient(   right,",
  "linear-gradient(     to right,"]
 
-gradient = "black 0px, #222233  calc(50% - ( 928px / 2 ) ), #222233  calc( 50% + ( 928px / 2 ) ), black 100%);"
+gradient_from = "black"
+gradient_to = "#222233"
+
+gradient = gradient_from+" 0px, "+gradient_to+"  calc(50% - ( 928px / 2 ) ), "+gradient_to+"  calc( 50% + ( 928px / 2 ) ), "+gradient_from+" 100%);"
 
 css = open("kashyyyk.css", "w")
 css.write("body {"
@@ -16,7 +19,7 @@ css.write("body {"
 "margin: 0px auto;"
 "width: 50%;"
 "color: #888899;"
-"font-family: \"DejaVu sans\";")
+"font-family: \"DejaVu sans\";\n")
 
 for i in gradient_types:
   css.write("background: ")
