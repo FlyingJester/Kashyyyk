@@ -6,7 +6,7 @@ readmegen.generate()
 
 environment = Environment()
 
-gcc_ccflags = "-pedantic -O3 -fno-common -flto -Werror -Wall -fstrict-enums -fno-threadsafe-statics -g "
+gcc_ccflags = "-pedantic -Werror -Wall -fstrict-enums -fno-threadsafe-statics -g "
 
 def PrepareCompilerGPP(env):
   env.Append(CXXFLAGS = "  -Wsign-promo -fno-rtti -fno-exceptions " + gcc_ccflags, LINKFLAGS = " -g ")

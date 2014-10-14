@@ -121,7 +121,7 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 	{
 		pfd.fd = socket;
 		pfd.events = 0;
-		
+
 		poll(&pfd, 1, 10);
 	}
 	int n, err = ioctl(socket, FIONREAD, &n);
@@ -326,18 +326,15 @@ unsigned long Length_Socket(struct WSocket *aSocket){
 
     assert(aSocket!=NULL);
     assert(aSocket->sock!=0);
-	
+
 	r = GetPendingBytes(aSocket->sock, &len);
 
     if(r<0){
 		perror("ioctl error in GetPendingBytes");
         return 0;
 	}
-	
+
     memcpy(&f, &len, llen);
-	
-	if(f)
-		printf("[libfjnet] Got %i bytes.\n", f);
-	
+
     return f;
 }

@@ -377,9 +377,10 @@ public:
 
 template <IRC_messageType type>
 class ServerChannel_Handler : public MessageHandler {
-  Channel *channel;
-  Server  *server;
 public:
+    Channel *channel;
+    Server  *server;
+
     ServerChannel_Handler(Server *s, Channel *Server_Channel)
       : channel(Server_Channel)
       , server(s) {
@@ -391,6 +392,39 @@ public:
         if(msg->type==type){
             Fl::lock();
             channel->GiveMessage(msg);
+            Fl::unlock();
+        }
+        return false;
+    }
+
+};
+
+template <IRC_messageType type, int P>
+class ServerChannel_ParamEqual_Handler : public ServerChannel_Handler<type> {
+std::string test_value;
+public:
+    ServerChannel_ParamEqual_Handler(Server *s, Channel *Server_Channel, const std::string &v)
+      : ServerChannel_Handler<type> (s, Server_Channel)
+      , test_value(v) {
+
+    }
+
+    bool HandleMessage(IRC_Message *msg) override {
+
+        if((msg->num_parameters>P)){
+          printf("Comparing %s to %s.\n", msg->parameters[P], test_value.c_str());
+          if (std::string(msg->parameters[P])!=test_value)
+            return false;
+          printf("Compares as true.\n");
+        }
+        else{
+          return false;
+        }
+
+        if(msg->type==type){
+            Fl::lock();
+            printf("Compares as true.\n");
+            ServerChannel_Handler<type>::channel->GiveMessage(msg);
             Fl::unlock();
         }
         return false;
@@ -618,7 +652,6 @@ void Server::SendMessage(IRC_Message *msg){
         nick = msg->parameters[0];
     }
 
-
     const char *str = IRC_MessageToString(msg);
 
     Write_Socket(socket, str);
@@ -639,7 +672,7 @@ void Server::AddChannel_l(Channel *a){
     Parent->RedrawChannels();
 
     Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(new ServerChannel_Handler<IRC_quit>(this, a))));
-    Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(new ServerChannel_Handler<IRC_join>(this, a))));
+    Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(new ServerChannel_ParamEqual_Handler<IRC_join, 0>(this, a, a->name))));
 
 
     printf("Added channel %s\n", a->name.c_str());

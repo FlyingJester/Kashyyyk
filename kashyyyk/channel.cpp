@@ -321,37 +321,23 @@ void Channel::GiveMessage(IRC_Message *msg){
 
     }
     else if(msg->type==IRC_join){
-        if(std::string(msg->from)==Parent->nick){
-            Parent->JoinChannel(msg->parameters[0]);
-            str = (char *)Alloc(1);
-            str[0] = '\0';
-        }
-        else {
 
-            // Not for this channel.
-            if(name!=std::string(msg->parameters[0]))
-              return;
+        std::string nick = msg->from;
 
-            std::string nick = msg->from;
+        size_t colon = nick.find(':');
+        if(colon!=std::string::npos)
+          nick = nick.substr(colon+1);
 
-            size_t colon = nick.find(':');
-            if(colon!=std::string::npos)
-              nick = nick.substr(colon+1);
+        std::string join_s = std::string(alignment, ' ');
+        join_s[0] = '*';
+        join_s[1] = '*';
+        join_s[2] = '*';
 
+        join_s.push_back('|');
 
-            std::string join_s = std::string(alignment, ' ');
-            join_s[0] = '*';
-            join_s[1] = '*';
-            join_s[2] = '*';
+        assert(join_s.size()==alignment+1);
 
-            join_s.push_back('|');
-
-            assert(join_s.size()==alignment+1);
-
-            str = IRC_Strdup(((join_s+nick.substr(0, nick.find('!'))).append(" Joined ")+name).c_str());
-        }
-
-
+        str = IRC_Strdup(((join_s+nick.substr(0, nick.find('!'))).append(" Joined ")+name).c_str());
 
     }
     else if(msg->type==IRC_quit){
@@ -440,6 +426,11 @@ void Channel::GiveMessage(IRC_Message *msg){
 
 
 void Channel::SendMessage(IRC_Message *msg){
+    if(msg->type==IRC_join && msg->num_parameters>0){
+        Parent->JoinChannel(msg->parameters[0]);
+        printf("Pushing a join message for %s.\n", msg->parameters[0]);
+    }
+
     Parent->SendMessage(msg);
 }
 
