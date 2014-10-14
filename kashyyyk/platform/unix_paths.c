@@ -25,7 +25,10 @@ char * Kashyyyk_HomeDirectory(){
 
 void Kashyyyk_MakeDir(const char *a){
     struct stat s, home;
-    int err = stat(Kashyyyk_HomeDirectory(), &home);
+    const char *homedir = Kashyyyk_HomeDirectory();
+    int err = stat(homedir, &home);
+    free((void *)homedir);
+
     if(err==-1){
         perror("Could not stat home directory");
         return;

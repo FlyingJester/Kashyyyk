@@ -24,8 +24,16 @@ static BOOL inited = NO;
     const char *title_c = STR_EMPTY_IF_NULL(atitle);
     const char *msg_c   = STR_EMPTY_IF_NULL(msg);
 
-    [super setTitle:[[NSString alloc] initWithBytes:title_c length:strlen(title_c) encoding:NSUTF8StringEncoding]];
-    [super setSubtitle:[[NSString alloc] initWithBytes:msg_c length:strlen(msg_c) encoding:NSUTF8StringEncoding]];
+    NSString *title_ns = [[NSString alloc] initWithBytes:title_c length:strlen(title_c) encoding:NSUTF8StringEncoding];
+    NSString *subtitle_ns = [[NSString alloc] initWithBytes:msg_c length:strlen(msg_c) encoding:NSUTF8StringEncoding];
+
+    [super setTitle:title_ns];
+    [super setSubtitle:subtitle_ns];
+
+
+    [title_ns release];
+    [subtitle_ns release];
+
 }
 
 @end
@@ -52,13 +60,23 @@ enum NotificationSuccess Kashyyyk_GiveNotification(const char *title, const char
 
     if(inited==NO)
       return eNoteNotInitialized;
-
     note = [[Kashyyyk_Notification alloc] init];
-    [note setTitle:[[NSString alloc] initWithBytes:title_c length:strlen(title_c) encoding:NSUTF8StringEncoding]];
-    [note setSubtitle:[[NSString alloc] initWithBytes:msg_c length:strlen(msg_c) encoding:NSUTF8StringEncoding]];
+
+    {
+        NSString *title_ns =[[NSString alloc] initWithBytes:title_c length:strlen(title_c) encoding:NSUTF8StringEncoding];
+        NSString *subtitle_ns = [[NSString alloc] initWithBytes:msg_c length:strlen(msg_c) encoding:NSUTF8StringEncoding];
+
+        [note setTitle:title_ns];
+        [note setSubtitle:subtitle_ns];
+
+        [title_ns release];
+        [subtitle_ns release];
+    }
     [note setResponsePlaceholder: @"Reply"];
 
     [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:note];
+
+    [note release];
 
     return eNoteSuccess;
 }
