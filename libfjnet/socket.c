@@ -42,8 +42,6 @@ const char *ExplainError_Socket(enum WSockErr err){
 
 typedef int FJNET_SOCKET;
 
-#define FJNET_INET AF_INET
-
 void InitSock(){}
 
 #define MakeNonBlocking(S) fcntl(S, F_SETFL, O_NONBLOCK)
@@ -65,8 +63,6 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 #include <string.h>
 
 typedef SOCKET FJNET_SOCKET;
-
-#define FJNET_INET AF_INET
 
 static void WSACleanupWrapper_Local(void){
 	WSACleanup();
@@ -100,6 +96,7 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <poll.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -109,29 +106,28 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 
 typedef int FJNET_SOCKET;
 
-#define FJNET_INET PF_INET
-
 void InitSock(){}
 
-static void MakeNonBlocking(FJNET_SOCKET socket){
-	int m=1;
-	int err = ioctl(socket, FIONBIO, &m);
-	
-	if(err==-1)
-		perror("ioctl error in MakeNonBlocking");
+const int SO_NREAD = 0x1020;
 
-}
+#define MakeNonBlocking(S) fcntl(S, F_SETFL, O_NONBLOCK)
 
 #define CLOSE_SOCKET close
 
 #define PRINT_LAST_ERROR perror
 
-int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
-	int l, err = ioctl(socket, FIONREAD, &l);
-	*len = l;
+static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
+	struct pollfd pfd;
+	{
+		pfd.fd = socket;
+		pfd.events = 0;
+		
+		poll(&pfd, 1, 10);
+	}
+	int n, err = ioctl(socket, FIONREAD, &n);
+	*len = n;
 	return err;
 }
-
 
 #endif
 
@@ -185,7 +181,7 @@ enum WSockErr Connect_Socket(struct WSocket *aSocket, const char *aTo, unsigned 
     lAddr = (void *)(aSocket->host->h_addr_list[0]);
     aSocket->sockaddr->sin_addr.s_addr = inet_addr(inet_ntoa(*lAddr));
 
-    aSocket->sock = socket(FJNET_INET, SOCK_STREAM, IPPROTO_TCP);
+    aSocket->sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     if(
 #if defined USE_WINSOCK

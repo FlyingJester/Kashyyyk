@@ -8,7 +8,7 @@
 #ifdef _WIN32
 
 #include <Windows.h>
-#define MILLISLEEP(X) Sleep(X)
+#define MILLISLEEP(X) SleepEx(X, TRUE)
 
 #else
 
