@@ -42,6 +42,8 @@ const char *ExplainError_Socket(enum WSockErr err){
 
 typedef int FJNET_SOCKET;
 
+#define FJNET_INET AF_INET
+
 void InitSock(){}
 
 #define MakeNonBlocking(S) fcntl(S, F_SETFL, O_NONBLOCK)
@@ -63,6 +65,8 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 #include <string.h>
 
 typedef SOCKET FJNET_SOCKET;
+
+#define FJNET_INET AF_INET
 
 static void WSACleanupWrapper_Local(void){
 	WSACleanup();
@@ -105,16 +109,27 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 
 typedef int FJNET_SOCKET;
 
+#define FJNET_INET PF_INET
+
 void InitSock(){}
 
-#define MakeNonBlocking(S) fcntl(S, F_SETFL, O_NONBLOCK)
+static void MakeNonBlocking(FJNET_SOCKET socket){
+	int m=1;
+	int err = ioctl(socket, FIONBIO, &m);
+	
+	if(err==-1)
+		perror("ioctl error in MakeNonBlocking");
+
+}
 
 #define CLOSE_SOCKET close
 
 #define PRINT_LAST_ERROR perror
 
-static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
-	return ioctl(socket, FIONREAD, len);
+int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
+	int l, err = ioctl(socket, FIONREAD, &l);
+	*len = l;
+	return err;
 }
 
 
@@ -170,7 +185,8 @@ enum WSockErr Connect_Socket(struct WSocket *aSocket, const char *aTo, unsigned 
     lAddr = (void *)(aSocket->host->h_addr_list[0]);
     aSocket->sockaddr->sin_addr.s_addr = inet_addr(inet_ntoa(*lAddr));
 
-    aSocket->sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    aSocket->sock = socket(FJNET_INET, SOCK_STREAM, IPPROTO_TCP);
+
     if(
 #if defined USE_WINSOCK
 	(aSocket->sock==INVALID_SOCKET)
@@ -264,7 +280,11 @@ enum WSockErr Read_Socket(struct WSocket *aSocket, char **aTo){
     }
     if(l!=0){
 		InitSock();
-        recv(aSocket->sock, *aTo, l, 0);
+		if(recv(aSocket->sock, *aTo, l, 0)!=l){
+			perror("Read_Socket failure");
+			return eFailure;
+			return eFailure;
+		}
 	}
 
     (*aTo)[l] = '\0';
@@ -288,9 +308,10 @@ enum WSockErr Write_Socket(struct WSocket *aSocket, const char *aToWrite){
 	InitSock();
     err = send(aSocket->sock, aToWrite, strlen(aToWrite), 0);
 
-    if(err<0)
-        return eFailure;
-
+    if(err<0){
+		perror("Write_Socket failure");
+		return eFailure;
+	}
     return eSuccess;
 }
 
@@ -300,21 +321,27 @@ enum WSockErr Write_Socket(struct WSocket *aSocket, const char *aToWrite){
 unsigned long Length_Socket(struct WSocket *aSocket){
 
     unsigned long len = 0;
-    unsigned int llen = sizeof(unsigned long);
+    const unsigned int llen = sizeof(unsigned long);
     unsigned long f = 0;
 
 	int r;
 
 	InitSock();
 
-	r = GetPendingBytes(aSocket->sock, &len);
-
     assert(aSocket!=NULL);
     assert(aSocket->sock!=0);
-    if(r<0)
+	
+	r = GetPendingBytes(aSocket->sock, &len);
+
+    if(r<0){
+		perror("ioctl error in GetPendingBytes");
         return 0;
-
+	}
+	
     memcpy(&f, &len, llen);
-
+	
+	if(f)
+		printf("[libfjnet] Got %i bytes.\n", f);
+	
     return f;
 }
