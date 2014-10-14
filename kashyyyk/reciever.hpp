@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
 struct IRC_Message;
 
 namespace Kashyyyk {
@@ -15,6 +18,8 @@ public:
 
 };
 
+typedef std::unique_ptr<MessageHandler> unique_MessageHandler;
+
 class Reciever {
 public:
 
@@ -29,11 +34,16 @@ public:
 
 };
 
-template <class Parent_T>
+template <class Parent_T, class C = std::vector<unique_MessageHandler> >
 class TypedReciever : public Reciever {
+public:
+
+    typedef C HandlerList_t;
+
 protected:
 
     Parent_T *Parent;
+    HandlerList_t Handlers;
 
 public:
 
@@ -47,6 +57,5 @@ public:
     inline bool HasParent() {return Parent!=nullptr;}
 
 };
-
 
 }

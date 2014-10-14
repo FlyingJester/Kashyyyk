@@ -19,9 +19,22 @@ namespace Kashyyyk{
 
 class Channel;
 
+//
+// The MessageHandlers in a Server should only very rarely need to actually see
+// much about the Server's Channels. In the case of server-only messages, such
+// as PING or NOTICE messages, the Handler won't even touch any Channels. If
+// the message has a clear target, such as a PRIVMSG, it will be sent to the
+// appropriate channel. Other messages, such as QUITs, will be sent to all
+// Channels. It will be up to the channels to decide if such Channel-specific
+// messages with no codified target are relevant or not.
+//
+// Other MessageHandlers do exist, such as listeners for JOIN success, or
+// one-shot reactionary responses for registration.
+//
+
 class Server : public TypedReciever<Window> {
 public:
-    typedef std::list<std::unique_ptr<MessageHandler> > HandlerList;
+
     typedef std::list<std::unique_ptr<Channel> >        ChannelList;
 
 protected:
@@ -29,7 +42,6 @@ protected:
     Channel *last_channel;
 
     WSocket *socket;
-    HandlerList Handlers;
 
     std::mutex mutex;
 
@@ -76,6 +88,14 @@ public:
     void Hide();
 
     void Highlight();
+
+    class find_channel {
+        const std::string &n;
+    public:
+        find_channel(const std::string &s);
+        find_channel(const Channel *);
+        bool operator () (std::unique_ptr<Channel> &);
+    };
 
 };
 

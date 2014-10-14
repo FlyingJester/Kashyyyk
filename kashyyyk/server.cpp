@@ -19,6 +19,7 @@
 
 namespace Kashyyyk {
 
+// Functional-style objects for SendMessageOn_Handlers.
 template<IRC_messageType type>
 class OnMsgType {
 public:
@@ -36,6 +37,20 @@ public:
     }
 
 };
+
+// FUnctional-style objects for finding certain channels in a Server
+Server::find_channel::find_channel(const std::string &s)
+  : n(s){
+}
+
+Server::find_channel::find_channel(const Channel *a)
+  : n(a->name) {
+
+}
+
+bool Server::find_channel::operator () (std::unique_ptr<Channel> &a){
+    return a->name==n;
+}
 
 // Honds onto a message until a message that causes T::(msg) to return true.
 // It then sends the message, frees the message, and dies.
@@ -81,262 +96,96 @@ public:
 
 };
 
-
-
-class NickChange_Handler : public MessageHandler {
+// Checks if a certain message parameter equals the channel name for
+// a certain message type, and GiveMessage's the channel if it does.
+// Most Handlers should be of this type.
+template<IRC_messageType type, int n = 0>
+class ChannelChecker_Handler : public MessageHandler {
+protected:
     Server *server;
 public:
-    NickChange_Handler(Server *s)
-      : server(s){
-
-    }
-
-    bool HandleMessage(IRC_Message *msg) override {
-        if(msg->type!=IRC_nick)
-          return false;
-
-        if(msg->from==NULL)
-          return false;
-
-        assert(msg->num_parameters>0);
-        assert(msg->parameters[0]);
-
-        Server::ChannelList::iterator iter = server->Channels.begin();
-
-        while(iter!=server->Channels.end()){
-            (*iter)->GiveMessage(msg);
-            iter++;
-        }
-
-        return false;
-
-    }
-
-};
-
-
-class PrivateMessage_Handler : public MessageHandler {
-    Server *server;
-public:
-    PrivateMessage_Handler(Server *s)
+    ChannelChecker_Handler(Server *s)
       : server(s) {
 
     }
 
     bool HandleMessage(IRC_Message *msg) override {
+        if( (msg->type==type) && (msg->num_parameters>n)){
 
-        if(msg->type!=IRC_privmsg)
-          return false;
+            Server::ChannelList::iterator iter =
+              std::find_if(server->Channels.begin(), server->Channels.end(), Server::find_channel(msg->parameters[n]));
 
-        printf("Message for channel %s\n", msg->parameters[0]);
-        std::string name = msg->parameters[0];
-
-        Server::ChannelList::iterator iter = server->Channels.begin();
-
-
-        while(iter!=server->Channels.end()){
-            if(iter->get()->name==name){
-
-                Fl::lock();
-                iter->get()->GiveMessage(msg);
-                Fl::unlock();
-
-                return false;
-            }
-
-            iter++;
-
-        }
-
-        Fl::lock();
-
-        Channel * channel = new Channel(server, name);
-
-        server->AddChannel_l(channel);
-        channel->GiveMessage(msg);
-
-        Fl::unlock();
-
-        return false;
-
-    }
-
-
-};
-
-class Topic_Handler : public MessageHandler {
-    Server *server;
-public:
-
-    Topic_Handler(Server *s)
-      : server(s){
-
-    }
-
-    bool HandleMessage(IRC_Message *msg) override {
-
-        if((msg->type!=IRC_topic) && (msg->type!=IRC_topic_num))
-          return false;
-
-        assert(msg->num_parameters>=2);
-
-        std::string name = msg->parameters[1];
-
-        const char *str = IRC_MessageToString(msg);
-
-        printf("Handling topic for %s (%s) (%s).\n", msg->parameters[1], msg->parameters[2], str);
-
-        free((void *)str);
-
-        Server::ChannelList::iterator iter = server->Channels.begin();
-
-        while(iter!=server->Channels.end()){
-            if(iter->get()->name==name){
-
-                Fl::lock();
-                iter->get()->SetTopic(msg->parameters[2]);
-                Fl::unlock();
-
-                break;
-            }
-
-            iter++;
-
+            if(iter!=server->Channels.end())
+              iter->get()->GiveMessage(msg);
         }
 
         return false;
-
     }
-
-
 };
 
-class NameList_Handler : public MessageHandler {
+// Known specializations
+typedef ChannelChecker_Handler<IRC_join>  Join_Handler;
+typedef ChannelChecker_Handler<IRC_part>  Part_Handler;
+typedef ChannelChecker_Handler<IRC_topic> Topic_Handler;
+
+// These types of messages are broad to all channels, and are up to the channel
+// whether or not to act on them.
+template<IRC_messageType type>
+class ServerToAllChannels_Handler : public MessageHandler {
 protected:
     Server *server;
-    std::string channel_name;
-
 public:
-    NameList_Handler(Server *s, const std::string &n, std::shared_ptr<bool> &b, std::shared_ptr<PromiseValue<Channel *> > &promise)
-      : server(s)
-      , channel_name(n)
-      , ChannelPromise(promise)
-      , Started(b){
+    ServerToAllChannels_Handler(Server *s)
+      : server(s) {
 
     }
 
-    virtual bool HandleMessage(IRC_Message *msg) = 0;
+    bool HandleMessage(IRC_Message *msg) override {
+        if(msg->type==type) {
+            for(Server::ChannelList::iterator iter = server->Channels.begin(); iter!=server->Channels.end(); iter++)
+              iter->get()->GiveMessage(msg);
+        }
 
-    std::shared_ptr<PromiseValue<Channel *> > ChannelPromise;
+        return false;
+    }
 
-    // This is referenced by the namelist end handler (which should also be installed at the same time.
-    std::shared_ptr<bool> Started;
 };
 
-class NameListBegin_Handler : public NameList_Handler{
+// Known specializations
+typedef ServerToAllChannels_Handler<IRC_quit> Quit_Handler;
+typedef ServerToAllChannels_Handler<IRC_nick> Nick_Handler;
 
+class Notice_Handler : public ServerToAllChannels_Handler<IRC_notice> {
+    static const std::string server_s;
 public:
-    NameListBegin_Handler(Server *s, const std::string &n, std::shared_ptr<bool> &b, std::shared_ptr<PromiseValue<Channel *> > &p)
-      : NameList_Handler(s, n, b, p) {
+    Notice_Handler(Server *s)
+      : ServerToAllChannels_Handler<IRC_notice> (s){
 
     }
 
     bool HandleMessage(IRC_Message *msg) override {
 
-        printf("Namelist Begin Promise ready? %i\n", ChannelPromise->IsReady());
-        if(msg->type!=IRC_namelist_start_num)
-          return false;
+        if(msg->type==IRC_notice){
+            Server::ChannelList::iterator server_chan =
+              std::find_if(server->Channels.begin(), server->Channels.end(), Server::find_channel(server_s));
 
-        printf("Namelist message:");
-        for(int i = 0; i<msg->num_parameters; i++)
-          printf("%s __ ", msg->parameters[i]);
-
-        printf("\n");
-
-        if(!ChannelPromise->IsReady())
-          return false;
-
-        if(std::string(msg->parameters[2])!=channel_name)
-          return false;
-
-        *Started = true;
-
-        Channel *channel = ChannelPromise->Finish();
-
-        Fl::lock();
-
-        std::stack<User> name_stack;
-        {
-            std::string names = msg->parameters[msg->num_parameters-1];
-
-            std::string::iterator first = names.begin(), next = names.begin(), last = names.end();
-            last--;
-
-            while(next!=names.end()){
-
-                while((next!=last) && (*next!=' '))
-                  next++;
-
-                std::string::iterator mode = first;
-
-                char c = *mode;
-                std::string mode_s;
-                if((c=='=')||(c=='&')||(c=='%')||(c=='*')||(c==' ')||(c=='~')){
-                    mode++;
-                    mode_s = std::string(first, mode);
-                }
-                else{
-                    mode_s = "";
-                }
-
-                std::string l(mode, next);
-                name_stack.push({l, mode_s});
-                first = next;
-
-                next++;
+            if(server_chan==server->Channels.end()){
+                fprintf(stderr, "Warning: server channel not found for Server %s.\n", server->name.c_str());
+                return false; // Wait, what?
             }
+
+            server_chan->get()->GiveMessage(msg);
         }
 
-        while(!name_stack.empty()){
-            channel->AddUser(name_stack.top());
-            name_stack.pop();
-        }
-
-        Fl::unlock();
-
-
-        return true;
-
+        return false;
     }
+
 };
-
-class NameListEnd_Handler : public NameList_Handler {
-
-public:
-    NameListEnd_Handler(Server *s, const std::string &n, std::shared_ptr<bool> &b, std::shared_ptr<PromiseValue<Channel *> > &p)
-      : NameList_Handler(s, n, b, p) {
-
-    }
-
-    bool HandleMessage(IRC_Message *msg) override {
+const std::string Notice_Handler::server_s = "server";
 
 
-        printf("Namelist End Promises ready? %i %i\n", ChannelPromise->IsReady(), *Started);
-
-        if(!ChannelPromise->IsReady())
-          return false;
-
-
-        if((msg->type!=IRC_namelist_end_num) || (!*Started) ||
-           (std::string(msg->parameters[1])!=channel_name)){
-            return false;
-        }
-
-        return true;
-
-    }
-};
-
+// Listens for an expected channel JOIN, and adds the channel when
+// it is recieved.
 class JoinChannel_Handler : public MessageHandler {
     Server *server;
     std::string channel_name;
@@ -374,65 +223,6 @@ public:
 
 };
 
-
-template <IRC_messageType type>
-class ServerChannel_Handler : public MessageHandler {
-public:
-    Channel *channel;
-    Server  *server;
-
-    ServerChannel_Handler(Server *s, Channel *Server_Channel)
-      : channel(Server_Channel)
-      , server(s) {
-
-    }
-
-    bool HandleMessage(IRC_Message *msg) override {
-
-        if(msg->type==type){
-            Fl::lock();
-            channel->GiveMessage(msg);
-            Fl::unlock();
-        }
-        return false;
-    }
-
-};
-
-template <IRC_messageType type, int P>
-class ServerChannel_ParamEqual_Handler : public ServerChannel_Handler<type> {
-std::string test_value;
-public:
-    ServerChannel_ParamEqual_Handler(Server *s, Channel *Server_Channel, const std::string &v)
-      : ServerChannel_Handler<type> (s, Server_Channel)
-      , test_value(v) {
-
-    }
-
-    bool HandleMessage(IRC_Message *msg) override {
-
-        if((msg->num_parameters>P)){
-          printf("Comparing %s to %s.\n", msg->parameters[P], test_value.c_str());
-          if (std::string(msg->parameters[P])!=test_value)
-            return false;
-          printf("Compares as true.\n");
-        }
-        else{
-          return false;
-        }
-
-        if(msg->type==type){
-            Fl::lock();
-            printf("Compares as true.\n");
-            ServerChannel_Handler<type>::channel->GiveMessage(msg);
-            Fl::unlock();
-        }
-        return false;
-    }
-
-};
-
-
 class Ping_Handler : public MessageHandler {
     Server *server;
 public:
@@ -454,7 +244,6 @@ public:
     }
 
 };
-
 
 class ServerTask : public Task {
 
@@ -539,12 +328,7 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
 
     AddShortRunningTask(new ServerTask(this, socket));
 
-    Handlers.push_back(std::unique_ptr<MessageHandler>(new ServerChannel_Handler<IRC_notice>(this, channel)));
-    Handlers.push_back(std::unique_ptr<MessageHandler>(new ServerChannel_Handler<IRC_error_m>(this, channel)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Ping_Handler(this)));
-    Handlers.push_back(std::unique_ptr<MessageHandler>(new PrivateMessage_Handler(this)));
-    Handlers.push_back(std::unique_ptr<MessageHandler>(new Topic_Handler(this)));
-    Handlers.push_back(std::unique_ptr<MessageHandler>(new NickChange_Handler(this)));
 
     char *nick_c = nullptr;
     char *name_c = nullptr;
@@ -583,6 +367,13 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
 
     Handlers.push_back(std::unique_ptr<MessageHandler>(new SendMessage_Handler(this, msg_name)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new SendMessage_Handler(this, msg_nick)));
+
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Join_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Part_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Topic_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Quit_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Nick_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Notice_Handler(this)));
 
     char *autojoin;
 
@@ -627,18 +418,15 @@ void Server::GiveMessage(IRC_Message *msg){
 
     lock();
 
-    HandlerList::iterator iter = Handlers.begin();
+    HandlerList_t::iterator iter = Handlers.begin();
     while(iter!=Handlers.end()){
-        HandlerList::iterator d_iter = Handlers.end();
 
         if((*iter)->HandleMessage(msg)){
-            d_iter = iter;
+            HandlerList_t::iterator d_iter = iter;
+            iter--;
+            Handlers.erase(d_iter);
         }
-
         iter++;
-
-        if(d_iter!=Handlers.end())
-          Handlers.erase(d_iter);
 
     }
 
@@ -670,10 +458,6 @@ void Server::AddChannel_l(Channel *a){
 
     Parent->SetChannel(a);
     Parent->RedrawChannels();
-
-    Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(new ServerChannel_Handler<IRC_quit>(this, a))));
-    Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(new ServerChannel_ParamEqual_Handler<IRC_join, 0>(this, a, a->name))));
-
 
     printf("Added channel %s\n", a->name.c_str());
 
@@ -752,13 +536,8 @@ std::shared_ptr<PromiseValue<Channel *> > Server::JoinChannel(const std::string 
 
     std::shared_ptr<bool> started(new bool(false));
 
-    NameList_Handler *name_beg_handler = new NameListBegin_Handler(this, channel, started, handler_raw->promise);
-    NameList_Handler *name_end_handler = new NameListEnd_Handler(this, channel, started, handler_raw->promise);
-
     lock();
     Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(handler_raw)));
-    Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(name_beg_handler)));
-    Handlers.push_back(std::move(std::unique_ptr<MessageHandler>(name_end_handler)));
     unlock();
 
     return handler_raw->promise;
