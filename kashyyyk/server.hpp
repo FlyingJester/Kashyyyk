@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <mutex>
+#include <algorithm>
 #include <FL/Fl_Tree_Prefs.H>
 
 class Fl_Group;

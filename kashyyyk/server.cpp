@@ -41,6 +41,7 @@ public:
 // FUnctional-style objects for finding certain channels in a Server
 Server::find_channel::find_channel(const std::string &s)
   : n(s){
+
 }
 
 Server::find_channel::find_channel(const Channel *a)
