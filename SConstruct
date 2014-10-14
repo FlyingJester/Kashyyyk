@@ -1,15 +1,18 @@
 import os
 import sys
+import readmegen
+
+readmegen.generate()
 
 environment = Environment()
 
-gcc_ccflags = "-pedantic -Oz -fno-common -flto -Werror -Wall -fstrict-enums -fno-threadsafe-statics "
+gcc_ccflags = "-pedantic -O3 -fno-common -flto -Werror -Wall -fstrict-enums -fno-threadsafe-statics -g "
 
 def PrepareCompilerGPP(env):
-  env.Append(CXXFLAGS = "  -Wsign-promo -fno-rtti -fno-exceptions " + gcc_ccflags)
+  env.Append(CXXFLAGS = "  -Wsign-promo -fno-rtti -fno-exceptions " + gcc_ccflags, LINKFLAGS = " -g ")
 
 def PrepareCompilerGCC(env):
-  env.Append(CFLAGS = " -ansi "+gcc_ccflags)
+  env.Append(CFLAGS = " -ansi "+gcc_ccflags, LINKFLAGS = " -g ")
 
 def PrepareCompilerMSVC(env):
   env.Append(CFLAGS = "/O2 /EHsc /Zi /MDd")

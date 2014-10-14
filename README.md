@@ -1,7 +1,10 @@
 Kashyyyk
 ========
+
 A Work-In-Progress, Full-Featured, Open Source IRC Client
-*****
+
+******
+
 About Kashyyyk
 --------------
 
@@ -17,7 +20,7 @@ Compiling Kashyyyk
 ------------------
 
 Kashyyyk requires a C++11 compiler and an ansi C compiler. The build scripts
-support GCC, Clang, and MSVC. You will need FLTK 1.3, either in shared or 
+support GCC, Clang, and MSVC. You will need FLTK 1.3, either in shared or
 static version. You need Python 2.x and SCons to build Kashyyyk.
 
 #### Checklist for Compiling
@@ -57,4 +60,4 @@ License
 -------
 
 Kashyyyk is released under the GPL 2.0.
-A copy of the GPL 2.0 is included in the file `license.txt`.
+A copy of the GPL 2.0 is included in the file [license.txt](license.html).
