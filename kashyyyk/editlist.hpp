@@ -10,6 +10,8 @@
 #include <cstdlib>
 #include <cassert>
 
+#include "platform/strdup.h"
+
 #ifdef _WIN32
 // This include is necessary for std::min and std::max with MSVC.
 #include <algorithm>

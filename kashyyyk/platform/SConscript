@@ -28,6 +28,10 @@ else:
   platform_files += ["generic_pling.cpp"];
   platform_files += ["generic_notification.c"];
   platform_files += ["generic_paths.c"];
+ 
+if sys.platform == 'cygwin':
+  platform_files += ['strdup.c'];
+ 
 
 platformlib = platformenv.StaticLibrary("kashyyyk_platform", platform_files)
 

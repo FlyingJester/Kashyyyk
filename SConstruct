@@ -20,7 +20,10 @@ def PrepareCompilerMSVCpp(env):
   env.Append(CXXFLAGS = "/O2 /EHsc /Zi /MDd")
 
 def PrepareEnvironmentUNIX(env):
-  env.Append(CPPDEFINES = ["USE_BSDSOCK"])
+  if sys.platform == 'cygwin':
+    env.Append(CPPDEFINES = ["USE_CYGSOCK", "WIN32"])
+  else:
+    env.Append(CPPDEFINES = ["USE_BSDSOCK"])
 def PrepareEnvironmentWin(env):
   env.Append(LIBPATH = [os.path.join(os.getcwd(), "lib")], LIBS = ["Gdi32.lib", "User32.lib", "Ole32.lib", "Advapi32.lib", "Shell32.lib", "Ws2_32.lib"], CPPDEFINES = ["WIN32"])
   env.Append(CPPDEFINES = ["USE_WINSOCK"])
@@ -54,8 +57,18 @@ else:
 
 if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
   PrepareEnvironmentUNIX(environment)
+  if sys.platform != 'darwin':
+    conf = Configure(environment)
+    if conf.CheckLib("tbb"):
+      environment.Append(LIBS = ["tbb"], CPPDEFINES = ["USE_TBB"])
+    elif conf.CheckCXXHeader("mutex"):
+      environment.Append(CPPDEFINES = ["USE_MUTEX"])
+    elif conf.CheckCHeader("pthread.h"):
+      environment.Append(CPPDEFINES = ["USE_PTHREAD"])
 elif sys.platform.startswith('win'):
   PrepareEnvironmentWin(environment)
+
+
 
 libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment'])
 libfjirc = SConscript(dirs = ['libfjirc'], exports = ['environment'])

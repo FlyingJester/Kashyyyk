@@ -13,7 +13,7 @@
 
 #include <stack>
 
-#ifdef _WIN32
+#ifdef SendMessage
 #undef SendMessage
 #endif
 
