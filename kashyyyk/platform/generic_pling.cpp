@@ -4,7 +4,9 @@
 #include <cstdio>
 
 inline void GenericPling(void){
+#ifndef __CYGWIN__
     fl_beep(FL_BEEP_NOTIFICATION);
+#endif
 }
 
 // For when we don't know where we are.

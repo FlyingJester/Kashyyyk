@@ -12,6 +12,8 @@
 #include <FL/Fl.H>
 #include <FL/fl_ask.H>
 
+#include "platform/strdup.h"
+
 namespace Kashyyyk {
 
 static void No_Callback(Fl_Widget *w, void *p){}

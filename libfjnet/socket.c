@@ -25,7 +25,7 @@ const char *ExplainError_Socket(enum WSockErr err){
     return "Bad Error Value";
 }
 
-#if !(defined USE_BSDSOCK) && !(defined USE_WINSOCK)
+#if !(defined USE_BSDSOCK) && !(defined USE_WINSOCK) && !(defined USE_CYGSOCK)
 #error No sutiable socket backend.
 #endif
 
@@ -54,10 +54,6 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
     unsigned int llen = sizeof(unsigned long);
 	return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);
 }
-#if defined USE_WINSOCK
-#elif defined USE_BSDSOCK
-#endif
-
 
 #elif defined (USE_WINSOCK)
 
@@ -94,6 +90,33 @@ static void MakeNonBlocking(FJNET_SOCKET socket){
 static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 	return ioctlsocket(socket, FIONREAD, len);
 }
+
+
+#elif defined (USE_CYGSOCK)
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <netdb.h>
+
+typedef int FJNET_SOCKET;
+
+void InitSock(){}
+
+#define MakeNonBlocking(S) fcntl(S, F_SETFL, O_NONBLOCK)
+
+#define CLOSE_SOCKET close
+
+#define PRINT_LAST_ERROR perror
+
+static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
+	return ioctl(socket, FIONREAD, len);
+}
+
 
 #endif
 
@@ -151,7 +174,7 @@ enum WSockErr Connect_Socket(struct WSocket *aSocket, const char *aTo, unsigned 
     if(
 #if defined USE_WINSOCK
 	(aSocket->sock==INVALID_SOCKET)
-#elif defined USE_BSDSOCK
+#elif defined USE_BSDSOCK || defined USE_CYGSOCK
 	(aSocket->sock<0)
 #endif
 	){

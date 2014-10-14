@@ -23,7 +23,9 @@
 #ifdef _WIN32
 // This include is necessary for std::min and std::max with MSVC.
 #include <algorithm>
+#endif
 
+#ifdef SendMessage
 #undef SendMessage
 #endif
 

@@ -17,7 +17,7 @@
 #include <FL/Fl_Sys_Menu_Bar.H>
 #include <FL/fl_ask.H>
 
-#ifdef _WIN32
+#ifdef SendMessage
 #undef SendMessage
 #endif
 
