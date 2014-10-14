@@ -5,6 +5,7 @@
 #include "input.h"
 #include "platform/pling.h"
 #include "platform/notification.h"
+#include "platform/strcasestr.h"
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Box.H>
@@ -20,6 +21,9 @@
 #include <FL/Fl_ask.H>
 
 #ifdef _WIN32
+// This include is necessary for std::min and std::max with MSVC.
+#include <algorithm>
+
 #undef SendMessage
 #endif
 

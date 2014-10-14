@@ -8,6 +8,8 @@
 #include <memory>
 #include <string>
 #include <mutex>
+#include <cmath>
+#include <cassert>
 
 class Fl_Group;
 class Fl_Browser;
