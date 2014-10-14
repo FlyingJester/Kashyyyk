@@ -23,5 +23,4 @@ HWND Kashyyyk_Win32_GetAnyWindow();
 
 #ifdef __cplusplus
 }
-
-
+#endif

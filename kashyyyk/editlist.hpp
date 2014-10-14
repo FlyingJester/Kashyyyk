@@ -8,6 +8,12 @@
 #include <memory>
 #include <utility>
 #include <cstdlib>
+#include <cassert>
+
+#ifdef _WIN32
+// This include is necessary for std::min and std::max with MSVC.
+#include <algorithm>
+#endif
 
 namespace Kashyyyk {
 
