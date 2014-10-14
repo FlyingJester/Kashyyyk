@@ -11,8 +11,7 @@ HWND Kashyyyk_Win32_GetWindow(Fl_Window *window){
     return fl_xid(window);
 }
 
-Kashyyyk_Win32_GetAnyWindow(){
+HWND Kashyyyk_Win32_GetAnyWindow(){
     return Kashyyyk_Win32_GetWindow(Fl_Window::current());
 }
 
-}

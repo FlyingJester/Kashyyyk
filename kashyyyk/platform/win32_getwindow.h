@@ -14,7 +14,7 @@ class Fl_Window;
 extern "C" {
 #else
 
-typedef Fl_Window void;
+typedef void Fl_Window;
 
 #endif
 
