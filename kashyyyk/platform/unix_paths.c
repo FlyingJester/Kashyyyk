@@ -12,8 +12,8 @@
 char * Kashyyyk_HomeDirectory(){
 
     char buffer[SIZE], *homedir;
-    struct passwd *pw = NULL, * pw_buf = malloc(sizeof(struct passwd));
-    getpwuid_r(getuid(), pw_buf, buffer, SIZE, &pw);
+    struct passwd *pw = malloc(sizeof(struct passwd));
+    getpwuid_r(getuid(), pw, buffer, SIZE, &pw);
     homedir = strdup(pw->pw_dir);
 
     free(pw);

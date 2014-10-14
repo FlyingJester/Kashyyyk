@@ -83,6 +83,9 @@ const char *CSV_ConstructString(const char **a){
 
     }
 
+    if(len==0)
+      return strdup("");
+
     printf("Parse n: %i\n", len);
     r = malloc(len);
     r[len-1] = '\0';

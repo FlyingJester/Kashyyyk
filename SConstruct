@@ -3,13 +3,13 @@ import sys
 
 environment = Environment()
 
-gcc_ccflags = "-pedantic -Werror -Wall -fstrict-enums -fno-threadsafe-statics -g "
+gcc_ccflags = "-pedantic -Oz -fno-common -flto -Werror -Wall -fstrict-enums -fno-threadsafe-statics "
 
 def PrepareCompilerGPP(env):
-  env.Append(CXXFLAGS = "  -Wsign-promo -fno-rtti -fno-exceptions " + gcc_ccflags, LINKFLAGS = " -g ")
+  env.Append(CXXFLAGS = "  -Wsign-promo -fno-rtti -fno-exceptions " + gcc_ccflags)
 
 def PrepareCompilerGCC(env):
-  env.Append(CFLAGS = " -ansi "+gcc_ccflags, LINKFLAGS = " -g ")
+  env.Append(CFLAGS = " -ansi "+gcc_ccflags)
 
 def PrepareCompilerMSVC(env):
   env.Append(CFLAGS = "/O2 /EHsc /Zi /MDd")

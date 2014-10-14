@@ -328,9 +328,7 @@ void Channel::GiveMessage(IRC_Message *msg){
             std::string nick = msg->from;
 
             size_t colon = nick.find(':');
-            if(colon==std::string::npos)
-              colon = 0;
-            else
+            if(colon!=std::string::npos)
               nick = nick.substr(colon+1);
 
 
