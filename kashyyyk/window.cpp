@@ -14,6 +14,8 @@
 
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Tree.H>
+#include <FL/Fl_Scroll.H>
+#include <FL/Fl_Box.H>
 #include <FL/Fl_Sys_Menu_Bar.H>
 #include <FL/fl_ask.H>
 
@@ -165,7 +167,7 @@ try_connect:
 
             Task *task = new AskToConnectAgain_Task(promise, server_name);
 
-            AddTask(window->task_group, task);
+            Thread::AddTask(window->task_group, task);
 
             Fl::awake();
 
@@ -204,26 +206,27 @@ void ConnectToServer(Fl_Widget *w, void *p){
     if(inp.empty())
       return;
 
-    AddLongRunningTask(new ConnectToServer_Task(win, inp.c_str(), port));
+    Thread::AddLongRunningTask(new ConnectToServer_Task(win, inp.c_str(), port));
 }
 
 Window::Window(){
 
 }
 
-Window::Window(int w, int h, TaskGroup *g, bool osx)
-  : task_group(g)
+Window::Window(int w, int h, Thread::TaskGroup *tg, bool osx)
+  : task_group(tg)
   , widget(new Fl_Window(w, h, "Kashyyyk IRC Client"))
   , chat_holder(new Fl_Group(128+8, 8+(osx?0:24), w-128-16, h-16-(osx?0:24)))
-  , channel_list(new Fl_Tree(8, 8+(osx?0:24), 128-16, h-16-(osx?0:24)))
   , last_server(nullptr)
   , Servers() {
 
     osx_style = osx;
 
+    widget->begin();
+
+    channel_list = new Fl_Tree(8, 8+(osx?0:24), 128-8, h-16-(osx?0:24));
     channel_list->showroot(0);
     channel_list->callback(WindowCallbacks::ChannelList_CB, this);
-    widget->add(channel_list.get());
 
     Fl_Menu_Bar *menubar = (osx)?new Fl_Sys_Menu_Bar(-2, 0, w+4, 24):new Fl_Menu_Bar(-2, 0, w+4, 24);
 
@@ -232,19 +235,15 @@ Window::Window(int w, int h, TaskGroup *g, bool osx)
     menubar->add("Edit/Preferences", 0, OpenPreferencesWindow_CB, this);
     menubar->add("Server/Change Nick", 0, WindowCallbacks::ChangeNick_CB, this);
     menubar->add("Server/Join Channel", 0, WindowCallbacks::JoinChannel_CB, this);
-
     widget->add(menubar);
-    //widget->add(channel_list.get());
-    //widget->add(chat_holder.get());
-    widget->resizable(chat_holder.get());
+
+    widget->resizable(chat_holder);
     widget->show();
 
 }
 
 
 Window::~Window(){
-    chat_holder.release();
-    channel_list.release();
 }
 
 

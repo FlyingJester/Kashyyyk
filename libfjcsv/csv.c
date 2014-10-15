@@ -3,7 +3,7 @@
 #include <string.h>
 #include <assert.h>
 
-unsigned CSV_CountElements(const char *a){
+unsigned CSV_CountElements(const char *a, char delimiter){
     unsigned r = 0;
 
     assert(a);
@@ -12,7 +12,7 @@ unsigned CSV_CountElements(const char *a){
         const char *b = a;
         r=1;
         do{
-            if(b[0]==',')
+            if(b[0]==delimiter)
               r++;
         } while(*b++!='\0');
 
@@ -20,8 +20,8 @@ unsigned CSV_CountElements(const char *a){
     return r;
 }
 
-const char **CSV_ParseString(const char *a){
-    int i, elements = CSV_CountElements(a);
+const char **CSV_ParseString(const char *a, char delimiter){
+    int i, elements = CSV_CountElements(a, delimiter);
     char **r = malloc(sizeof(const char*)*(elements+1));
     const char *b = a;
 
@@ -29,7 +29,7 @@ const char **CSV_ParseString(const char *a){
     assert(r);
 
     for(i = 0; i<elements; i++){
-        const char *c = strchr(b, ',');
+        const char *c = strchr(b, delimiter);
 
         if(c==NULL){
             assert(i==elements-1);
@@ -63,7 +63,7 @@ const char **CSV_ParseString(const char *a){
     return (const char **)r;
 }
 
-const char *CSV_ConstructString(const char **a){
+const char *CSV_ConstructString(const char **a, char delimiter){
 
     char *r = NULL, *c = NULL;
     int i = 0, len = 0;
@@ -103,7 +103,7 @@ const char *CSV_ConstructString(const char **a){
 
             printf("Parse 2: %s\n", c);
 
-            c[olen] = ',';
+            c[olen] = delimiter;
 
             c+=olen+1;
 

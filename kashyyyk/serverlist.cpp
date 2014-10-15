@@ -80,7 +80,7 @@ static void AutoJoinFocusCallback(Fl_Widget *w, void *p){
 
     values.push_back(nullptr);
 
-    const char *value = CSV_ConstructString(&values.front());
+    const char *value = FJ::CSV::ConstructString(&values.front(), ',');
 
     std::string pref_name = std::string("server.") + pref_items->server + ".autojoin";
 

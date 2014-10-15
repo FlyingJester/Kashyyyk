@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include "autolocker.hpp"
 
 struct IRC_Message;
 
@@ -53,9 +54,56 @@ public:
 
     virtual ~TypedReciever(){}
 
-
     inline bool HasParent() {return Parent!=nullptr;}
 
+
+    void GiveMessage(IRC_Message *msg) override {
+
+        typename HandlerList_t::iterator iter = Handlers.begin();
+        while(iter!=Handlers.end()){
+            if((*iter)->HandleMessage(msg)){
+                typename HandlerList_t::iterator d_iter = iter;
+                iter--;
+                Handlers.erase(d_iter);
+            }
+            iter++;
+        }
+    }
+
 };
+
+template <class Parent_T, class Mutex, class C = std::vector<unique_MessageHandler> >
+class LockingReciever : public TypedReciever<Parent_T, C> {
+protected:
+    Mutex m;
+
+    virtual void lock(){
+        m.lock();
+    }
+    virtual void unlock(){
+        m.unlock();
+    }
+
+public:
+    typedef TypedReciever<Parent_T, C> TypedReciever_T;
+    typedef AutoLocker<LockingReciever<Parent_T, Mutex, C> *> AutoLocker_T;
+    friend class AutoLocker<LockingReciever<Parent_T, Mutex, C> *>;
+
+
+    LockingReciever(Parent_T *parent)
+      : TypedReciever_T(parent) {}
+
+    virtual ~LockingReciever(){}
+
+    void GiveMessage(IRC_Message *msg) override {
+
+        AutoLocker_T locker(this);
+
+        TypedReciever_T::GiveMessage(msg);
+
+    }
+
+};
+
 
 }

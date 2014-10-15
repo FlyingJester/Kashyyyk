@@ -22,16 +22,12 @@ namespace Kashyyyk{
 Task::Task(){repeating = false;}
 Task::~Task(){}
 
-void Task::Run(){
-    MILLISLEEP(10);
-}
+//! @cond
 
-
-class TaskGroup{
+class Thread::TaskGroup{
   public:
     concurrent_queue<Task *> queue;
 };
-
 
 struct Thread::Thread_Impl{
     concurrent_queue<Task *> *queue;
@@ -40,6 +36,7 @@ struct Thread::Thread_Impl{
     bool live;
 };
 
+//! @endcond
 
 static void ThreadFunction(Thread::Thread_Impl *thimble){
     while(true){
@@ -67,24 +64,24 @@ static void ThreadFunction(Thread::Thread_Impl *thimble){
 }
 
 
-TaskGroup *Thread::GetShortThreadPool(){
+Thread::TaskGroup *Thread::GetShortThreadPool(){
     static TaskGroup group;
     return &group;
 }
 
 
-TaskGroup *Thread::GetLongThreadPool(){
+Thread::TaskGroup *Thread::GetLongThreadPool(){
     static TaskGroup group;
     return &group;
 }
 
 
-void AddLongRunningTask(Task *task){
+void Thread::AddLongRunningTask(Task *task){
     Thread::GetLongThreadPool()->queue.push(task);
 }
 
 
-void AddShortRunningTask(Task *task){
+void Thread::AddShortRunningTask(Task *task){
     Thread::GetShortThreadPool()->queue.push(task);
 }
 
@@ -104,11 +101,11 @@ Thread::~Thread(){
     delete guts->thread;
 }
 
-void AddTask(TaskGroup *pool, Task *task){
+void Thread::AddTask(TaskGroup *pool, Task *task){
     pool->queue.push(task);
 }
 
-void PerformTask(TaskGroup *pool){
+void Thread::PerformTask(TaskGroup *pool){
     while(true){
         Task * task;
         if(!pool->queue.try_pop(task))
@@ -123,10 +120,10 @@ void PerformTask(TaskGroup *pool){
     }
 }
 
-TaskGroup *CreateTaskGroup(){
-    return new TaskGroup();
+Thread::TaskGroup *Thread::CreateTaskGroup(){
+    return new Thread::TaskGroup();
 }
-void DestroyTaskGroup(TaskGroup *a){
+void Thread::DestroyTaskGroup(Thread::TaskGroup *a){
     delete a;
 }
 

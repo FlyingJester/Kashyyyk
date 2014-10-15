@@ -6,6 +6,7 @@
 #include <mutex>
 
 #include "autolocker.hpp"
+#include "background.hpp"
 
 #include <FL/Fl_Tree_Prefs.H>
 
@@ -13,12 +14,12 @@ class Fl_Window;
 class Fl_Group;
 class Fl_Tree;
 class Fl_Tree_Item;
+class Fl_Scroll;
 
 namespace Kashyyyk {
 
   class Server;
   class Channel;
-  class TaskGroup;
 
   class WindowCallbacks{
 public:
@@ -31,13 +32,13 @@ public:
 
   class Window {
 public:
-      TaskGroup *task_group;
+      Thread::TaskGroup *task_group;
 
 protected:
 
-      std::unique_ptr<Fl_Window> widget;
-      std::unique_ptr<Fl_Group>  chat_holder;
-      std::unique_ptr<Fl_Tree>   channel_list;
+      std::unique_ptr<Fl_Window>  widget;
+      Fl_Group  *chat_holder;
+      Fl_Tree   *channel_list;
 
       std::mutex mutex;
 
@@ -55,7 +56,7 @@ public:
       friend class WindowCallbacks;
 
       Window();
-      Window(int w, int h, TaskGroup *g, bool osx = false);
+      Window(int w, int h, Thread::TaskGroup *g, bool osx = false);
       ~Window();
 
       std::list<Channel *> Channels;

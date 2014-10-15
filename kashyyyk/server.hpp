@@ -33,7 +33,7 @@ class Channel;
 // one-shot reactionary responses for registration.
 //
 
-class Server : public TypedReciever<Window> {
+class Server : public LockingReciever<Window, std::mutex> {
 public:
 
     typedef std::list<std::unique_ptr<Channel> >        ChannelList;
@@ -43,11 +43,6 @@ protected:
     Channel *last_channel;
 
     WSocket *socket;
-
-    std::mutex mutex;
-
-    inline void lock(){mutex.lock();}
-    inline void unlock(){mutex.unlock();}
 
     std::unique_ptr<Fl_Group> widget;
     std::unique_ptr<Fl_Tree_Item> channel_list;
@@ -74,8 +69,6 @@ public:
      // Resizes the group given to the correct proportions.
     void AddChild(Fl_Group *);
 
-     // Will give the message to the appropriate channel.
-    virtual void GiveMessage(IRC_Message *msg) override;
      // Sends the message out the socket.
     virtual void SendMessage(IRC_Message *msg) override;
 
@@ -90,12 +83,13 @@ public:
 
     void Highlight();
 
+     // Functional-style object for finding a certain Channel in a Server
     class find_channel {
         const std::string &n;
     public:
         find_channel(const std::string &s);
         find_channel(const Channel *);
-        bool operator () (std::unique_ptr<Channel> &);
+        bool operator () (const std::unique_ptr<Channel> &);
     };
 
 };

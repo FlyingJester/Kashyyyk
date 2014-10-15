@@ -2,7 +2,8 @@ import os
 import sys
 import readmegen
 
-readmegen.generate()
+if ARGUMENTS.get('pandoc_readme', '0') == '1':
+    readmegen.generate()
 
 environment = Environment()
 

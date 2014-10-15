@@ -17,7 +17,21 @@ platformenv = localenv.Clone()
 kashyyyk_platform = SConscript(dirs = ["platform"], exports = "platformenv");
 localenv.Append(LIBS=[kashyyyk_platform])
 
-kashyyyk = localenv.Program("kashyyyk", ["kashyyyk.cpp", "reciever.cpp", "promise.cpp", "background.cpp", "prefs.cpp", "doubleinput.cpp", "serverlist.cpp", "server.cpp", "channel.cpp", "window.cpp"])
+kashyyyk_files = ["kashyyyk.cpp",
+                  "reciever.cpp",
+                  "servermessage.cpp",
+                  "channelmessage.cpp",
+                  "message.cpp",
+                  "promise.cpp",
+                  "background.cpp",
+                  "prefs.cpp",
+                  "doubleinput.cpp",
+                  "serverlist.cpp",
+                  "server.cpp",
+                  "channel.cpp",
+                  "window.cpp"]
+
+kashyyyk = localenv.Program("kashyyyk", kashyyyk_files)
 
 if sys.platform == 'darwin':
   AppDir = os.path.join(os.getcwd(), "Kashyyyk.app")

@@ -27,7 +27,7 @@ struct User {
 
 class Server;
 
-class Channel : public TypedReciever<Server>{
+class Channel : public LockingReciever<Server, std::mutex>{
 
     struct StyleTable;
     static struct StyleTable table;
@@ -41,22 +41,16 @@ class Channel : public TypedReciever<Server>{
     Fl_Text_Buffer *stylebuffer;
 
     bool focus;
-    int font, last_msg_type;
+    int font;
 
     Fl_Tree_Item *GetWindowItem();
-
-    std::mutex mutex;
 
     // Used for aligning usernames with messages in the chat box.
     unsigned alignment;
 
-    inline void lock(){mutex.lock();}
-    inline void unlock(){mutex.unlock();}
-
 public:
     friend class Server;
     friend class AutoLocker<Channel *>;
-
 
     Channel(Server *, const std::string &channel_name);
     ~Channel();
@@ -65,7 +59,6 @@ public:
 
     std::list<User> Users;
 
-    virtual void GiveMessage(IRC_Message *msg) override;
     virtual void SendMessage(IRC_Message *msg) override;
 
     void GiveFocus();
@@ -89,14 +82,32 @@ public:
     void SetTopic(const char *topic);
     inline void SetTopic(const std::string &topic){SetTopic(topic.c_str());}
 
+    void WriteLine(const char *from, const char *msg);
+
     void AddUser(const char *user, const char *mode);
     void AddUser(const struct User &user);
+    void AddUser_l(const char *user, const char *mode);
+    void AddUser_l(const struct User &user);
+
+    void SortUsers();
+    void SortUsers_l();
 
     void RemoveUser(const char *user);
 
     const char *Nick();
 
     static void TextModify_CB(int, int, int, int, const char*, void*);
+
+     // Functional-style object for finding certain Users in a Channel
+    class find_user {
+        const std::string &n;
+    public:
+        find_user(const std::string &s);
+        find_user(const User *);
+        bool operator () (const User &);
+    };
+
+    int last_msg_type;
 
 };
 

@@ -1,8 +1,11 @@
 #include "channel.hpp"
 #include "server.hpp"
 #include "prefs.hpp"
+#include "message.hpp"
+#include "channelmessage.hpp"
 #include "message.h"
 #include "input.h"
+#include "csv.h"
 #include "platform/pling.h"
 #include "platform/notification.h"
 #include "platform/strcasestr.h"
@@ -29,10 +32,25 @@
 #undef SendMessage
 #endif
 
+using namespace Kashyyyk::ChannelMessage;
+
 namespace Kashyyyk{
 
-static IRC_allocator Alloc;
-static IRC_deallocator Dealloc;
+Channel::find_user::find_user(const std::string &s)
+  : n(s){
+
+}
+
+
+Channel::find_user::find_user(const User *a)
+  : n(a->Name) {
+
+}
+
+
+bool Channel::find_user::operator () (const User &a){
+    return a.Name==n;
+}
 
 struct Channel::StyleTable{
 public:
@@ -46,6 +64,7 @@ public:
     }
 
 };
+
 
 Channel::StyleTable Channel::table = {{
   {FL_FOREGROUND_COLOR, FL_COURIER, FL_NORMAL_SIZE}, // A - Default
@@ -61,47 +80,45 @@ Channel::StyleTable Channel::table = {{
 // Which is good just in case?
 void Channel::TextModify_CB(int pos, int nInserted, int nDeleted, int nRestyled, const char* deletedText, void *p){
 
-        Channel *that = static_cast<Channel *>(p);
-        assert(that);
+    Channel *that = static_cast<Channel *>(p);
+    assert(that);
 
-        if ((!nInserted) && (!nDeleted)){
-            that->stylebuffer->unselect();
-            return;
-        }
-
-        if (nInserted>0) {
-          char style = 'A';
-
-          switch((IRC_messageType)(that->last_msg_type)){
-              case IRC_join:
-              style = 'B';
-              break;
-              case IRC_quit:
-              style = 'C';
-              break;
-              case IRC_nick:
-              style = 'D';
-              break;
-              case IRC_notice:
-              style = 'E';
-              break;
-              case IRC_privmsg:
-              default:
-              break;
-          }
-
-          std::string style_str(nInserted, style);
-          that->stylebuffer->replace(pos, pos+nDeleted, style_str.c_str());
-        }
-        else {
-          that->stylebuffer->remove(pos, pos+nDeleted);
-        }
-
-        // Avoids callbacks?
-        that->stylebuffer->select(pos, pos+nInserted-nDeleted);
+    if ((!nInserted) && (!nDeleted)){
+        that->stylebuffer->unselect();
+        return;
     }
 
+    if (nInserted>0) {
+      char style = 'A';
 
+      switch((IRC_messageType)(that->last_msg_type)){
+          case IRC_join:
+          style = 'B';
+          break;
+          case IRC_quit:
+          style = 'C';
+          break;
+          case IRC_nick:
+          style = 'D';
+          break;
+          case IRC_notice:
+          style = 'E';
+          break;
+          case IRC_privmsg:
+          default:
+          break;
+      }
+
+      std::string style_str(nInserted, style);
+      that->stylebuffer->replace(pos, pos+nDeleted, style_str.c_str());
+    }
+    else {
+      that->stylebuffer->remove(pos, pos+nDeleted);
+    }
+
+    // Avoids callbacks?
+    that->stylebuffer->select(pos, pos+nInserted-nDeleted);
+}
 
 void Input_CB(Fl_Widget *w, void *p){
     Fl_Input *input   = static_cast<Fl_Input *>(w);
@@ -137,7 +154,7 @@ void Input_CB(Fl_Widget *w, void *p){
 
 
 Channel::Channel(Server *s, const std::string &channel_name)
-  : TypedReciever<Server>(s)
+  : LockingReciever<Server, std::mutex>(s)
   , widget()
   , alignment(8)
   , name(channel_name) {
@@ -174,6 +191,7 @@ Channel::Channel(Server *s, const std::string &channel_name)
 
     userlist = new Fl_Browser(64, 0, 128, 112);
     userlist->textfont(font);
+    userlist->format_char(0);
 
      // Set the chat box to be the auto-resizable portion.
     Fl_Box *resize_box = new Fl_Box(FL_NO_BOX, 24, 24, 40, 64, "");
@@ -183,6 +201,15 @@ Channel::Channel(Server *s, const std::string &channel_name)
 
     Parent->AddChild(tiler);
 
+    //Handlers.push_back(std::unique_ptr<MessageHandler>(new Debug_Handler()));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new PrivateMessage_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Part_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Notice_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new JoinPrint_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Join_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Quit_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Namelist_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new Topic_Handler(this)));
 
 }
 
@@ -195,6 +222,23 @@ Channel::~Channel(){
 void Channel::SetTopic(const char *topic){
 
     topiclabel->value(topic);
+
+}
+
+
+void Channel::WriteLine(const char *from, const char *msg){
+    const unsigned from_len = strlen(from);
+    alignment = std::max<unsigned>(from_len, alignment);
+
+    std::string line = from + std::string(alignment-from_len, ' ');
+
+    line.push_back('|');
+
+    line+=msg;
+
+    line.push_back('\n');
+
+    buffer->append(line.c_str());
 
 }
 
@@ -255,176 +299,6 @@ void Channel::FocusChanged(){
 
 }
 
-void Channel::GiveMessage(IRC_Message *msg){
-
-    char *str = nullptr;
-
-    assert(msg);
-
-    last_msg_type = msg->type;
-
-    HighlightLevel level;
-    switch(msg->type){
-      case IRC_notice:
-      case IRC_privmsg:
-        level = Medium;
-        break;
-      default:
-        level = Low;
-    }
-
-    IRC_GetAllocators(&Alloc, &Dealloc);
-
-    if(msg->type==IRC_error_m){
-      str = IRC_MessageToString(msg);
-
-      std::string str_s;
-      str_s.append(str);
-
-      Dealloc(str);
-      str = IRC_Strdup(str_s.c_str());
-
-    }
-    else if(msg->type==IRC_privmsg){
-        std::string str_s = msg->from?msg->from:"***";
-
-
-        str_s = str_s.substr(str_s[0]==':'?1:0);
-        str_s = str_s.substr(0, str_s.find('!'));
-
-        /*
-        if(!(alignment>=str_s.size()))
-          alignment=str_s.size();
-        */
-        if(strcasestr(msg->parameters[1], Nick())){
-          last_msg_type = IRC_notice;
-          level = High;
-
-          std::string str_note = "<";
-          str_note+=str_s;
-          str_note+="> ";
-          str_note+=msg->parameters[1];
-
-          Kashyyyk::GiveNotification("Private Message", str_note);
-
-        }
-
-        alignment = std::max<unsigned>(alignment, str_s.size());
-
-        str_s+=std::string(alignment-str_s.size(), ' ');
-
-        str_s.push_back('|');
-        str_s+=msg->parameters[1];
-
-        str = (char *)Alloc(str_s.size()+1);
-        strcpy(str, str_s.c_str());
-
-    }
-    else if(msg->type==IRC_join){
-
-        std::string nick = msg->from;
-
-        size_t colon = nick.find(':');
-        if(colon!=std::string::npos)
-          nick = nick.substr(colon+1);
-
-        std::string join_s = std::string(alignment, ' ');
-        join_s[0] = '*';
-        join_s[1] = '*';
-        join_s[2] = '*';
-
-        join_s.push_back('|');
-
-        assert(join_s.size()==alignment+1);
-
-        str = IRC_Strdup(((join_s+nick.substr(0, nick.find('!'))).append(" Joined ")+name).c_str());
-
-    }
-    else if(msg->type==IRC_quit){
-
-        std::string nick = msg->from;
-
-        size_t colon = nick.find(':');
-        if(colon==std::string::npos)
-          colon = 0;
-
-        nick = nick.substr(colon, nick.find('!'));
-
-        std::list<User>::iterator user_iter = Users.begin();
-        while(user_iter!=Users.end()){
-            if(user_iter->Name==nick)
-              break;
-
-            user_iter++;
-        }
-
-        if(user_iter==Users.end())
-          return;
-
-        RemoveUser(nick.c_str());
-
-        str = IRC_Strdup((std::string("***")+std::string(alignment-3, ' ').append("|")+nick).append(" Quit (").append(msg->parameters[0]).append(")").c_str());
-
-
-    }
-    else if((msg->type==IRC_nick) && (msg->from==nullptr) && (msg->num_parameters>0)){
-
-
-        std::string from_nick = msg->from;
-        std::string to_nick   = msg->parameters[0];
-
-        size_t colon = from_nick.find(':');
-        if(colon==std::string::npos)
-          colon = 0;
-        from_nick = from_nick.substr(colon, from_nick.find('!'));
-
-        std::list<User>::iterator user_iter = Users.begin();
-        while(user_iter!=Users.end()){
-            if(user_iter->Name==from_nick){
-                user_iter->Name = to_nick;
-                for(int i = 0; i<userlist->size(); i++) {
-                      if(std::string(userlist->text(i))==from_nick){
-                          userlist->text(i, to_nick.c_str());
-                          break;
-                      }
-                }
-
-                break;
-            }
-            user_iter++;
-
-        }
-
-        if(user_iter==Users.end())
-          return;
-
-        str = IRC_Strdup((std::string("***")+std::string(alignment-3, ' ').append("|")+from_nick).append(" is now knwown as ").append(to_nick).append(".").c_str());
-    }
-    else{
-
-      str = IRC_ParamsToString(msg);
-
-      std::string str_s(alignment, ' ');
-      str_s.push_back('|');
-      str_s.append(str);
-
-      Dealloc(str);
-      str = IRC_Strdup(str_s.c_str());
-
-    }
-
-    buffer->append(str);
-    buffer->append("\n");
-    chatlist->redraw();
-    widget->redraw();
-    Parent->widget->redraw();
-    Dealloc(str);
-
-    Highlight(level);
-
-}
-
-
 void Channel::SendMessage(IRC_Message *msg){
     if(msg->type==IRC_join && msg->num_parameters>0){
         Parent->JoinChannel(msg->parameters[0]);
@@ -452,22 +326,46 @@ void Channel::Show(){
 
 }
 
+
 void Channel::Hide(){
 
     Parent->Hide();
 
 }
 
+void Channel::AddUser_l(const char *user, const char *mode){
+    AddUser_l({user, mode});
+}
 
-void Channel::AddUser(const struct User &user){
-    lock();
+void Channel::AddUser_l(const struct User &user){
+
     Users.push_back(user);
     userlist->add(user.Name.c_str());
 
     alignment = std::max<unsigned>(user.Name.size(), alignment);
+}
+
+
+void Channel::AddUser(const struct User &user){
+    lock();
+
+    AddUser_l(user);
 
     unlock();
 
+}
+
+
+void Channel::SortUsers(){
+    lock();
+    SortUsers_l();
+    unlock();
+}
+
+
+void Channel::SortUsers_l(){
+    userlist->sort(FL_SORT_ASCENDING);
+    userlist->redraw();
 }
 
 

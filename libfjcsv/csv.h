@@ -8,9 +8,9 @@ extern "C" {
  Parse parameters (const char **) should have a NULL element on the end.
 */
 
-unsigned CSV_CountElements(const char *);
-const char **CSV_ParseString(const char *);
-const char *CSV_ConstructString(const char **);
+unsigned CSV_CountElements(const char *, char);
+const char **CSV_ParseString(const char *, char);
+const char *CSV_ConstructString(const char **, char);
 void CSV_FreeParse(const char **);
 
 #ifdef __cplusplus
@@ -23,44 +23,48 @@ namespace FJ {
 
     namespace CSV {
 
-        inline unsigned CountElements(const char *a){
-            return CSV_CountElements(a);
+        inline unsigned CountElements(const char *a, char delimiter = ','){
+            return CSV_CountElements(a, delimiter);
         }
 
         template<typename T>
-        unsigned CountElements(const T &a){
-            return CSV_CountElements(a.c_str());
+        unsigned CountElements(const T &a, char delimiter = ','){
+            return CSV_CountElements(a.c_str(), delimiter);
         }
 
-        inline const char **ParseString(const char *a){
-            return CSV_ParseString(a);
+        inline const char **ParseString(const char *a, char delimiter = ','){
+            return CSV_ParseString(a, delimiter);
         }
 
-        inline const char **ParseString(char *const a){
-            return CSV_ParseString(a);
+        inline const char **ParseString(char *const a, char delimiter = ','){
+            return CSV_ParseString(a, delimiter);
         }
 
         template<typename T>
-        const char **ParseString(const T &a){
-            return CSV_ParseString(a.c_str());
+        const char **ParseString(const T &a, char delimiter = ','){
+            return CSV_ParseString(a.c_str(), delimiter);
         }
 
         template<class T>
-        const char *ConstructString(T &container){
+        const char *ConstructString(T &container, char delimiter = ','){
 
             std::vector<typename T::T> vec(container.begin(), container.end());
 
-            return CSV_ConstructString(&(vec.front()));
+            return CSV_ConstructString(&(vec.front()), delimiter);
         }
 
         template<>
-        inline const char *ConstructString<const char **>(const char ** &c_array){
-            return CSV_ConstructString(c_array);
+        inline const char *ConstructString<const char **>(const char ** &c_array, char delimiter){
+            return CSV_ConstructString(c_array, delimiter);
         }
 
         template<>
-        inline const char *ConstructString<std::vector<const char *> >(std::vector<const char *> &container){
-            return CSV_ConstructString(&(container.front()));
+        inline const char *ConstructString<std::vector<const char *> >(std::vector<const char *> &container, char delimiter){
+            return CSV_ConstructString(&(container.front()), delimiter);
+        }
+
+        inline const char *ConstructString(const char ** c_array, char delimiter = ' '){
+            return CSV_ConstructString(c_array, delimiter);
         }
 
         inline void FreeParse(const char **a){
