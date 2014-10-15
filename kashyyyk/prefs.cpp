@@ -18,9 +18,10 @@
   const_cast<Fl_Menu_Item *>(TO->menu())[_i].user_data(_p);\
 }
 
+//! Meta-data for a font face
 struct FontInfo {
-  bool Italic;
-  bool Bold;
+  bool Italic; //!< Is bold
+  bool Bold;   //!< Is italic
 };
 
 

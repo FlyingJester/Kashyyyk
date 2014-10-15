@@ -52,6 +52,7 @@ bool Channel::find_user::operator () (const User &a){
     return a.Name==n;
 }
 
+//! @cond
 struct Channel::StyleTable{
 public:
     static const int NumEntries = 5;
@@ -74,10 +75,11 @@ Channel::StyleTable Channel::table = {{
   {FL_RED,              FL_COURIER, FL_NORMAL_SIZE}, // E - Directed Messages
 }};
 
+//! @endcond
 
-// Based the FLTK.org text editor example.
-// Very much overkill, this can handle text insertions as well as deletions.
-// Which is good just in case?
+//! Based the FLTK.org text editor example.
+//! Very much overkill, this can handle text insertions as well as deletions.
+//! Which is good just in case.
 void Channel::TextModify_CB(int pos, int nInserted, int nDeleted, int nRestyled, const char* deletedText, void *p){
 
     Channel *that = static_cast<Channel *>(p);
@@ -248,6 +250,7 @@ void Channel::GetPath(std::string &path) const{
     path+=name;
 }
 
+
 Fl_Tree_Item *Channel::GetWindowItem(){
 
     std::string path;
@@ -260,6 +263,9 @@ Fl_Tree_Item *Channel::GetWindowItem(){
 
 
 void Channel::Highlight(HighlightLevel level){
+
+    if(level==HighlightLevel::None)
+      return;
 
     Parent->Highlight();
 

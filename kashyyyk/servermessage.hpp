@@ -6,29 +6,54 @@
 #include "message.hpp"
 #include "message.h"
 
+//! @file
+//! @brief @link Kashyyyk::MessageHandler @endlink derivatives for defining
+//! @link Kashyyyk::Server @endlink behaviour
+//! @author    FlyingJester
+//! @date      2014
+//! @copyright GNU Public License 2.0
+//! @sa channelmessage.hpp
+//! @sa message.hpp
+
 namespace Kashyyyk{
 namespace ServerMessage{
 
-// Pure virtual base class. Primarily to ensure the
-// consistency of 'server'.
+//! @brief Base class for Server-based MessageHandler objects
+//! @sa MessageHandler
 class Message_Handler : public MessageHandler {
 protected:
+    //! Owning Server
     Server *server;
 public:
+    //! Construct with specified Server
     Message_Handler(Server *s);
     virtual ~Message_Handler();
 };
 
-
-// Honds onto a message until a message that causes T::(msg) to return true.
-// It then sends the message, frees the message, and dies.
+//!
+//! @brief Message_Handler to hold on to a message until some later time, and
+//! send it in response to a certain message
+//!
+//! Holds on to a message until the unary predicate T of a recieved message
+//! evaluates to true. The SendMessageOn_Handler then sends its message and
+//! signals its owner that it has complete its task and so shall be deleted.
+//! @tparam T unary predicate to evaluate messages
 template <class T>
 class SendMessageOn_Handler : public Message_Handler {
+//! Message that will be sent. Will be freed when SendMessageOn_Handler is
+//! deleted.
 IRC_Message *r_msg;
+//! Unary predicate to evaluate incoming messages using
+T t;
 public:
-    SendMessageOn_Handler(Server *s, IRC_Message *m)
+
+    //! Constructs a SendMessageOn_Handler. The given message will be freed
+    //! then this object is deleted.
+    //! @param s Server to send message to
+    //! @param msg Message to send
+    SendMessageOn_Handler(Server *s, IRC_Message *msg)
       : Message_Handler(s)
-      , r_msg(m) {
+      , r_msg(msg) {
 
     }
 
@@ -36,9 +61,10 @@ public:
         IRC_FreeMessage(r_msg);
     }
 
+    //! Check @p msg against a @p T predicate, and if it evaluates to true then
+    //! send r_msg.
+    //! @param msg Message to evaluates
     bool HandleMessage(IRC_Message *msg) override {
-
-        T t;
 
         if(t(msg)){
             server->SendMessage(r_msg);
@@ -50,14 +76,14 @@ public:
 };
 
 
-// Sends the message in response to any message at all.
-// A SendMessageOn with a T::(msg) that always returns true.
+//! @brief Sends the message in response to any message at all.
+//!
+//! A SendMessageOn with a T::(msg) that always returns true.
 typedef SendMessageOn_Handler<OnMsgAlways> SendMessage_Handler;
 
-
-// Checks if a certain message parameter equals the channel name for
-// a certain message type, and GiveMessage's the channel if it does.
-// Most Handlers should be of this type.
+//! Checks if a certain message parameter equals the channel name for
+//! a certain message type, and GiveMessage's the channel if it does.
+//! Most Handlers should be of this type.
 template<IRC_messageType type, int n = 0>
 class ChannelChecker_Handler : public Message_Handler {
 public:

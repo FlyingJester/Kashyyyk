@@ -1,13 +1,18 @@
 #pragma once
 #include <memory>
 
-/** @file */
+//! @file
+//! @brief Definition of @link Kashyyyk::Task @endlink and
+//! @link Kashyyyk::Thread @endlink
+//! @author    FlyingJester
+//! @date      2014
+//! @copyright GNU Public License 2.0
 
 namespace Kashyyyk {
 
 //!
 //! @brief Basic Task object. Designed to work with Thread and
-//! TaskGroup.
+//! TaskGroup
 //!
 //! Adding a Task to a TaskGroup using AddTask will result
 //! in Run being called by Kashyyyk::PerformTask called with the same
@@ -44,7 +49,7 @@ public:
 };
 
 //!
-//! @brief Represents a thread.
+//! @brief Represents a thread
 //!
 //! Be sure to be careful about stack allocation of Thread objects. Every time
 //! one is constructed a new thread is created, and every time one is destroyed
@@ -66,16 +71,16 @@ public:
     class TaskGroup;
 
     //!
-    //! @brief Create a thread.
+    //! @brief Create a thread
     //!
-    //! This task will perform tasks placed on @p taskgroup using AddTask, or
+    //! This task will perform tasks placed on @p taskgroup using #AddTask, or
     //! if @p taskgroup is from #GetShortThreadPool or #GetLongThreadPool,
-    //! AddLongRunningTask and AddShortRunningTask respectively.
+    //! #AddLongRunningTask and #AddShortRunningTask respectively.
     //! @param taskgroup The TaskGroup to use.
     Thread(TaskGroup *taskgroup);
 
     //!
-    //! @brief Joins the thread.
+    //! @brief Joins the thread
     ~Thread();
 
     //! @brief Retrieve the predefined Short Running TaskGroup
@@ -93,7 +98,7 @@ public:
     static TaskGroup *GetLongThreadPool();
 
     //!
-    //! @brief Add a task to a group.
+    //! @brief Add a task to a group
     //!
     //! Pushes @p task into the Task queue in @p group. Some future call
     //! of PerformTask with @p group will perform task.
@@ -103,22 +108,40 @@ public:
     static void AddTask(TaskGroup *group, Task *task);
 
     //!
-    //! @brief Perform the next task in @p group.
+    //! @brief Perform the next task in @p group
     //!
     //! Calling this performs the next task in @p group.
     //! @param group to perform a task from.
     static void PerformTask(TaskGroup *group);
 
+    //! @brief Queue a @p task to be performed in the Long Running TaskGroup
+    //! @param Task to be performed
     static void AddLongRunningTask(Task *task);
+    //! @brief Queue a @p task to be performed in the Short Running TaskGroup
+    //! @param Task to be performed
     static void AddShortRunningTask(Task *task);
 
+    //! @brief Create a new TaskGroup
+    //!
+    //! This is a very lightweight call, since all thread creation and
+    //! initialization is performed when Thread objects are created.s
+    //! @return New TaskGroup, ready to be used
     static TaskGroup *CreateTaskGroup();
+    //! @brief Destroy a TaskGroup
+    //!
+    //! @warning All remaining queued tasks are dropped when this is called,
+    //! so it is best to ensure that all tasks have completed before this.
     static void DestroyTaskGroup(TaskGroup *task);
 
+    //! @cond
+
     struct Thread_Impl;
+
 private:
 
     std::unique_ptr<Thread_Impl> guts;
+
+    //! @endcond
 
 };
 
