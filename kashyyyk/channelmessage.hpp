@@ -23,10 +23,8 @@ public:
 
 class Quit_Handler : public Message_Handler {
 public:
-    Quit_Handler(Channel *c)
-      : Message_Handler(c){
-
-    }
+    Quit_Handler(Channel *c);
+    ~Quit_Handler() override {}
 
     bool HandleMessage(IRC_Message *msg) override;
 
@@ -71,9 +69,7 @@ class ChannelMessage_Handler : public Message_Handler {
     T t;
 public:
     ChannelMessage_Handler(Channel *c)
-      : Message_Handler(c){
-
-    }
+      : Message_Handler(c){}
 
     ~ChannelMessage_Handler() override {}
 

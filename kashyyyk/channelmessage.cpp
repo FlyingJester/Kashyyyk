@@ -12,6 +12,12 @@ Message_Handler::Message_Handler(Channel *c)
 }
 
 
+Quit_Handler::Quit_Handler(Channel *c)
+  : Message_Handler(c){
+
+}
+
+
 bool Quit_Handler::HandleMessage(IRC_Message *msg){
     if((msg->type!=IRC_quit) || (msg->from==nullptr))
        return false;
