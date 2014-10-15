@@ -74,8 +74,9 @@ public:
             Server::ChannelList::const_iterator iter =
               std::find_if(server->Channels.cbegin(), server->Channels.cend(), Server::find_channel(msg->parameters[n]));
 
-            if(iter!=server->Channels.cend())
-              iter->get()->GiveMessage(msg);
+            if(iter!=server->Channels.cend()){
+                iter->get()->GiveMessage(msg);
+            }
         }
 
         return false;
@@ -105,8 +106,9 @@ public:
 
     bool HandleMessage(IRC_Message *msg) override {
         if(msg->type==type) {
-            for(Server::ChannelList::iterator iter = server->Channels.begin(); iter!=server->Channels.end(); iter++)
-              iter->get()->GiveMessage(msg);
+            for(Server::ChannelList::iterator iter = server->Channels.begin(); iter!=server->Channels.end(); iter++){
+                iter->get()->GiveMessage(msg);
+            }
         }
 
         return false;

@@ -201,7 +201,7 @@ Channel::Channel(Server *s, const std::string &channel_name)
 
     Parent->AddChild(tiler);
 
-    //Handlers.push_back(std::unique_ptr<MessageHandler>(new Debug_Handler()));
+    printf("%s Channel at %p\n", __func__, this);
     Handlers.push_back(std::unique_ptr<MessageHandler>(new PrivateMessage_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Part_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Notice_Handler(this)));

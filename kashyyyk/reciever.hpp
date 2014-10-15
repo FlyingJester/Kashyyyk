@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <vector>
+#include <list>
 #include "autolocker.hpp"
 
 struct IRC_Message;
@@ -35,7 +35,7 @@ public:
 
 };
 
-template <class Parent_T, class C = std::vector<unique_MessageHandler> >
+template <class Parent_T, class C = std::list<unique_MessageHandler> >
 class TypedReciever : public Reciever {
 public:
 
@@ -61,18 +61,19 @@ public:
 
         typename HandlerList_t::iterator iter = Handlers.begin();
         while(iter!=Handlers.end()){
-            if((*iter)->HandleMessage(msg)){
-                typename HandlerList_t::iterator d_iter = iter;
-                iter--;
-                Handlers.erase(d_iter);
+
+            if(iter->get()->HandleMessage(msg)){
+                iter = Handlers.erase(iter);
             }
-            iter++;
+            else{
+                ++iter;
+            }
         }
     }
 
 };
 
-template <class Parent_T, class Mutex, class C = std::vector<unique_MessageHandler> >
+template <class Parent_T, class Mutex, class C = std::list<unique_MessageHandler> >
 class LockingReciever : public TypedReciever<Parent_T, C> {
 protected:
     Mutex m;

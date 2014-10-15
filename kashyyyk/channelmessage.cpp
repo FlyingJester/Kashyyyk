@@ -1,12 +1,13 @@
 #include "channelmessage.hpp"
 #include "csv.h"
 #include <string.h>
+#include <stdio.h>
 
 namespace Kashyyyk{
 namespace ChannelMessage{
 
-Message_Handler::Message_Handler(Channel *s)
-  : channel(s){
+Message_Handler::Message_Handler(Channel *c)
+  : channel(c){
 
 }
 

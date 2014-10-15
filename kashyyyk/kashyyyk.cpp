@@ -84,7 +84,6 @@ int main(int argc, char *argv[]){
     Kashyyyk::Thread thread1(Kashyyyk::Thread::GetShortThreadPool());
 
     Kashyyyk::Thread thread2(Kashyyyk::Thread::GetLongThreadPool());
-    Kashyyyk::Thread thread3(Kashyyyk::Thread::GetLongThreadPool());
 
     while(Fl::wait()){
         Kashyyyk::Thread::PerformTask(group.get());

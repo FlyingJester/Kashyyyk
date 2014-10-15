@@ -17,7 +17,7 @@ class Message_Handler : public MessageHandler {
 protected:
     Channel *channel;
 public:
-    Message_Handler(Channel *s);
+    Message_Handler(Channel *c);
     virtual ~Message_Handler() {}
 };
 
@@ -56,7 +56,6 @@ public:
 
 
 class Namelist_Handler : public Message_Handler {
-    Channel *channel;
     param_reader<3> r;
 public:
     Namelist_Handler(Channel *c);
