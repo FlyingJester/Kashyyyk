@@ -4,7 +4,7 @@
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
-#include <FL/Fl_Toggle_Button.H>
+#include <FL/Fl_Light_Button.H>
 
 #include <FL/Fl_Preferences.H>
 #include <FL/Fl.H>
@@ -122,7 +122,7 @@ void Prefs_color_CB(Fl_Widget *w, void *p){
 
 static void Pling_Button_CB(Fl_Widget *w, void *p){
 
-    Fl_Toggle_Button *b = static_cast<Fl_Toggle_Button *>(w);
+    Fl_Button *b = static_cast<Fl_Button *>(w);
 
     int do_pling = b->value();
 
@@ -227,10 +227,11 @@ void Kashyyyk::OpenPreferencesWindow(){
         note_group->box(FL_EMBOSSED_FRAME);
         note_group->begin();
         {
-            Fl_Toggle_Button *pling_button = new Fl_Toggle_Button(0, 0, 80, 24, "Plings");
+            Fl_Light_Button *pling_button = new Fl_Light_Button(0, 0, 80, 24, "Plings");
             int do_pling = 1;
             prefs.get("sys.pling.enabled", do_pling, do_pling);
             pling_button->value(do_pling);
+            pling_button->align(FL_ALIGN_CENTER);
             pling_button->callback(Pling_Button_CB, nullptr);
         }
         note_group->end();
