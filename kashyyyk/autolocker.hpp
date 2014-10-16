@@ -3,7 +3,7 @@
 //! @file
 //! @brief Simple RAII Wrapper intended for use with
 //! @link Kashyyyk::LockingReciever @endlink objects, although compatible with
-//! std::mutex objects as well.
+//! std::mutex objects or any class wiht a lock and unlock methodl.
 //! @author    FlyingJester
 //! @date      2014
 //! @copyright GNU Public License 2.0
@@ -30,7 +30,8 @@ protected:
 public:
 
     //!
-    //! @brief Calls lock. unlock will be called when the AutoLocker is destroyed.
+    //! @brief Calls lock. unlock will be called when the AutoLocker is
+    //! destroyed.
     //!
     //! @param a object to wrap.
     AutoLocker(T a)
