@@ -131,6 +131,7 @@ public:
 template <IRC_messageType type, Channel::HighlightLevel level, class T>
 class ChannelMessage_Handler : public Message_Handler {
     T t;
+    from_reader r;
 public:
     ChannelMessage_Handler(Channel *c)
       : Message_Handler(c){}
@@ -143,10 +144,11 @@ public:
           return false;
 
         channel->last_msg_type = type;
+        const char *from = r(msg);
 
-        channel->WriteLine((msg->from==nullptr)?msg->from:"", t(msg));
+        channel->WriteLine(from, t(msg));
 
-        if(strcasestr(t(msg), channel->server()->name.c_str())!=nullptr){
+        if(strcasestr(t(msg), channel->server()->nick.c_str())!=nullptr){
             channel->Highlight(Channel::HighlightLevel::High);
         }
         else{

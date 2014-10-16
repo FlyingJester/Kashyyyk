@@ -113,6 +113,7 @@ public:
 typedef ChannelChecker_Handler<IRC_join>  Join_Handler;
 typedef ChannelChecker_Handler<IRC_part>  Part_Handler;
 typedef ChannelChecker_Handler<IRC_topic> Topic_Handler;
+typedef ChannelChecker_Handler<IRC_privmsg, 0> PrivateMessage_Handler;
 typedef ChannelChecker_Handler<IRC_topic_num, 1> NumericTopic_Handler;
 typedef ChannelChecker_Handler<IRC_no_topic_num, 1> NumericNoTopic_Handler;
 typedef ChannelChecker_Handler<IRC_namelist_num, 2> Namelist_Handler;

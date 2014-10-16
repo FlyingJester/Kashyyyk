@@ -4,6 +4,7 @@
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
+#include <FL/Fl_Toggle_Button.H>
 
 #include <FL/Fl_Preferences.H>
 #include <FL/Fl.H>
@@ -119,6 +120,17 @@ void Prefs_color_CB(Fl_Widget *w, void *p){
 }
 
 
+static void Pling_Button_CB(Fl_Widget *w, void *p){
+
+    Fl_Toggle_Button *b = static_cast<Fl_Toggle_Button *>(w);
+
+    int do_pling = b->value();
+
+    Kashyyyk::GetPreferences().set("sys.pling.enabled", do_pling);
+
+}
+
+
 Fl_Preferences &Kashyyyk::GetPreferences(){
     printf("Using config directory %s.\n", Kashyyyk_ConfigDirectory());
     static Fl_Preferences prefs(Kashyyyk_ConfigDirectory(), "FlyingJester", "Kashyyyk");
@@ -131,17 +143,22 @@ void Kashyyyk::OpenPreferencesWindow(){
 
     static Fl_Window *window = new Fl_Window(800, 600, "Preferences");
     if(first){
-
         Fl_Preferences &prefs = Kashyyyk::GetPreferences();
+        Fl_Pack *Left_Column;
+        { // window is active
 
-        window->end();
-        first = false;
+            first = false;
 
-        Fl_Button * OK = new Fl_Button(8, 600-40, 128, 32, "OK");
-        OK->callback(Prefs_OKButton_CB, window);
-        window->add(OK);
+            Fl_Button * OK = new Fl_Button(8, 600-40, 128, 32, "OK");
+            OK->callback(Prefs_OKButton_CB, window);
 
-        Fl_Pack *gfx_group = new Fl_Pack(8, 32, 200, 128, "Appearance");
+            Left_Column = new Fl_Pack(8, 32, 200, 600-40-16);
+            Left_Column->spacing(24);
+            Left_Column->end();
+            window->end();
+        }// window is active
+
+        Fl_Pack *gfx_group = new Fl_Pack(0, 0, 32, 128, "Appearance");
         gfx_group->box(FL_EMBOSSED_FRAME);
 
         gfx_group->add(new Fl_Box(0, 0, 0, 24, "Theme"));
@@ -205,9 +222,21 @@ void Kashyyyk::OpenPreferencesWindow(){
             gfx_group->begin();
         }
         gfx_group->end();
-        window->add(gfx_group);
+
+        Fl_Pack *note_group = new Fl_Pack(0, 0, 32, 128, "Notifications");
+        note_group->box(FL_EMBOSSED_FRAME);
+        note_group->begin();
+        {
+            Fl_Toggle_Button *pling_button = new Fl_Toggle_Button(0, 0, 80, 24, "Plings");
+            int do_pling = 1;
+            prefs.get("sys.pling.enabled", do_pling, do_pling);
+            pling_button->value(do_pling);
+            pling_button->callback(Pling_Button_CB, nullptr);
+        }
+        note_group->end();
+        Left_Column->add(gfx_group);
+        Left_Column->add(note_group);
 
     }
-
     window->show();
 }

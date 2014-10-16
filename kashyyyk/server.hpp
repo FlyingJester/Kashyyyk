@@ -92,6 +92,10 @@ public:
         bool operator () (const std::unique_ptr<Channel> &);
     };
 
+    void Pling(){
+        Parent->Pling();
+    }
+
 };
 
 }

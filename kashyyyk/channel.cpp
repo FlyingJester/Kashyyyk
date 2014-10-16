@@ -282,9 +282,9 @@ void Channel::Highlight(HighlightLevel level){
       case High:
         i->labelcolor(FL_RED);
         if(do_pling==1){
-          Pling(Parent->Parent->Handle());
-          break;
+          Pling();
         }
+        break;
       case Medium:
         i->labelcolor(FL_DARK_RED);
       break;
@@ -401,6 +401,10 @@ void Channel::RemoveUser(const char *user_c){
         iter++;
     }
 
+}
+
+void Channel::Pling(){
+    Parent->Pling();
 }
 
 }

@@ -293,6 +293,13 @@ public:
         bool operator () (const User &);
     };
 
+    //! @brief Send a Pling to the Parent
+    //!
+    //! This will cause the owning Window to Pling.
+    //! @sa Server::Pling
+    //! @sa Window::Pling
+    void Pling();
+
     int last_msg_type;
 
 };

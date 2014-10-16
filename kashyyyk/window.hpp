@@ -7,6 +7,7 @@
 
 #include "autolocker.hpp"
 #include "background.hpp"
+#include "platform/pling.h"
 
 #include <FL/Fl_Tree_Prefs.H>
 
@@ -80,6 +81,10 @@ public:
 
       inline const Fl_Window *Handle(){
           return widget.get();
+      }
+
+      void Pling(){
+            Kashyyyk::Pling(widget.get());
       }
 
   };

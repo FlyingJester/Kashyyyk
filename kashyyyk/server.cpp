@@ -168,6 +168,7 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Join_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Part_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Topic_Handler(this)));
+    Handlers.push_back(std::unique_ptr<MessageHandler>(new PrivateMessage_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new NumericTopic_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new NumericNoTopic_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Namelist_Handler(this)));
