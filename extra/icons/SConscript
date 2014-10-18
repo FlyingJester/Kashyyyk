@@ -1,0 +1,15 @@
+import os
+import sys
+
+Import("environment")
+
+source = [
+    "new_window.c",
+]
+
+localenv = environment.Clone()
+localenv.Append(CFLAGS = " -Wno-overlength-strings -funsigned-char ")
+
+yyyicons = localenv.StaticLibrary("yyyicons", source)
+
+Return("yyyicons")
