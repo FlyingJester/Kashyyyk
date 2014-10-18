@@ -143,8 +143,6 @@ void Input_CB(Fl_Widget *w, void *p){
 
     input->value("");
 
-    AutoLocker<Channel *> locker(channel);
-
     channel->SendMessage(msg);
 
     msg->from = IRC_Strdup(channel->Nick());

@@ -37,7 +37,6 @@ else:
 if sys.platform == 'cygwin':
   platform_files += ["strdup.c"];
 
-
 platformlib = platformenv.StaticLibrary("kashyyyk_platform", platform_files)
 
 Return("platformlib")

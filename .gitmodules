@@ -1,3 +1,3 @@
 [submodule "TSPR"]
-	path = TSPR
+	path = extra/TSPR
 	url = https://github.com/FlyingJester/TSPR.git

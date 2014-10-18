@@ -8,6 +8,8 @@ unsigned CSV_CountElements(const char *a, char delimiter){
 
     assert(a);
 
+    while(*a==delimiter) a++;
+
     if(a[0]!='\0'){
         const char *b = a;
         r=1;
@@ -23,7 +25,10 @@ unsigned CSV_CountElements(const char *a, char delimiter){
 const char **CSV_ParseString(const char *a, char delimiter){
     int i, elements = CSV_CountElements(a, delimiter);
     char **r = malloc(sizeof(const char*)*(elements+1));
-    const char *b = a;
+    const char *b;
+
+    while(*a==delimiter) a++;
+    b=a;
 
     assert(a);
     assert(r);

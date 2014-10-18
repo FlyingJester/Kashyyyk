@@ -50,10 +50,59 @@ public:
     typedef std::pair<const char *, void *> ItemType;
     //! Callback type for list change events
     typedef ItemType(*ItemCallback)(ItemType in, void *arg);
+    typedef void(*NoReturnItemCallback)(ItemType in, void *arg);
     //! Callback type for item number change events
     typedef void(*NumCallbackT)(int n, void *arg);
+
 //! @cond
     typedef EditList<T, H> this_type;
+
+    class Fl_Browser_iterator {
+
+        const Fl_Browser &browser;
+        int i;
+
+    public:
+
+        Fl_Browser_iterator(const Fl_Browser &b, int e = 0)
+          : browser(b)
+          , i(e) {
+
+        }
+
+        Fl_Browser_iterator& operator++ (){
+            i++;
+            return *this;
+        }
+
+        Fl_Browser_iterator& operator-- (){
+            i--;
+            return *this;
+        }
+
+        template<typename T2>
+        void operator+ (T2 t){
+            i+=t;
+            return *this;
+        }
+
+        template<typename T2>
+        void operator- (T2 t){
+            i-=t;
+            return *this;
+        }
+
+        ItemType operator -> () const {
+            assert(i>0);
+            assert(i<browser.size());
+            return {browser.text(i), browser.data(i)};
+        }
+
+        bool operator == (const Fl_Browser_iterator& that) const {
+            return ( (i==that->i) && (browser==that->browser));
+        }
+    };
+
 protected:
 
     int pad;
@@ -67,9 +116,11 @@ protected:
     struct CallBacks_T {
             ItemCallback AddCallback;
             void *AddCallbackArg;
-            ItemCallback DelCallback;
+            ItemCallback EdtCallback;
+            void *EdtCallbackArg;
+            NoReturnItemCallback DelCallback;
             void *DelCallbackArg;
-            ItemCallback SelCallback;
+            NoReturnItemCallback SelCallback;
             void *SelCallbackArg;
             NumCallbackT  NumCallback;
             void *NumCallbackArg;
@@ -79,12 +130,18 @@ protected:
         this_type *that = static_cast<this_type *>(p);
 
         int i = that->list.value();
+        ItemType proto = {that->list.text(i), that->list.data(i)};
 
-        const char *c = fl_input("Rename Server %s", that->list.text(i), that->list.text(i));
-        if(!c)
-          return;
+        if(!that->CallBacks.EdtCallback)
+          proto.first = fl_input("Rename Item %s", that->list.text(i), that->list.text(i));
+        else
+          proto = that->CallBacks.EdtCallback(proto, that->CallBacks.EdtCallbackArg);
+        if(!proto.first)
+            return;
 
-        that->list.text(i, c);
+        that->list.text(i, proto.first);
+        that->list.data(i, proto.second);
+        free((void *)proto.first);
 
     }
 
@@ -222,15 +279,23 @@ public:
     //! @brief Set callback for the Delete button
     //! @param cb Callback for Delete button
     //! @param arg Argument for @p cb when used.
-    inline void SetDelCallback(ItemCallback cb, void *arg = nullptr){
+    inline void SetDelCallback(NoReturnItemCallback cb, void *arg = nullptr){
         CallBacks.DelCallback = cb;
         CallBacks.DelCallbackArg = arg;
+    }
+
+    //! @brief Set callback for when an item is edited with the edit button
+    //! @param cb Callback for the browser
+    //! @param arg Argument for @p cb when used.
+    inline void SetEdtCallback(ItemCallback cb, void *arg = nullptr){
+        CallBacks.EdtCallback = cb;
+        CallBacks.EdtCallbackArg = arg;
     }
 
     //! @brief Set callback for when an item is selected
     //! @param cb Callback for the browser
     //! @param arg Argument for @p cb when used.
-    inline void SetSelCallback(ItemCallback cb, void *arg = nullptr){
+    inline void SetSelCallback(NoReturnItemCallback cb, void *arg = nullptr){
         CallBacks.SelCallback = cb;
         CallBacks.SelCallbackArg = arg;
     }
@@ -250,8 +315,33 @@ public:
 
     //! @return Selected item in the browser
     inline const ItemType GetItem() const {
-        const int sel = list->selected();
-        return {list->text(sel), list->data(sel)};
+        const int sel = list.value();
+        return {list.text(sel), list.data(sel)};
+    }
+
+
+    Fl_Browser_iterator begin() const {
+        return Fl_Browser_iterator(list, 0);
+    }
+
+    Fl_Browser_iterator end() const {
+        return Fl_Browser_iterator(list, list.size());
+    }
+
+
+    const size_t Size(){
+        return list.size();
+    }
+
+
+    inline void SetText(const Fl_Browser_iterator &iter, const char *text){
+        list.text(iter.i, text);
+    }
+
+
+    inline void SetText(const char *text){
+        const int sel = list.value();
+        list.text(sel, text);
     }
 
     //! @brief  Add an item to the browser

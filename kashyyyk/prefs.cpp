@@ -168,6 +168,7 @@ void Kashyyyk::OpenPreferencesWindow(){
         theme_input->add("none");
         theme_input->add("gtk+");
         theme_input->add("plastic");
+        theme_input->add("gleam");
         {
             char *theme = nullptr;
             prefs.get("sys.appearance.theme", theme, "gtk+");

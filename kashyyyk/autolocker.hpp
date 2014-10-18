@@ -35,8 +35,8 @@ public:
     //!
     //! @param a object to wrap.
     AutoLocker(T a)
-    : know(true)
-    , t(a) {
+      : t(a)
+      , know(true){
       t->lock();
     }
 

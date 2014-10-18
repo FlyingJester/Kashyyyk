@@ -10,10 +10,12 @@ environment = Environment()
 gcc_ccflags = "-pedantic -Werror -Wall -fstrict-enums -fno-threadsafe-statics -g "
 
 def PrepareCompilerGPP(env):
-  env.Append(CXXFLAGS = "  -Wsign-promo -fno-rtti -fno-exceptions " + gcc_ccflags, LINKFLAGS = " -g ")
+  print "Preparing g++"
+  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions " + gcc_ccflags, LINKFLAGS = " -g ")
 
 def PrepareCompilerGCC(env):
-  env.Append(CFLAGS = " -ansi "+gcc_ccflags, LINKFLAGS = " -g ")
+  print "Preparing gcc"
+  env.Append(CFLAGS = " -ansi " + gcc_ccflags, LINKFLAGS = " -g ")
 
 def PrepareCompilerMSVC(env):
   env.Append(CFLAGS = "/O2 /EHsc /Zi /MDd")
@@ -32,6 +34,7 @@ def PrepareEnvironmentWin(env):
 if os.getenv('CC', 'none') != 'none':
   print "using CC ", os.environ.get('CC')
   environment.Replace(CC = os.environ.get('CC'))
+  environment.Append(CFLAGS = os.getenv('CFLAGS', ''))
 elif ARGUMENTS.get('CC', 'none') != 'none':
   print "using CC ", ARGUMENTS.get('CC', 'none')
   environment.Replace(CC = ARGUMENTS.get('CC', 'none'))
@@ -46,6 +49,7 @@ else:
 if os.getenv('CXX', 'none') != 'none':
   print "using CXX ", os.environ.get('CXX')
   environment.Replace(CXX = os.environ.get('CXX'))
+  environment.Append(CXXFLAGS = os.getenv('CXXFLAGS', ''))
 elif ARGUMENTS.get('CXX', 'none') != 'none':
   print "using CXX ", ARGUMENTS.get('CXX', 'none')
   environment.Replace(CXX = ARGUMENTS.get('CXX', 'none'))
@@ -74,7 +78,8 @@ elif sys.platform.startswith('win'):
 libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment'])
 libfjirc = SConscript(dirs = ['libfjirc'], exports = ['environment'])
 libfjcsv = SConscript(dirs = ['libfjcsv'], exports = ['environment'])
+yyyicons = SConscript(dirs = [os.path.join('extra', 'icons')],    exports = ['environment'])
 
-environment.Append(CPPPATH = [os.path.join(os.getcwd(), 'libfjirc'), os.path.join(os.getcwd(), 'libfjnet'), os.getcwd(), os.path.join(os.getcwd(), 'libfjcsv'), os.getcwd()])
+environment.Append(CPPPATH = [os.path.join(os.getcwd(), 'libfjirc'), os.path.join(os.getcwd(), 'libfjnet'), os.path.join(os.getcwd(), 'extra'), os.path.join(os.getcwd(), 'libfjcsv'), os.getcwd()])
 
-SConscript(dirs = ['kashyyyk'], exports = ['environment', 'libfjirc', 'libfjnet', 'libfjcsv'])
+SConscript(dirs = ['kashyyyk'], exports = ['environment', 'libfjirc', 'libfjnet', 'libfjcsv', 'yyyicons'])

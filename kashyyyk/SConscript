@@ -1,13 +1,16 @@
 import os
 import sys
 
-Import("environment libfjirc libfjnet libfjcsv")
+Import("environment libfjirc libfjnet libfjcsv yyyicons")
 
 localenv = environment.Clone()
-localenv.Append(LIBS = [libfjnet, libfjirc, libfjcsv, 'fltk'])
+localenv.Append(LIBS = [libfjnet, libfjirc, libfjcsv, yyyicons])
 
-if not ( sys.platform == 'win32' or sys.platform.startswith('win64') ):
-  localenv.Append(CXXFLAGS = " -std=c++11 ")
+fltklib = ARGUMENTS.get('fltklib', '')
+if fltklib == '':
+    localenv.Append(LIBS=['fltk'])
+else:
+    localenv.Append(LINKFLAGS=[fltklib])
 
 if sys.platform == 'darwin':
   localenv.Append(FRAMEWORKS = ["Cocoa"])
@@ -18,7 +21,9 @@ kashyyyk_platform = SConscript(dirs = ["platform"], exports = "platformenv");
 localenv.Append(LIBS=[kashyyyk_platform])
 
 kashyyyk_files = ["kashyyyk.cpp",
+                  "launcher.cpp",
                   "reciever.cpp",
+                  "serverdatabase.cpp",
                   "servermessage.cpp",
                   "channelmessage.cpp",
                   "message.cpp",

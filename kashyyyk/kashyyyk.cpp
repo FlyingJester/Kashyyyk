@@ -1,7 +1,9 @@
 #include "window.hpp"
 #include "background.hpp"
 #include "prefs.hpp"
+#include "launcher.hpp"
 #include "platform/notification.h"
+#include "platform/init.h"
 
 #include <stack>
 #include <string>
@@ -65,6 +67,8 @@ void SetTheme(Fl_Preferences &prefs){
 
 int main(int argc, char *argv[]){
 
+    Kashyyyk::Init();
+
     Kashyyyk::NotificationRAII note_raii;
 
     Fl_Preferences &prefs = Kashyyyk::GetPreferences();
@@ -77,15 +81,20 @@ int main(int argc, char *argv[]){
     std::unique_ptr<Kashyyyk::Thread::TaskGroup, void(*)(Kashyyyk::Thread::TaskGroup*)>
       group(Kashyyyk::Thread::CreateTaskGroup(), Kashyyyk::Thread::DestroyTaskGroup);
 
-    Kashyyyk::Window window(1024, 600, group.get());
-
     Fl::lock();
 
     Kashyyyk::Thread thread1(Kashyyyk::Thread::GetShortThreadPool());
 
     Kashyyyk::Thread thread2(Kashyyyk::Thread::GetLongThreadPool());
 
+    Kashyyyk::Launcher launcher(group.get());
+
     while(Fl::wait()){
         Kashyyyk::Thread::PerformTask(group.get());
     }
+
+    Kashyyyk::Close();
+
+    return EXIT_SUCCESS;
+
 }

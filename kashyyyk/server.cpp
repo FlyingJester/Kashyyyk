@@ -42,62 +42,83 @@ bool Server::find_channel::operator () (const std::unique_ptr<Channel> &a){
 
 class ServerTask : public Task {
 
-  char *buffer;
-  struct IRC_ParseState *old_state;
-  Server *server;
-  WSocket *socket;
+    char *buffer;
+    struct IRC_ParseState *old_state;
+    Server *server;
+    WSocket *socket;
+    bool *task_died;
 
 public:
 
-  ServerTask(Server *aServer, WSocket *aSocket)
+    ServerTask(Server *aServer, WSocket *aSocket, bool *deded)
     : Task()
     , buffer(nullptr)
     , old_state(nullptr)
     , server(aServer)
-    , socket(aSocket) {
-    repeating = true;
-  }
+    , socket(aSocket)
+    , task_died(deded)
+    , should_die(false) {
+        repeating = true;
+    }
 
-  ~ServerTask(){
-      free(buffer);
-  }
+    virtual ~ServerTask(){
 
-  void Run() override {
+        printf("ServerTask is being deleted.\n");
 
-      if(Length_Socket(socket)==0)
-        return;
+        free(buffer);
 
-      Read_Socket(socket, &buffer);
+        *task_died = true;
 
-      struct IRC_ParseState *state;
-      if(old_state==nullptr)
-        state = IRC_InitParse(buffer);
-      else{
-        printf("Stitching state.\n");
-        state = IRC_StitchParse(old_state, buffer);
-        IRC_DestroyParseState(old_state);
-        old_state = nullptr;
-      }
-      struct IRC_Message *msg = IRC_ConsumeParse(state);
+    }
 
-      while(msg!=nullptr){
+    void Run() override {
+        {
+            AutoLocker<Server *> locker(server);
 
-          if(IRC_GetParseStatus(state)==IRC_unexpectedEnd){
-              old_state = state;
-              return;
-          }
+            if(should_die){
 
-          Fl::lock();
-          server->GiveMessage(msg);
-          Fl::unlock();
+                printf("ServerTask signalled to deletes.\n");
+                repeating = false;
+            }
+        }
+        if(Length_Socket(socket)==0)
+          return;
 
-          IRC_FreeMessage(msg);
+        Read_Socket(socket, &buffer);
 
-          msg = IRC_ConsumeParse(state);
-      }
+        struct IRC_ParseState *state;
+        if(old_state==nullptr)
+          state = IRC_InitParse(buffer);
+        else{
+            printf("Stitching state.\n");
+            state = IRC_StitchParse(old_state, buffer);
+            IRC_DestroyParseState(old_state);
+            old_state = nullptr;
+        }
+        struct IRC_Message *msg = IRC_ConsumeParse(state);
 
-      IRC_DestroyParseState(state);
-  }
+        while(msg!=nullptr){
+
+            if(IRC_GetParseStatus(state)==IRC_unexpectedEnd){
+                old_state = state;
+                return;
+            }
+
+            Fl::lock();
+            server->GiveMessage(msg);
+            Fl::unlock();
+
+            IRC_FreeMessage(msg);
+
+            msg = IRC_ConsumeParse(state);
+        }
+        printf("ServerTask Ren.\n");
+
+        IRC_DestroyParseState(state);
+
+    }
+
+    bool should_die;
 
 };
 
@@ -108,7 +129,9 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
   , widget(new Fl_Group(0, 0, 800, 600))
   , channel_list(new Fl_Tree_Item(tree_prefs))
   , tree_prefs()
-  , name(n) {
+  , task_died(false)
+  , network_task(new ServerTask(this, socket, &task_died))
+  , name(n){
 
     Fl_Preferences &prefs = GetPreferences();
 
@@ -121,7 +144,7 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
 
     w->SetChannel(channel);
 
-    Thread::AddShortRunningTask(new ServerTask(this, socket));
+    Thread::AddShortRunningTask(network_task);
 
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Ping_Handler(this)));
 
@@ -206,12 +229,22 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
 Server::~Server(){
     printf("Closing Server.\n");
 
+    lock();
+    network_task->should_die = true;
+    while(!task_died){
+        unlock();
+
+        lock();
+    }
+    unlock();
+
+    channel_list.release();
+
     // Not particularly concerned with whether this fails or not.
     // There's not a lot we can do if it fails.
     Disconnect_Socket(socket);
     Destroy_Socket(socket);
 
-    channel_list.release();
 
 }
 

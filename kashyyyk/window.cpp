@@ -7,6 +7,7 @@
 #include "message.h"
 #include "serverlist.hpp"
 #include "doubleinput.hpp"
+#include "launcher.hpp"
 
 #include <cstdio>
 #include <stack>
@@ -209,9 +210,35 @@ void ConnectToServer(Fl_Widget *w, void *p){
     Thread::AddLongRunningTask(new ConnectToServer_Task(win, inp.c_str(), port));
 }
 
+
 Window::Window(){
 
 }
+
+
+class WindowKiller : public Task{
+    Window *window;
+public:
+    WindowKiller(Window *w)
+      : window(w) {
+        repeating = false;
+    }
+
+    ~WindowKiller() override {}
+
+    void Run() override {
+        delete window;
+        printf("We deleted a window!\n");
+    }
+
+};
+
+void WindowCallbacks::WindowCallback(Fl_Widget *w, void *arg){
+    Window *window = static_cast<Window *>(arg);
+    Thread::AddTask(window->task_group, new WindowKiller(window));
+    Launcher::windows--;
+}
+
 
 Window::Window(int w, int h, Thread::TaskGroup *tg, bool osx)
   : task_group(tg)
@@ -222,6 +249,7 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, bool osx)
 
     osx_style = osx;
 
+    widget->callback(WindowCallbacks::WindowCallback, this);
     widget->begin();
 
     channel_list = new Fl_Tree(8, 8+(osx?0:24), 128-8, h-16-(osx?0:24));

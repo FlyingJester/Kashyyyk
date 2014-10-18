@@ -63,6 +63,25 @@ namespace FJ {
             return CSV_ConstructString(&(container.front()), delimiter);
         }
 
+
+        template<class T>
+        class FunctionalStringConverter {
+        public:
+            const char *operator () (const T &str){
+                return str.c_str();
+            }
+        };
+
+        template<>
+        inline const char *ConstructString<std::vector<std::string> >(std::vector<std::string> &container, char delimiter){
+
+            std::vector<const char *> vec(container.size());
+            std::for_each(container.begin(), container.end(), FunctionalStringConverter<std::string>());
+
+            return CSV_ConstructString(&(vec.front()), delimiter);
+        }
+
+
         inline const char *ConstructString(const char ** c_array, char delimiter = ' '){
             return CSV_ConstructString(c_array, delimiter);
         }

@@ -19,6 +19,7 @@ struct WSocket;
 namespace Kashyyyk{
 
 class Channel;
+class ServerTask;
 
 //
 // The MessageHandlers in a Server should only very rarely need to actually see
@@ -48,6 +49,10 @@ protected:
     std::unique_ptr<Fl_Tree_Item> channel_list;
 
     Fl_Tree_Prefs tree_prefs;
+
+    bool task_died;
+    ServerTask *network_task;
+
     void Show(Channel *chan);
 
     void FocusChanged();

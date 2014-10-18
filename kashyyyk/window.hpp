@@ -19,74 +19,74 @@ class Fl_Scroll;
 
 namespace Kashyyyk {
 
-  class Server;
-  class Channel;
+class Server;
+class Channel;
 
-  class WindowCallbacks{
+class WindowCallbacks{
 public:
+    static void ChangeNick_CB(Fl_Widget *, void *);
+    static void JoinChannel_CB(Fl_Widget *, void *);
+    static void ChannelList_CB(Fl_Widget *, void *);
+    static void WindowCallback(Fl_Widget *w, void *arg);
+};
 
-      static void ChangeNick_CB(Fl_Widget *, void *);
-      static void JoinChannel_CB(Fl_Widget *, void *);
-      static void ChannelList_CB(Fl_Widget *, void *);
-
-  };
-
-  class Window {
+class Window {
 public:
-      Thread::TaskGroup *task_group;
+    Thread::TaskGroup *task_group;
 
 protected:
 
-      std::unique_ptr<Fl_Window>  widget;
-      Fl_Group  *chat_holder;
-      Fl_Tree   *channel_list;
+    std::unique_ptr<Fl_Window>  widget;
+    Fl_Group  *chat_holder;
+    Fl_Tree   *channel_list;
 
-      std::mutex mutex;
+    std::mutex mutex;
 
-      inline void lock(){mutex.lock();}
-      inline void unlock(){mutex.unlock();}
+    inline void lock(){mutex.lock();}
+    inline void unlock(){mutex.unlock();}
 
-      bool osx_style;
+    bool osx_style;
 
-      Fl_Tree_Prefs prefs;
+    Fl_Tree_Prefs prefs;
 
-      Server *last_server;
+    Server *last_server;
 
 public:
-      friend class AutoLocker<Window *>;
-      friend class WindowCallbacks;
 
-      Window();
-      Window(int w, int h, Thread::TaskGroup *g, bool osx = false);
-      ~Window();
+    friend class AutoLocker<Window *>;
+    friend class WindowCallbacks;
 
-      std::list<Channel *> Channels;
-      std::list<std::unique_ptr<Server> > Servers;
+    Window();
+    Window(int w, int h, Thread::TaskGroup *g, bool osx = false);
+    ~Window();
 
-      void AddServer(Server *);
-      void RemoveChannel(Channel *);
+    std::list<Channel *> Channels;
+    std::list<std::unique_ptr<Server> > Servers;
 
-      void SetChannel(Channel *);
+    void AddServer(Server *);
+    void RemoveChannel(Channel *);
 
-       // Only call on the main thread.
-      void Show();
-      void Hide();
+    void SetChannel(Channel *);
 
-       // Remember to call Fl::lock() before calling these on other threads.
-      void RedrawChannels();
-      void RedrawChat();
-      void Redraw();
+    // Only call on the main thread.
+    void Show();
+    void Hide();
 
-      Fl_Tree_Item *FindChannel(const char *);
+    // Remember to call Fl::lock() before calling these on other threads.
+    void RedrawChannels();
+    void RedrawChat();
+    void Redraw();
 
-      inline const Fl_Window *Handle(){
-          return widget.get();
-      }
+    Fl_Tree_Item *FindChannel(const char *);
 
-      void Pling(){
-            Kashyyyk::Pling(widget.get());
-      }
+    inline const Fl_Window *Handle(){
+      return widget.get();
+    }
 
-  };
+    void Pling(){
+        Kashyyyk::Pling(widget.get());
+    }
+
+};
 
 }
