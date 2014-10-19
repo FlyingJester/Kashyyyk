@@ -1,4 +1,5 @@
 #include "handlemessage.h"
+#include <stdlib.h>
 
 int IRC_CanApplyMessage(struct IRC_State *state, struct IRC_Message *msg){
     switch(msg->type){
