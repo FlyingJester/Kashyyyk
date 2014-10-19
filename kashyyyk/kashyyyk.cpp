@@ -87,7 +87,7 @@ int main(int argc, char *argv[]){
 
     Kashyyyk::Thread thread2(Kashyyyk::Thread::GetLongThreadPool());
 
-    Kashyyyk::Launcher launcher(group.get());
+    Kashyyyk::Launcher::CreatePlatformLauncher(group.get());
 
     while(Fl::wait()){
         Kashyyyk::Thread::PerformTask(group.get());

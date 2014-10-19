@@ -3,7 +3,7 @@ import sys
 
 Import("platformenv")
 
-platform_files = [];
+platform_files = ["launcher.cpp"];
 
 if sys.platform == 'darwin':
   platform_files += ["cocoa_pling.m"];
@@ -11,6 +11,7 @@ if sys.platform == 'darwin':
   platform_files += ["unix_paths.c"];
   platform_files += ["mac_init.cpp"];
   platform_files += ["cocoa_about.m"];
+  platform_files += ["mac_launcher.cpp"];
   platformenv.Append(FRAMEWORKS = ["Foundation", "AppKit"])
 
 elif sys.platform.startswith('win'):
@@ -19,6 +20,7 @@ elif sys.platform.startswith('win'):
   platform_files += ["generic_notification.c"];
   platform_files += ["generic_paths.c"];
   platform_files += ["generic_init.c"];
+  platform_files += ["generic_launcher.cpp"];
   platform_files += ["strcasestr.c"];
   platform_files += ["strncasecmp.c"];
 
@@ -27,12 +29,14 @@ elif os.name == 'posix':
   platform_files += ["generic_notification.c"];
   platform_files += ["unix_paths.c"];
   platform_files += ["generic_init.c"];
+  platform_files += ["generic_launcher.cpp"];
 
 else:
   platform_files += ["generic_pling.cpp"];
   platform_files += ["generic_notification.c"];
   platform_files += ["generic_paths.c"];
   platform_files += ["generic_init.c"];
+  platform_files += ["generic_launcher.cpp"];
 
 if sys.platform == 'cygwin':
   platform_files += ["strdup.c"];

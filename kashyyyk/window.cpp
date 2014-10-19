@@ -13,7 +13,7 @@
 #include <stack>
 #include <cassert>
 
-#include <FL/Fl_Window.H>
+#include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Tree.H>
 #include <FL/Fl_Scroll.H>
 #include <FL/Fl_Box.H>
@@ -25,6 +25,10 @@
 #endif
 
 namespace Kashyyyk {
+
+void Window::WindowDeleteTask::Run(){
+    window->widget->do_callback();
+}
 
 void WindowCallbacks::JoinChannel_CB(Fl_Widget *, void *p){
 
@@ -236,16 +240,19 @@ public:
 void WindowCallbacks::WindowCallback(Fl_Widget *w, void *arg){
     Window *window = static_cast<Window *>(arg);
     Thread::AddTask(window->task_group, new WindowKiller(window));
-    Launcher::windows--;
+
 }
 
 
-Window::Window(int w, int h, Thread::TaskGroup *tg, bool osx)
+Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
   : task_group(tg)
-  , widget(new Fl_Window(w, h, "Kashyyyk IRC Client"))
+  , widget(new Fl_Double_Window(w, h, "Kashyyyk IRC Client"))
+  , launcher(l)
   , chat_holder(new Fl_Group(128+8, 8+(osx?0:24), w-128-16, h-16-(osx?0:24)))
   , last_server(nullptr)
   , Servers() {
+
+    printf("Created a window.\nLauncher was %p.\n", launcher);
 
     osx_style = osx;
 
@@ -272,6 +279,13 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, bool osx)
 
 
 Window::~Window(){
+    if(launcher){
+        launcher->Release(this);
+
+        printf("Released from launcher.\n");
+    }
+    else
+      printf("Did not release from launcher.\n");
 }
 
 
@@ -396,6 +410,10 @@ Fl_Tree_Item *Window::FindChannel(const char *a){
     return channel_list->find_item(a);
 }
 
+void Window::ForgetLauncher(){
+    printf("Forgot launcher.\n");
+    launcher = nullptr;
+}
 
 void Window::Show(){widget->show();}
 void Window::Hide(){widget->hide();}

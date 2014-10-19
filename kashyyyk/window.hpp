@@ -21,6 +21,7 @@ namespace Kashyyyk {
 
 class Server;
 class Channel;
+class Launcher;
 
 class WindowCallbacks{
 public:
@@ -30,13 +31,26 @@ public:
     static void WindowCallback(Fl_Widget *w, void *arg);
 };
 
+
+
 class Window {
 public:
     Thread::TaskGroup *task_group;
 
+    class WindowDeleteTask : public Task {
+        Window *window;
+    public:
+        WindowDeleteTask(Window *w)
+          : window(w){}
+        ~WindowDeleteTask() override {};
+
+        void Run() override;
+    };
+
 protected:
 
     std::unique_ptr<Fl_Window>  widget;
+    Launcher *launcher;
     Fl_Group  *chat_holder;
     Fl_Tree   *channel_list;
 
@@ -57,7 +71,7 @@ public:
     friend class WindowCallbacks;
 
     Window();
-    Window(int w, int h, Thread::TaskGroup *g, bool osx = false);
+    Window(int w, int h, Thread::TaskGroup *g, Launcher *l = nullptr, bool osx = false);
     ~Window();
 
     std::list<Channel *> Channels;
@@ -86,6 +100,8 @@ public:
     void Pling(){
         Kashyyyk::Pling(widget.get());
     }
+
+    void ForgetLauncher();
 
 };
 

@@ -40,6 +40,9 @@ public:
     virtual ~Task();
 
     //! @brief Override this method to what the Task should do.
+    //!
+    //! If you want to change the repeating status of the Task, it is best to
+    //! do it here and not in the constructor, even for task that never repeat.
     virtual void Run() = 0;
 
     //! @brief determines if the Task will be reappear to the task queue when
