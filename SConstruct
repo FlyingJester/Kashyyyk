@@ -39,7 +39,7 @@ elif ARGUMENTS.get('CC', 'none') != 'none':
   print "using CC ", ARGUMENTS.get('CC', 'none')
   environment.Replace(CC = ARGUMENTS.get('CC', 'none'))
 else:
-  if sys.platform.startswith('linux') or sys.platform == 'darwin':
+  if sys.platform.startswith('linux') or sys.platform == 'darwin' or sys.platform == 'cygwin':
     PrepareCompilerGCC(environment)
     environment.Replace(CC = 'cc')
   elif sys.platform.startswith('win'):
@@ -54,7 +54,7 @@ elif ARGUMENTS.get('CXX', 'none') != 'none':
   print "using CXX ", ARGUMENTS.get('CXX', 'none')
   environment.Replace(CXX = ARGUMENTS.get('CXX', 'none'))
 else:
-  if sys.platform.startswith('linux') or sys.platform == 'darwin':
+  if sys.platform.startswith('linux') or sys.platform == 'darwin' or sys.platform == 'cygwin':
     PrepareCompilerGPP(environment)
     environment.Replace(CXX = 'c++')
   elif sys.platform.startswith('win'):
