@@ -7,11 +7,11 @@ if ARGUMENTS.get('pandoc_readme', '0') == '1':
 
 environment = Environment()
 
-gcc_ccflags = "-pedantic -Werror -Wall -fstrict-enums -fno-threadsafe-statics -g "
+gcc_ccflags = "-pedantic -Werror -Wall -g "
 
 def PrepareCompilerGPP(env):
   print "Preparing g++"
-  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions " + gcc_ccflags, LINKFLAGS = " -g ")
+  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, LINKFLAGS = " -g ")
 
 def PrepareCompilerGCC(env):
   print "Preparing gcc"
