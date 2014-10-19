@@ -94,6 +94,7 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 
 #elif defined (USE_CYGSOCK)
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <poll.h>
@@ -124,9 +125,11 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 
 		poll(&pfd, 1, 10);
 	}
-	int n, err = ioctl(socket, FIONREAD, &n);
-	*len = n;
-	return err;
+	{
+		int n, err = ioctl(socket, FIONREAD, &n);
+		*len = n;
+		return err;
+	}
 }
 
 #endif
@@ -164,7 +167,7 @@ enum WSockErr Connect_Socket(struct WSocket *aSocket, const char *aTo, unsigned 
 	InitSock();
 
     {
-        unsigned long len = strnlen(aTo, 0x100);
+        unsigned long len = strlen(aTo);
         assert(len<=0xFE);
         strncpy(aSocket->hostname, aTo, 0xFE);
         printf("Connection to %s\n", aSocket->hostname);

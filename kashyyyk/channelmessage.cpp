@@ -76,7 +76,7 @@ bool Namelist_Handler::HandleMessage(IRC_Message *msg){
         const char **names = FJ::CSV::ParseString(r(msg), ' ');
         int i = 0;
         for(const char *iter = names[i++];iter!=nullptr; iter = names[i++]){
-            if(strnlen(iter, 1)==0)
+            if(iter[0]=='\0')
               continue;
 
             channel->AddUser_l({iter, ""});

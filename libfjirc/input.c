@@ -34,10 +34,10 @@ struct IRC_Message *IRC_GenerateMessage(const char *to, const char *input){
 
     IRC_GetAllocators(&Alloc, &Dealloc);
 
-    while(isspace(*msg_start))
+    while(isspace((int)msg_start[0]))
       msg_start++;
 
-    if(strnlen(msg_start, 2)==0)
+    if(msg_start[0]=='\0')
       return NULL;
 
     if((msg_start[0]=='!') || (msg_start[0]=='/')){

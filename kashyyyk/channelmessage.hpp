@@ -15,6 +15,7 @@
 #include "message.hpp"
 #include "message.h"
 #include <string>
+#include "platform/strcasestr.h"
 
 namespace Kashyyyk{
 namespace ChannelMessage{

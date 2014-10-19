@@ -420,7 +420,7 @@ void ServerList(Fl_Widget *w, void *p){
         EditList<> *autojoin = new EditList<>(8, 24, 256, 156, "AutoJoin Channels");
         pref_items->AutoJoin = autojoin;
 
-        printf("AutoJoin: %p\n", autojoin);
+        printf("AutoJoin: %p\n", static_cast<void *>(autojoin));
 
         servers->SetNumCallback(ServerListNumCallback, pref_items);
         servers->SetAddCallback(ServerListAddCallback, pref_items);

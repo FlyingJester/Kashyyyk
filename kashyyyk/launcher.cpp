@@ -3,12 +3,13 @@
 #include "window.hpp"
 #include "background.hpp"
 #include <cstdlib>
+#include <forward_list>
+#include <algorithm>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_RGB_Image.H>
 
 #include <icons/index.h>
-#include <forward_list>
 
 namespace Kashyyyk {
 
@@ -87,7 +88,7 @@ struct WindowLauncherImpl : public Launcher::LauncherImpl{
 
 };
 
-template<constexpr unsigned icon_dimen_wT, constexpr unsigned icon_dimen_hT,  bool horozional=true>
+template<unsigned icon_dimen_wT, unsigned icon_dimen_hT,  bool horozional=true>
 struct IconLauncherSpacingImpl : public WindowLauncherImpl {
 
     struct LauncherButtons buttons;
@@ -159,7 +160,7 @@ EmptyLauncher::EmptyLauncher(Thread::TaskGroup *g)
 }
 
 
-EmptyLauncher::~EmptyLauncher() {};
+EmptyLauncher::~EmptyLauncher() {}
 
 
 IconLauncher::IconLauncher(Thread::TaskGroup *g)

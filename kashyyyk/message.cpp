@@ -1,4 +1,5 @@
 #include "message.hpp"
+#include <cstdio>
 
 namespace Kashyyyk{
 

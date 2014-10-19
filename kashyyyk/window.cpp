@@ -252,8 +252,6 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
   , last_server(nullptr)
   , Servers() {
 
-    printf("Created a window.\nLauncher was %p.\n", launcher);
-
     osx_style = osx;
 
     widget->callback(WindowCallbacks::WindowCallback, this);
@@ -309,7 +307,7 @@ void Window::AddServer(Server *a){
     std::stack<void *> items;
     std::stack<std::string> labels;
 
-    unsigned n_children = a->channel_list->children();
+    int n_children = a->channel_list->children();
 
     while(a->channel_list->has_children()){
         items.push(a->channel_list->next()->user_data());
@@ -327,22 +325,13 @@ void Window::AddServer(Server *a){
 
     a->channel_list.reset(i);
 
-    printf("Moved item %s (%p)\n",  a->name.c_str(), d);
-
     while(!items.empty()){
         Fl_Tree_Item* e =i->add(a->tree_prefs, labels.top().c_str());
         e->user_data(items.top());
-        printf("Moved item %s (%p)\n",  labels.top().c_str(), items.top());
         labels.pop();
         items.pop();
     }
 
-
-    printf("%p: %s, %i\n", a->channel_list.get(), a->channel_list.get()->label(), a->channel_list.get()->is_visible());
-    printf("%p: %s, %i\n", i, i->label(), i->is_visible());
-    for(Fl_Tree_Item *item = channel_list->first(); item; item = channel_list->next(item) ) {
-        printf("Item: %s\n", item->label());
-    }
     Fl::lock();
 
     if(a!=last_server){

@@ -3,13 +3,15 @@
 #include "autolocker.hpp"
 #include "csv.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <climits>
 #include <ctime>
 #include <mutex>
 #include <string>
+#include <sstream>
 
-#include <cassert>
+#include "platform/strdup.h"
 
 namespace Kashyyyk {
 
@@ -40,16 +42,16 @@ const char *ServerDB::GenerateUID(){
 
     assert(uid_coefficient >= sizeof(rand_holder));
 
-    std::string str_value;
+    std::stringstream str_value;
 
     srand(time(nullptr));
 
-    for(int i = 0; i < uid_len; i++){
+    for(unsigned i = 0; i < uid_len; i++){
         rand_holder r = rand();
-        str_value += std::to_string(r);
+        str_value << r;
     }
 
-    return strdup(str_value.c_str());
+    return strdup(str_value.str().c_str());
 
 }
 
@@ -118,7 +120,7 @@ struct ServerData *ServerDB::GenerateServer() const{
     ret->AutoJoins.clear();
 
     return ret;
-};
+}
 
 
 void ServerDB::MarkDirty(const struct ServerData *server) const{
@@ -182,7 +184,8 @@ void ServerDB::save(Fl_Preferences &prefs) const {
 void ServerDB::SaveServer(struct ServerData *server, Fl_Preferences &prefs){
         const std::string ServerPrefix = std::string("server.")+server->UID + ".";
 
-        printf("%s|%s(%p)(save)\n", server->Name, server->Address, &(server->Name));
+        printf("%s|%s(%p)(save)\n", server->Name, server->Address, 
+		  static_cast<void *>(&(server->Name)));
 
         prefs.set((ServerPrefix+"name").c_str(),     server->Name);
         prefs.set((ServerPrefix+"nickname").c_str(), server->Nick);

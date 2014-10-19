@@ -37,9 +37,14 @@ const char **CSV_ParseString(const char *a, char delimiter){
         const char *c = strchr(b, delimiter);
 
         if(c==NULL){
+			
+			const unsigned b_len = strlen(b);
+			
             assert(i==elements-1);
-
-            r[i] = strdup(b);
+			
+			r[i] = malloc(b_len+1);
+			r[i][b_len] = '\0';
+			memcpy(r[i], b, b_len);
 
             assert(r[i]);
         }
@@ -88,9 +93,12 @@ const char *CSV_ConstructString(const char **a, char delimiter){
 
     }
 
-    if(len==0)
-      return strdup("");
-
+    if(len==0){
+		char *ret_str = malloc(1);
+		ret_str[0] = '\0';
+		return ret_str;
+	}
+	
     printf("Parse n: %i\n", len);
     r = malloc(len);
     r[len-1] = '\0';

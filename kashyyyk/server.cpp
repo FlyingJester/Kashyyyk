@@ -140,8 +140,7 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
     AddChannel(channel);
 
     channel_list->user_data(channel);
-    printf("channel_list has a ud of %p (server %p, we are %p)\n", channel_list->user_data(), channel->server(), this);
-
+    
     w->SetChannel(channel);
 
     Thread::AddShortRunningTask(network_task);

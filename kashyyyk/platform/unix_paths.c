@@ -7,6 +7,8 @@
 #include <errno.h>
 #include <stdio.h>
 
+#include "strdup.h"
+
 #define SIZE 0xFF<<4
 
 char * Kashyyyk_HomeDirectory(){

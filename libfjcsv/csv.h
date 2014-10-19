@@ -18,6 +18,7 @@ void CSV_FreeParse(const char **);
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace FJ {
 

@@ -196,7 +196,7 @@ void Kashyyyk::OpenPreferencesWindow(){
             int font = 0;
             prefs.get("sys.appearance.font", font, FL_SCREEN);
             const Fl_Menu_Item *selected = theme_input->find_item(GetFontName(font));
-            printf("Last font setting was %s (%p)\n", GetFontName(font), selected);
+            printf("Last font setting was %s (%p)\n", GetFontName(font), static_cast<const void *>(selected));
 
             if(selected!=nullptr)
               font_input->picked(selected);
