@@ -5,17 +5,17 @@ import readmegen
 if ARGUMENTS.get('pandoc_readme', '0') == '1':
     readmegen.generate()
 
-environment = Environment()
+environment = Environment(ENV=os.environ)
 
-gcc_ccflags = "-pedantic -Werror -Wall -g "
+gcc_ccflags = "-pedantic -Werror -Wall -g -Os "
 
 def PrepareCompilerGPP(env):
   print "Preparing g++"
-  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, LINKFLAGS = " -g ")
+  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags)
 
 def PrepareCompilerGCC(env):
   print "Preparing gcc"
-  env.Append(CFLAGS = " -ansi " + gcc_ccflags, LINKFLAGS = " -g ")
+  env.Append(CFLAGS = " -ansi -Wno-overlength-strings " + gcc_ccflags)
 
 def PrepareCompilerMSVC(env):
   env.Append(CFLAGS = "/O2 /EHsc /Zi /MDd")
@@ -24,7 +24,7 @@ def PrepareCompilerMSVCpp(env):
 
 def PrepareEnvironmentUNIX(env):
   if sys.platform == 'cygwin':
-    env.Append(CPPDEFINES = ["USE_CYGSOCK", "WIN32"])
+    env.Append(CPPDEFINES = ["USE_CYGSOCK", "WIN32"], CCFLAGS = " -mwindows ")
   else:
     env.Append(CPPDEFINES = ["USE_BSDSOCK"])
 def PrepareEnvironmentWin(env):
@@ -74,12 +74,26 @@ elif sys.platform.startswith('win'):
   PrepareEnvironmentWin(environment)
 
 
+AddOption('--disable-iconlauncher', dest = 'disableicon', default=False, help=\
+"Disable compiling the Icon Launcher.\n"
+"This is useful for when using older or less capable compilers that can't handle string literals longer than 65k characters long.")
+
+disableicon = GetOption('disableicon')
+
+if disableicon:
+  environment.Append(CPPDEFINES=["NO_ICONLAUNCHER"])
+  
 
 libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment'])
 libfjirc = SConscript(dirs = ['libfjirc'], exports = ['environment'])
 libfjcsv = SConscript(dirs = ['libfjcsv'], exports = ['environment'])
-yyyicons = SConscript(dirs = [os.path.join('extra', 'icons')],    exports = ['environment'])
+
+kashyyyk_libs = [libfjirc, libfjnet, libfjcsv]
+
+if not disableicon:
+	yyyicons = SConscript(dirs = [os.path.join('extra', 'icons')],    exports = ['environment'])
+	kashyyyk_libs += [yyyicons]
 
 environment.Append(CPPPATH = [os.path.join(os.getcwd(), 'libfjirc'), os.path.join(os.getcwd(), 'libfjnet'), os.path.join(os.getcwd(), 'extra'), os.path.join(os.getcwd(), 'libfjcsv'), os.getcwd()])
 
-SConscript(dirs = ['kashyyyk'], exports = ['environment', 'libfjirc', 'libfjnet', 'libfjcsv', 'yyyicons'])
+SConscript(dirs = ['kashyyyk'], exports = ['kashyyyk_libs', 'environment'])

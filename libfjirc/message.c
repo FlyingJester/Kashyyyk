@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-static IRC_allocator Alloc = malloc;
+static IRC_allocator Alloc = (void *(*)(unsigned long ))malloc;
 static IRC_deallocator Dealloc = free;
 
 void IRC_SetAllocators(IRC_allocator a, IRC_deallocator b){
@@ -24,7 +24,7 @@ void IRC_GetAllocators(IRC_allocator *a, IRC_deallocator *b){
 }
 
 void IRC_ResetAllocators(){
-    Alloc = malloc;
+    Alloc = (void *(*)(unsigned long ))malloc;
     Dealloc = free;
 }
 
