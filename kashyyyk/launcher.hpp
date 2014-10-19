@@ -46,12 +46,18 @@ public:
 };
 
 
+#ifndef NO_ICONLAUNCHER
+
+
 class IconLauncher : public Launcher {
     struct IconLauncherImpl;
 public:
     IconLauncher(Thread::TaskGroup *);
     ~IconLauncher() override;
 };
+
+
+#endif
 
 
 class BoringLauncher : public Launcher {

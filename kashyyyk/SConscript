@@ -1,10 +1,10 @@
 import os
 import sys
 
-Import("environment libfjirc libfjnet libfjcsv yyyicons")
+Import("environment kashyyyk_libs")
 
 localenv = environment.Clone()
-localenv.Append(LIBS = [libfjnet, libfjirc, libfjcsv, yyyicons])
+localenv.Append(LIBS = kashyyyk_libs)
 
 fltklib = ARGUMENTS.get('fltklib', '')
 if fltklib == '':

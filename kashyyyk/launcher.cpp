@@ -88,6 +88,8 @@ struct WindowLauncherImpl : public Launcher::LauncherImpl{
 
 };
 
+#ifndef NO_ICONLAUNCHER
+
 template<unsigned icon_dimen_wT, unsigned icon_dimen_hT,  bool horozional=true>
 struct IconLauncherSpacingImpl : public WindowLauncherImpl {
 
@@ -133,6 +135,8 @@ struct IconLauncher::IconLauncherImpl : public IconLauncherSpacingImpl<128, 128>
 
 };
 
+#endif
+
 struct BoringLauncher::BoringLauncherImpl : public IconLauncherSpacingImpl<128, 24, false> {
 
 
@@ -163,6 +167,9 @@ EmptyLauncher::EmptyLauncher(Thread::TaskGroup *g)
 EmptyLauncher::~EmptyLauncher() {}
 
 
+#ifndef NO_ICONLAUNCHER
+
+
 IconLauncher::IconLauncher(Thread::TaskGroup *g)
   : Launcher(new IconLauncher::IconLauncherImpl(*this, g)){
 
@@ -172,6 +179,9 @@ IconLauncher::IconLauncher(Thread::TaskGroup *g)
 
 
 IconLauncher::~IconLauncher(){}
+
+
+#endif
 
 
 BoringLauncher::BoringLauncher(Thread::TaskGroup *g)

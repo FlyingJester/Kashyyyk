@@ -7,9 +7,6 @@ source = [
     "new_window.c",
 ]
 
-localenv = environment.Clone()
-localenv.Append(CFLAGS = " -Wno-overlength-strings -funsigned-char ")
-
-yyyicons = localenv.StaticLibrary("yyyicons", source)
+yyyicons = environment.StaticLibrary("yyyicons", source)
 
 Return("yyyicons")
