@@ -21,7 +21,7 @@ if enabledebug:
 
 def PrepareCompilerGPP(env):
   print "Preparing g++"
-  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH = 
+  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH =
 ["/usr/local/include"], LIBPATH = ["/usr/local/lib"])
   if enabledebug:
     env.Append(LINKFLAGS = " -g ")
@@ -78,17 +78,18 @@ else:
     print sys.platform
 if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
   PrepareEnvironmentUNIX(environment)
+  conf = Configure(environment)
   if sys.platform != 'darwin':
-    conf = Configure(environment)
     if conf.CheckLib("tbb"):
       environment.Append(LIBS = ["tbb"], CPPDEFINES = ["USE_TBB"])
     elif conf.CheckCXXHeader("mutex"):
       environment.Append(CPPDEFINES = ["USE_MUTEX"])
     elif conf.CheckCHeader("pthread.h"):
       environment.Append(CPPDEFINES = ["USE_PTHREAD"])
+  if (sys.platform == 'darwin' or 'bsd' in sys.platform) and conf.CheckCHeader("kqueue.h"):
+      environment.Append(CPPDEFINES = ["USE_KQUEUE"])
 elif sys.platform.startswith('win'):
   PrepareEnvironmentWin(environment)
-
 
 AddOption('--enable-iconlauncher', dest = 'enableicon', default=False, help=\
 "Disable compiling the Icon Launcher.\n"
