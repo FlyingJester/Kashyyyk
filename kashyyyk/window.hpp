@@ -101,6 +101,9 @@ public:
         Kashyyyk::Pling(widget.get());
     }
 
+    void AutoJoinServers(void);
+    void AutoJoinChannels(void);
+
     void ForgetLauncher();
 
 };

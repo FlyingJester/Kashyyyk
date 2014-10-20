@@ -140,7 +140,7 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
     AddChannel(channel);
 
     channel_list->user_data(channel);
-    
+
     w->SetChannel(channel);
 
     Thread::AddShortRunningTask(network_task);
@@ -198,9 +198,16 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Nick_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Notice_Handler(this)));
 
+
+    printf("Creating Server.\n");
+
+}
+
+
+void Server::AutoJoinChannels(void){
     char *autojoin;
 
-    if(prefs.get((std::string("server.")+name+".autojoin").c_str(), autojoin, "")!=0){
+    if(GetPreferences().get((std::string("server.")+name+".autojoin").c_str(), autojoin, "")!=0){
         const char **channels = FJ::CSV::ParseString(autojoin);
         const char *iter = channels[0];
         int i = 0;
@@ -220,10 +227,8 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
     }
 
     free(autojoin);
-
-    printf("Creating Server.\n");
-
 }
+
 
 Server::~Server(){
     printf("Closing Server.\n");

@@ -8,6 +8,7 @@
 #include "serverlist.hpp"
 #include "doubleinput.hpp"
 #include "launcher.hpp"
+#include "csv.h"
 
 #include <cstdio>
 #include <stack>
@@ -212,6 +213,7 @@ void ConnectToServer(Fl_Widget *w, void *p){
       return;
 
     Thread::AddLongRunningTask(new ConnectToServer_Task(win, inp.c_str(), port));
+
 }
 
 
@@ -392,6 +394,49 @@ void Window::SetChannel(Channel *channel){
         channel_list->select(i, 0);
     }
 
+}
+
+
+void Window::AutoJoinServers(void){
+    char *autojoin;
+
+    Fl_Preferences &prefs = GetPreferences();
+
+    if(prefs.get(std::string("sys.server_autoconnect.default").c_str(), autojoin, "")!=0){
+        const char **servers = FJ::CSV::ParseString(autojoin);
+        const char *iter = servers[0];
+        int i = 0;
+        while(iter!=nullptr){
+
+            printf("Connecting to %s.\n", iter);
+
+            char *address;
+            int port;
+
+            if(prefs.get((std::string("server.")+iter+".address").c_str(), address, "")==0){
+                continue;
+            }
+            prefs.get((std::string("server.")+iter+".port").c_str(), port, 6665);
+
+            Thread::AddLongRunningTask(new ConnectToServer_Task(this, address, port));
+
+            iter = servers[++i];
+        }
+
+        FJ::CSV::FreeParse(servers);
+
+    }
+
+    free(autojoin);
+}
+
+
+void Window::AutoJoinChannels(void){
+    lock();
+    for(std::list<std::unique_ptr<Server> >::iterator iter = Servers.begin(); iter!=Servers.end(); iter++){
+        iter->get()->AutoJoinChannels();
+    }
+    unlock();
 }
 
 

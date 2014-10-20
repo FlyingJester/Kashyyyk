@@ -74,13 +74,13 @@ int main(int argc, char *argv[]){
 
     Fl_Preferences &prefs = Kashyyyk::GetPreferences();
 
-    std::unique_ptr<Kashyyyk::Window>   window;
-
-
     std::unique_ptr<Kashyyyk::Thread::TaskGroup, void(*)(Kashyyyk::Thread::TaskGroup*)>
       group(Kashyyyk::Thread::CreateTaskGroup(), Kashyyyk::Thread::DestroyTaskGroup);
 
     {
+
+        Kashyyyk::Window *window = nullptr;
+        std::function<Kashyyyk::Window *()> new_window_function;
 
         Kashyyyk::Launcher *launcher;
         int startup_launcher         = 1;
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]){
         int startup_autojoin_servers = 1;
         int startup_autojoin_channels= 1;
 
-        prefs.get("sys.startup.launcher", startup_launcher, startup_launcher);
+        prefs.get("sys.startup.launcher.enabled", startup_launcher, startup_launcher);
         prefs.get("sys.startup.launcher.type", startup_launchertype, startup_launchertype);
         prefs.get("sys.startup.window", startup_window, startup_window);
         prefs.get("sys.startup.autojoin.servers", startup_autojoin_servers, startup_autojoin_servers);
@@ -111,12 +111,19 @@ int main(int argc, char *argv[]){
                 launcher = Kashyyyk::Launcher::CreatePlatformLauncher(group.get());
             }
 
-            launcher->NewWindow();
+            new_window_function = std::bind(std::mem_fn(&Kashyyyk::Launcher::NewWindow), launcher);
         }
         else{
-            window.reset(new Kashyyyk::Window(800, 600, group.get()));
-
+            Kashyyyk::Thread::TaskGroup *group_raw = group.get();
+            new_window_function = std::bind([=](){return new Kashyyyk::Window(800, 600, group_raw, nullptr, false);});
         }
+
+        if(startup_window){
+            window = new_window_function();
+        }
+
+
+
     }
 
     SetTheme(prefs);

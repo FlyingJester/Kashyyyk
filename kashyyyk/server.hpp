@@ -101,6 +101,8 @@ public:
         Parent->Pling();
     }
 
+    void AutoJoinChannels(void);
+
 };
 
 }

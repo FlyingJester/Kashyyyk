@@ -119,14 +119,13 @@ void Prefs_color_CB(Fl_Widget *w, void *p){
 
 }
 
-
-static void Pling_Button_CB(Fl_Widget *w, void *p){
+void Enable_Button_CB(Fl_Widget *w, void *p){
 
     Fl_Button *b = static_cast<Fl_Button *>(w);
 
-    int do_pling = b->value();
+    int enabled = b->value();
 
-    Kashyyyk::GetPreferences().set("sys.pling.enabled", do_pling);
+    Kashyyyk::GetPreferences().set(static_cast<const char *>(p), enabled);
 
 }
 
@@ -144,7 +143,8 @@ void Kashyyyk::OpenPreferencesWindow(){
     static Fl_Window *window = new Fl_Window(800, 600, "Preferences");
     if(first){
         Fl_Preferences &prefs = Kashyyyk::GetPreferences();
-        Fl_Pack *Left_Column;
+        Fl_Pack *left_column;
+        Fl_Pack *middle_column;
         { // window is active
 
             first = false;
@@ -152,9 +152,12 @@ void Kashyyyk::OpenPreferencesWindow(){
             Fl_Button * OK = new Fl_Button(8, 600-40, 128, 32, "OK");
             OK->callback(Prefs_OKButton_CB, window);
 
-            Left_Column = new Fl_Pack(8, 32, 200, 600-40-16);
-            Left_Column->spacing(24);
-            Left_Column->end();
+            left_column = new Fl_Pack(8, 32, 200, 600-40-16);
+            left_column->spacing(24);
+            left_column->end();
+            middle_column = new Fl_Pack(200+16, 32, 200, 600-40-16);
+            middle_column->spacing(24);
+            middle_column->end();
             window->end();
         }// window is active
 
@@ -233,11 +236,26 @@ void Kashyyyk::OpenPreferencesWindow(){
             prefs.get("sys.pling.enabled", do_pling, do_pling);
             pling_button->value(do_pling);
             pling_button->align(FL_ALIGN_CENTER);
-            pling_button->callback(Pling_Button_CB, nullptr);
+            pling_button->callback(Enable_Button_CB, const_cast<char *>("sys.pling.enabled"));
         }
         note_group->end();
-        Left_Column->add(gfx_group);
-        Left_Column->add(note_group);
+
+        Fl_Pack *startup_group = new Fl_Pack(0, 0, 32, 128, "Startup");
+        startup_group->box(FL_EMBOSSED_FRAME);
+        startup_group->begin();
+        {
+            Fl_Light_Button *launcher_button = new Fl_Light_Button(0, 0, 80, 24, "Launcher");
+            int do_launcher = 1;
+            prefs.get("sys.startup.launcher.enabled", do_launcher, do_launcher);
+            launcher_button->value(do_launcher);
+            launcher_button->callback(Enable_Button_CB, const_cast<char *>("sys.startup.launcher.enabled"));
+
+        }
+        startup_group->end();
+
+        left_column->add(gfx_group);
+        left_column->add(note_group);
+        middle_column->add(startup_group);
 
     }
     window->show();
