@@ -57,34 +57,17 @@ void InitSock(){}
 #define PRINT_LAST_ERROR perror
 
 static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
-#if defined USE_KQUEUE
-    struct kevent kev;
-    struct timespec tspec = {0, 1000};
-    int kqq;
-    EV_SET(&kev, socket, EVFILT_READ, EV_ADD, 0, 0, 0);
 
-    kqq = kqueue();
-
-    if(kqq!=0)
-      perror("kqueue error");
-
-    if(!kevent(kqq, NULL, 0, &kev, 1, &tspec))
-      perror("kevent error");
-
-    if(kqq.ident==socket){
-
-
-    }
-    return 0;
-
-#elif (defined __APPLE__) || (defined __linux__)
+#if (defined __APPLE__) || (defined __linux__)
 
     unsigned int llen = sizeof(unsigned long);
     return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);
 
 #else
 
-    return ioctl(socket, FIONBIO, &len);
+    int i = 0, err = ioctl(socket, FIONREAD, &i);
+    *len = i;
+    return err;
 
 #endif
 
@@ -374,5 +357,7 @@ unsigned long Length_Socket(struct WSocket *aSocket){
 
     memcpy(&f, &len, llen);
 
+    if(f>0)
+        printf("%lu bytes pending\n", f);
     return f;
 }
