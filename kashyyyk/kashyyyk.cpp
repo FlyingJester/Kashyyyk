@@ -65,6 +65,7 @@ void SetTheme(Fl_Preferences &prefs){
     free(theme);
 }
 
+
 int main(int argc, char *argv[]){
 
     Kashyyyk::Init();
@@ -73,21 +74,58 @@ int main(int argc, char *argv[]){
 
     Fl_Preferences &prefs = Kashyyyk::GetPreferences();
 
-    std::stack<std::string> default_servers;
+    std::unique_ptr<Kashyyyk::Window>   window;
 
-    GetDefaultServers(default_servers, prefs);
-    SetTheme(prefs);
 
     std::unique_ptr<Kashyyyk::Thread::TaskGroup, void(*)(Kashyyyk::Thread::TaskGroup*)>
       group(Kashyyyk::Thread::CreateTaskGroup(), Kashyyyk::Thread::DestroyTaskGroup);
+
+    {
+
+        Kashyyyk::Launcher *launcher;
+        int startup_launcher         = 1;
+        int startup_launchertype     = 1;
+        int startup_window           = 1;
+        int startup_autojoin_servers = 1;
+        int startup_autojoin_channels= 1;
+
+        prefs.get("sys.startup.launcher", startup_launcher, startup_launcher);
+        prefs.get("sys.startup.launcher.type", startup_launchertype, startup_launchertype);
+        prefs.get("sys.startup.window", startup_window, startup_window);
+        prefs.get("sys.startup.autojoin.servers", startup_autojoin_servers, startup_autojoin_servers);
+        prefs.get("sys.startup.autojoin.channels", startup_autojoin_channels, startup_autojoin_channels);
+
+        if(startup_launcher){
+            switch(startup_launchertype){
+            case 1:
+                launcher = new Kashyyyk::BoringLauncher(group.get());
+            break;
+#ifndef NO_ICONLAUNCHER
+            case 2:
+                launcher = new Kashyyyk::IconLauncher(group.get());
+            break
+#endif
+            break;
+            case 0:
+            default:
+                launcher = Kashyyyk::Launcher::CreatePlatformLauncher(group.get());
+            }
+
+            launcher->NewWindow();
+        }
+        else{
+            window.reset(new Kashyyyk::Window(800, 600, group.get()));
+
+        }
+    }
+
+    SetTheme(prefs);
 
     Fl::lock();
 
     Kashyyyk::Thread thread1(Kashyyyk::Thread::GetShortThreadPool());
 
     Kashyyyk::Thread thread2(Kashyyyk::Thread::GetLongThreadPool());
-
-    Kashyyyk::Launcher::CreatePlatformLauncher(group.get());
 
     while(Fl::wait()){
         Kashyyyk::Thread::PerformTask(group.get());

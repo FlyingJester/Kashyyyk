@@ -7,15 +7,29 @@ if ARGUMENTS.get('pandoc_readme', '0') == '1':
 
 environment = Environment(ENV=os.environ)
 
-gcc_ccflags = "-pedantic -Werror -Wall -g -Os "
+
+
+AddOption('--enable-debug', dest = 'enabledebug', default=True, help=\
+"Enables building with debug symbols.\n")
+
+enabledebug = GetOption('enabledebug')
+
+gcc_ccflags = "-pedantic -Werror -Wall -O2 "
+
+if enabledebug:
+  gcc_ccflags += " -g "
 
 def PrepareCompilerGPP(env):
   print "Preparing g++"
   env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags)
+  if enabledebug:
+    env.Append(LINKFLAGS = " -g ")
 
 def PrepareCompilerGCC(env):
   print "Preparing gcc"
   env.Append(CFLAGS = " -ansi -Wno-overlength-strings " + gcc_ccflags)
+  if enabledebug:
+    env.Append(LINKFLAGS = " -g ")
 
 def PrepareCompilerMSVC(env):
   env.Append(CFLAGS = "/O2 /EHsc /Zi /MDd")
@@ -74,15 +88,15 @@ elif sys.platform.startswith('win'):
   PrepareEnvironmentWin(environment)
 
 
-AddOption('--disable-iconlauncher', dest = 'disableicon', default=False, help=\
+AddOption('--enable-iconlauncher', dest = 'enableicon', default=False, help=\
 "Disable compiling the Icon Launcher.\n"
 "This is useful for when using older or less capable compilers that can't handle string literals longer than 65k characters long.")
 
-disableicon = GetOption('disableicon')
+disableicon = not GetOption('enableicon')
 
 if disableicon:
   environment.Append(CPPDEFINES=["NO_ICONLAUNCHER"])
-  
+
 
 libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment'])
 libfjirc = SConscript(dirs = ['libfjirc'], exports = ['environment'])

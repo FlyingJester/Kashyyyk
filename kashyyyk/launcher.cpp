@@ -88,7 +88,6 @@ struct WindowLauncherImpl : public Launcher::LauncherImpl{
 
 };
 
-#ifndef NO_ICONLAUNCHER
 
 template<unsigned icon_dimen_wT, unsigned icon_dimen_hT,  bool horozional=true>
 struct IconLauncherSpacingImpl : public WindowLauncherImpl {
@@ -116,6 +115,8 @@ struct IconLauncherSpacingImpl : public WindowLauncherImpl {
     ~IconLauncherSpacingImpl() override {}
 
 };
+
+#ifndef NO_ICONLAUNCHER
 
 struct IconLauncher::IconLauncherImpl : public IconLauncherSpacingImpl<128, 128> {
 
@@ -187,7 +188,6 @@ IconLauncher::~IconLauncher(){}
 BoringLauncher::BoringLauncher(Thread::TaskGroup *g)
   : Launcher(new BoringLauncher::BoringLauncherImpl(*this, g)){
 
-    NewWindow();
     guts_<WindowLauncherImpl>()->window.show();
 
 }
@@ -214,11 +214,13 @@ Launcher::~Launcher(){
 }
 
 
-void Launcher::NewWindow(){
+Window *Launcher::NewWindow(){
 
     Kashyyyk::Window *window_new = new Kashyyyk::Window(1024, 600, guts->group, this);
     window_new->Show();
     guts_<WindowLauncherImpl>()->windows.push_front(window_new);
+
+    return window_new;
 
 }
 
