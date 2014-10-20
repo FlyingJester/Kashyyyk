@@ -161,6 +161,11 @@ public:
         WSockErr err;
 try_connect:
         sock = Create_Socket();
+
+        if(!sock){
+            printf("Could not create a socket.\n");
+        }
+
         err = Connect_Socket(sock, server_name.c_str(), port, 10000);
         if(!err){
             Server * s = new Server(sock, server_name, window);
