@@ -122,7 +122,7 @@ public:
 
 };
 
-Server::Server(WSocket *sock, const std::string &n, Window *w)
+Server::Server(WSocket *sock, const std::string &n, Window *w, const char *uid)
   : LockingReciever<Window, std::mutex> (w)
   , last_channel(nullptr)
   , socket(sock)
@@ -131,6 +131,7 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
   , tree_prefs()
   , task_died(false)
   , network_task(new ServerTask(this, socket, &task_died))
+  , UID(uid?uid:"")
   , name(n){
 
     Fl_Preferences &prefs = GetPreferences();
@@ -207,7 +208,7 @@ Server::Server(WSocket *sock, const std::string &n, Window *w)
 void Server::AutoJoinChannels(void){
     char *autojoin;
 
-    if(GetPreferences().get((std::string("server.")+name+".autojoin").c_str(), autojoin, "")!=0){
+    if(GetPreferences().get((std::string("server.")+UID+".autojoin").c_str(), autojoin, "")!=0){
         const char **channels = FJ::CSV::ParseString(autojoin);
         const char *iter = channels[0];
         int i = 0;

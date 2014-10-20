@@ -9,7 +9,7 @@
 #include "background.hpp"
 #include "platform/pling.h"
 
-#include <FL/Fl_Tree_Prefs.H>
+#include <FL/Fl_Tree.H>
 
 class Fl_Window;
 class Fl_Group;
@@ -23,13 +23,18 @@ class Server;
 class Channel;
 class Launcher;
 
+class Window;
+
 class WindowCallbacks{
 public:
     static void ChangeNick_CB(Fl_Widget *, void *);
     static void JoinChannel_CB(Fl_Widget *, void *);
     static void ChannelList_CB(Fl_Widget *, void *);
     static void WindowCallback(Fl_Widget *w, void *arg);
+    static void ConnectToServer_CB(Fl_Widget *w, void *p);
+    static void ConnectToServer(Window *p);
 };
+
 
 
 

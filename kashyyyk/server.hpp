@@ -43,7 +43,7 @@ protected:
 
     Channel *last_channel;
 
-    WSocket *socket;
+    WSocket * const socket;
 
     std::unique_ptr<Fl_Group> widget;
     std::unique_ptr<Fl_Tree_Item> channel_list;
@@ -51,18 +51,21 @@ protected:
     Fl_Tree_Prefs tree_prefs;
 
     bool task_died;
-    ServerTask *network_task;
+    ServerTask * const network_task;
+
+    const std::string UID;
 
     void Show(Channel *chan);
 
     void FocusChanged();
+
 
 public:
     friend class Channel;
     friend class Window;
     friend class AutoLocker<Server *>;
 
-    Server(WSocket *socket, const std::string &name, Window *w);
+    Server(WSocket *socket, const std::string &name, Window *w, const char *uid=nullptr);
     ~Server();
 
     std::string name;

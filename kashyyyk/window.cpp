@@ -189,11 +189,13 @@ try_connect:
 
 };
 
-void ConnectToServer(Fl_Widget *w, void *p){
+void WindowCallbacks::ConnectToServer_CB(Fl_Widget *w, void *p){
+    WindowCallbacks::ConnectToServer(static_cast<Window *>(p));
+}
 
-    assert(p);
+void WindowCallbacks::ConnectToServer(Window *win){
 
-    Window *win = static_cast<Window *>(p);
+    assert(win);
 
     DoubleInput_Return r = DoubleInput("Enter Server Address", "URL", "", "Port", "6667");
 
@@ -265,7 +267,7 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
 
     Fl_Menu_Bar *menubar = (osx)?new Fl_Sys_Menu_Bar(-2, 0, w+4, 24):new Fl_Menu_Bar(-2, 0, w+4, 24);
 
-    menubar->add("File/Connect To...", 0, ConnectToServer, this);
+    menubar->add("File/Connect To...", 0, WindowCallbacks::ConnectToServer_CB, this);
     menubar->add("File/Server List", 0, ServerList, this);
     menubar->add("Edit/Preferences", 0, OpenPreferencesWindow_CB, this);
     menubar->add("Server/Change Nick", 0, WindowCallbacks::ChangeNick_CB, this);

@@ -91,9 +91,9 @@ int main(int argc, char *argv[]){
 
         prefs.get("sys.startup.launcher.enabled", startup_launcher, startup_launcher);
         prefs.get("sys.startup.launcher.type", startup_launchertype, startup_launchertype);
-        prefs.get("sys.startup.window", startup_window, startup_window);
-        prefs.get("sys.startup.autojoin.servers", startup_autojoin_servers, startup_autojoin_servers);
-        prefs.get("sys.startup.autojoin.channels", startup_autojoin_channels, startup_autojoin_channels);
+        prefs.get("sys.startup.window.enabled", startup_window, startup_window);
+        prefs.get("sys.startup.window.autojoin.servers", startup_autojoin_servers, startup_autojoin_servers);
+        prefs.get("sys.startup.window.autojoin.channels", startup_autojoin_channels, startup_autojoin_channels);
 
         if(startup_launcher){
             switch(startup_launchertype){
@@ -120,8 +120,19 @@ int main(int argc, char *argv[]){
 
         if(startup_window){
             window = new_window_function();
+            assert(window);
+
         }
 
+        if(window){
+
+            if(startup_autojoin_servers)
+              window->AutoJoinServers();
+
+            if(startup_autojoin_channels)
+              window->AutoJoinChannels();
+
+        }
 
 
     }
