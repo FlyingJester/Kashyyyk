@@ -42,6 +42,10 @@ const char *ExplainError_Socket(enum WSockErr err){
 #include <fcntl.h>
 #include <netdb.h>
 
+#if defined USE_KQUEUE
+#include <sys/kqueue.h>
+#endif
+
 typedef int FJNET_SOCKET;
 
 void InitSock(){}
@@ -53,29 +57,35 @@ void InitSock(){}
 #define PRINT_LAST_ERROR perror
 
 static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
-	struct pollfd pfd;
-	{
-		pfd.fd = socket;
-		pfd.events  = 0;
+#if defined USE_KQUEUE
+    struct kevent kev;
+    struct timespec tspec = {0, 1000};
+    int kqq;
+    EV_SET(&kev, socket, EVFILT_READ, EV_ADD, 0, 0, 0);
 
-		poll(&pfd, 1, 10);
+    kqq = kqueue();
 
-		if(pfd.revents&POLLERR){
-            perror(__func__);
-		}
-		if(pfd.revents&POLLHUP){
-            printf("Socket %i disconnected.\n", socket);
-		}
+    if(kqq!=0)
+      perror("kqueue error");
 
-	}
+    if(!kevent(kqq, NULL, 0, &kev, 1, &tspec))
+      perror("kevent error");
 
-#if (defined __APPLE__) || (defined __linux__)
-    {
-        unsigned int llen = sizeof(unsigned long);
-        return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);
+    if(kqq.ident==socket){
+
+
     }
+    return 0;
+
+#elif (defined __APPLE__) || (defined __linux__)
+
+    unsigned int llen = sizeof(unsigned long);
+    return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);
+
 #else
+
     return ioctl(socket, FIONBIO, &len);
+
 #endif
 
 }
