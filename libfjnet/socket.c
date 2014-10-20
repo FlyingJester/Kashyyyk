@@ -34,6 +34,7 @@ const char *ExplainError_Socket(enum WSockErr err){
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <poll.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -52,12 +53,29 @@ void InitSock(){}
 #define PRINT_LAST_ERROR perror
 
 static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
+	struct pollfd pfd;
 #if (defined __APPLE__) || (defined __linux__)
     unsigned int llen = sizeof(unsigned long);
 	return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);
 #else
     return ioctl(socket, FIONBIO, &len);
 #endif
+	{
+		pfd.fd = socket;
+		pfd.events  = 0;
+
+		poll(&pfd, 1, 10);
+
+		if(pfd.revents&POLLERR){
+            perror(__func__);
+		}
+		if(pfd.revents&POLLHUP){
+            printf("Socket %i disconnected.\n", socket);
+		}
+
+	}
+
+
 }
 
 #elif defined (USE_WINSOCK)
