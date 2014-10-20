@@ -53,13 +53,8 @@ void InitSock(){}
 #define PRINT_LAST_ERROR perror
 
 static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
-	struct pollfd pfd;
-#if (defined __APPLE__) || (defined __linux__)
     unsigned int llen = sizeof(unsigned long);
-	return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);
-#else
-    return ioctl(socket, FIONBIO, &len);
-#endif
+	struct pollfd pfd;
 	{
 		pfd.fd = socket;
 		pfd.events  = 0;
@@ -75,6 +70,11 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 
 	}
 
+#if (defined __APPLE__) || (defined __linux__)
+	return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);
+#else
+    return ioctl(socket, FIONBIO, &len);
+#endif
 
 }
 
