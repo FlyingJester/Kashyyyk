@@ -55,6 +55,12 @@ struct Launcher::LauncherImpl{
         launch->Quit();
     }
 
+    //! Wraps Launcher::Preferences for use in an FLTK callback.
+    static void Preferences_CB(Fl_Widget *w, void *p){
+        Launcher *launch = static_cast<Launcher *>(p);
+        launch->Preferences();
+    }
+
     Launcher &launcher;
     Thread::TaskGroup *group;
     std::forward_list<Window *> windows;
@@ -126,6 +132,7 @@ struct IconLauncherSpacingImpl : public WindowLauncherImpl {
         buttons.NewWindowButton->callback(NewWindow_CB, &launcher);
         buttons.DirectConnectButton->callback(DirectConnect_CB, &launcher);
         buttons.QuitButton->callback(Quit_CB, &launcher);
+        buttons.PreferencesButton->callback(Preferences_CB, &launcher);
 
     }
 
