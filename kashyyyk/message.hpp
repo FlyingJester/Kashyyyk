@@ -95,6 +95,8 @@ public:
     inline const std::string &Value() const{return value;}
     //! Get the memoized value as a C string
     inline const char *ValueC() const{return valuec;}
+	
+	inline void Reset() {msg=nullptr;}
 
 };
 
@@ -134,6 +136,8 @@ class join_reader {
 public:
 
     const char * operator () (const IRC_Message *m);
+	
+	inline void Reset() {r.Reset();}
 
 };
 
@@ -147,6 +151,8 @@ class part_reader {
 public:
 
     const char * operator () (const IRC_Message *m);
+	
+	inline void Reset() {r.Reset();}
 };
 
 

@@ -6,6 +6,10 @@
 #include "message.hpp"
 #include "message.h"
 
+#ifdef SendMessage
+#undef SendMessage
+#endif
+
 //! @file
 //! @brief @link Kashyyyk::MessageHandler @endlink derivatives for defining
 //! @link Kashyyyk::Server @endlink behaviour

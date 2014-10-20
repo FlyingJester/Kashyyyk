@@ -12,6 +12,10 @@
 #include <algorithm>
 #include <FL/Fl_Tree_Prefs.H>
 
+#ifdef SendMessage
+#undef SendMessage
+#endif
+
 class Fl_Group;
 class Fl_Tree_Item;
 struct WSocket;

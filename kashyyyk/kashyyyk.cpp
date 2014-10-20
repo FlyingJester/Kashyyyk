@@ -8,6 +8,7 @@
 #include <stack>
 #include <string>
 #include <cstdlib>
+#include <cassert>
 #include <FL/Fl_Preferences.H>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Preferences.H>

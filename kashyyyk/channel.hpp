@@ -40,6 +40,9 @@ class Fl_Output;
 #undef None
 #endif
 
+#ifdef SendMessage
+#undef SendMessage
+#endif
 
 
 namespace Kashyyyk{

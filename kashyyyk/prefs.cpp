@@ -15,6 +15,10 @@
 
 #include "platform/paths.h"
 
+#ifdef _MSC_VER
+#define constexpr const
+#endif
+
 #define ADD_FONT_ITEM(TO, NAME, VALUE)\
 {\
   int _i = TO->add(NAME);\

@@ -4,6 +4,7 @@
 #include "prefs.hpp"
 #include "background.hpp"
 #include <cstdlib>
+#include <cassert>
 #include <forward_list>
 #include <algorithm>
 #include <FL/Fl_Window.H>
@@ -11,6 +12,10 @@
 #include <FL/Fl_RGB_Image.H>
 
 #include <icons/index.h>
+
+#ifdef _MSC_VER
+#define constexpr const
+#endif
 
 namespace Kashyyyk {
 

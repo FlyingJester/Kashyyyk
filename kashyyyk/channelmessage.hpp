@@ -17,6 +17,10 @@
 #include <string>
 #include "platform/strcasestr.h"
 
+#ifdef SendMessage
+#undef SendMessage
+#endif
+
 namespace Kashyyyk{
 namespace ChannelMessage{
 
@@ -148,14 +152,16 @@ public:
         const char *from = r(msg);
 
         channel->WriteLine(from, t(msg));
-
+		
         if(strcasestr(t(msg), channel->server()->nick.c_str())!=nullptr){
             channel->Highlight(Channel::HighlightLevel::High);
         }
         else{
             channel->Highlight(level);
         }
-
+		
+		t.Reset();
+		
         return false;
     }
 

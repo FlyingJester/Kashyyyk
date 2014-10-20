@@ -15,6 +15,10 @@
 #include <list>
 #include "autolocker.hpp"
 
+#ifdef SendMessage
+#undef SendMessage
+#endif
+
 struct IRC_Message;
 
 namespace Kashyyyk {
