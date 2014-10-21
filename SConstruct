@@ -21,7 +21,8 @@ if enabledebug:
 
 def PrepareCompilerGPP(env):
   print "Preparing g++"
-  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH = ["/usr/local/include"])
+  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH = 
+["/usr/local/include"], LIBPATH = ["/usr/local/lib"])
   if enabledebug:
     env.Append(LINKFLAGS = " -g ")
 
