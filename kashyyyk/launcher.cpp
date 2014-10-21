@@ -226,9 +226,9 @@ Launcher::Launcher(Thread::TaskGroup *g)
 
 Launcher::~Launcher(){
 
-    for(std::forward_list<Window *>::iterator iter = guts->windows.begin(); iter!=guts->windows.end(); iter++)
-        Release(*iter);
-
+	while(!guts->windows.empty())
+	  Release(guts->windows.front());
+	
     delete guts;
 }
 
