@@ -75,7 +75,11 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
         return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);
     }
 #else
-    return ioctl(socket, FIONBIO, &len);
+    {
+        int i = 0, err = ioctl(socket, FIONREAD, &i);
+        *len = i;
+        return err;
+    }
 #endif
 
 }
@@ -363,6 +367,8 @@ unsigned long Length_Socket(struct WSocket *aSocket){
 	}
 
     memcpy(&f, &len, llen);
-
+    
+    if(f>0)
+        printf("%lu bytes pending\n", f);
     return f;
 }
