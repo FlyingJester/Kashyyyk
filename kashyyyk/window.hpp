@@ -9,11 +9,7 @@
 #include "background.hpp"
 #include "platform/pling.h"
 
-#ifdef __GNCU__
-#pragma GCC diagnostic ignored "-Wvariadic-macros"
-#endif
-
-#include <FL/Fl_Tree_Prefs.H>
+#include <FL/Fl_Tree.H>
 
 class Fl_Window;
 class Fl_Group;
@@ -27,13 +23,18 @@ class Server;
 class Channel;
 class Launcher;
 
+class Window;
+
 class WindowCallbacks{
 public:
     static void ChangeNick_CB(Fl_Widget *, void *);
     static void JoinChannel_CB(Fl_Widget *, void *);
     static void ChannelList_CB(Fl_Widget *, void *);
     static void WindowCallback(Fl_Widget *w, void *arg);
+    static void ConnectToServer_CB(Fl_Widget *w, void *p);
+    static void ConnectToServer(Window *p);
 };
+
 
 
 
@@ -104,6 +105,9 @@ public:
     void Pling(){
         Kashyyyk::Pling(widget.get());
     }
+
+    void AutoJoinServers(void);
+    void AutoJoinChannels(void);
 
     void ForgetLauncher();
 

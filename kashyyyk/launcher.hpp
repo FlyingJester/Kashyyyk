@@ -25,7 +25,7 @@ public:
     friend class WindowCallbacks;
     virtual ~Launcher();
 
-    void NewWindow();
+    Window *NewWindow();
     void DirectConnect();
     void JoinChannel();
     void ServerList();

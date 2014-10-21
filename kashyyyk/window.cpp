@@ -8,6 +8,7 @@
 #include "serverlist.hpp"
 #include "doubleinput.hpp"
 #include "launcher.hpp"
+#include "csv.h"
 
 #include <cstdio>
 #include <stack>
@@ -188,11 +189,13 @@ try_connect:
 
 };
 
-void ConnectToServer(Fl_Widget *w, void *p){
+void WindowCallbacks::ConnectToServer_CB(Fl_Widget *w, void *p){
+    WindowCallbacks::ConnectToServer(static_cast<Window *>(p));
+}
 
-    assert(p);
+void WindowCallbacks::ConnectToServer(Window *win){
 
-    Window *win = static_cast<Window *>(p);
+    assert(win);
 
     DoubleInput_Return r = DoubleInput("Enter Server Address", "URL", "", "Port", "6667");
 
@@ -212,6 +215,7 @@ void ConnectToServer(Fl_Widget *w, void *p){
       return;
 
     Thread::AddLongRunningTask(new ConnectToServer_Task(win, inp.c_str(), port));
+
 }
 
 
@@ -263,7 +267,7 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
 
     Fl_Menu_Bar *menubar = (osx)?new Fl_Sys_Menu_Bar(-2, 0, w+4, 24):new Fl_Menu_Bar(-2, 0, w+4, 24);
 
-    menubar->add("File/Connect To...", 0, ConnectToServer, this);
+    menubar->add("File/Connect To...", 0, WindowCallbacks::ConnectToServer_CB, this);
     menubar->add("File/Server List", 0, ServerList, this);
     menubar->add("Edit/Preferences", 0, OpenPreferencesWindow_CB, this);
     menubar->add("Server/Change Nick", 0, WindowCallbacks::ChangeNick_CB, this);
@@ -392,6 +396,49 @@ void Window::SetChannel(Channel *channel){
         channel_list->select(i, 0);
     }
 
+}
+
+
+void Window::AutoJoinServers(void){
+    char *autojoin;
+
+    Fl_Preferences &prefs = GetPreferences();
+
+    if(prefs.get(std::string("sys.server_autoconnect.default").c_str(), autojoin, "")!=0){
+        const char **servers = FJ::CSV::ParseString(autojoin);
+        const char *iter = servers[0];
+        int i = 0;
+        while(iter!=nullptr){
+
+            printf("Connecting to %s.\n", iter);
+
+            char *address;
+            int port;
+
+            if(prefs.get((std::string("server.")+iter+".address").c_str(), address, "")==0){
+                continue;
+            }
+            prefs.get((std::string("server.")+iter+".port").c_str(), port, 6665);
+
+            Thread::AddLongRunningTask(new ConnectToServer_Task(this, address, port));
+
+            iter = servers[++i];
+        }
+
+        FJ::CSV::FreeParse(servers);
+
+    }
+
+    free(autojoin);
+}
+
+
+void Window::AutoJoinChannels(void){
+    lock();
+    for(std::list<std::unique_ptr<Server> >::iterator iter = Servers.begin(); iter!=Servers.end(); iter++){
+        iter->get()->AutoJoinChannels();
+    }
+    unlock();
 }
 
 

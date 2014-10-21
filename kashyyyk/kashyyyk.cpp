@@ -65,6 +65,7 @@ void SetTheme(Fl_Preferences &prefs){
     free(theme);
 }
 
+
 int main(int argc, char *argv[]){
 
     Kashyyyk::Init();
@@ -73,21 +74,76 @@ int main(int argc, char *argv[]){
 
     Fl_Preferences &prefs = Kashyyyk::GetPreferences();
 
-    std::stack<std::string> default_servers;
-
-    GetDefaultServers(default_servers, prefs);
-    SetTheme(prefs);
-
     std::unique_ptr<Kashyyyk::Thread::TaskGroup, void(*)(Kashyyyk::Thread::TaskGroup*)>
       group(Kashyyyk::Thread::CreateTaskGroup(), Kashyyyk::Thread::DestroyTaskGroup);
+
+    {
+
+        Kashyyyk::Window *window = nullptr;
+        std::function<Kashyyyk::Window *()> new_window_function;
+
+        Kashyyyk::Launcher *launcher;
+        int startup_launcher         = 1;
+        int startup_launchertype     = 1;
+        int startup_window           = 1;
+        int startup_autojoin_servers = 1;
+        int startup_autojoin_channels= 1;
+
+        prefs.get("sys.startup.launcher.enabled", startup_launcher, startup_launcher);
+        prefs.get("sys.startup.launcher.type", startup_launchertype, startup_launchertype);
+        prefs.get("sys.startup.window.enabled", startup_window, startup_window);
+        prefs.get("sys.startup.window.autojoin.servers", startup_autojoin_servers, startup_autojoin_servers);
+        prefs.get("sys.startup.window.autojoin.channels", startup_autojoin_channels, startup_autojoin_channels);
+
+        if(startup_launcher){
+            switch(startup_launchertype){
+            case 1:
+                launcher = new Kashyyyk::BoringLauncher(group.get());
+            break;
+#ifndef NO_ICONLAUNCHER
+            case 2:
+                launcher = new Kashyyyk::IconLauncher(group.get());
+            break
+#endif
+            break;
+            case 0:
+            default:
+                launcher = Kashyyyk::Launcher::CreatePlatformLauncher(group.get());
+            }
+
+            new_window_function = std::bind(std::mem_fn(&Kashyyyk::Launcher::NewWindow), launcher);
+        }
+        else{
+            Kashyyyk::Thread::TaskGroup *group_raw = group.get();
+            new_window_function = std::bind([=](){return new Kashyyyk::Window(800, 600, group_raw, nullptr, false);});
+        }
+
+        if(startup_window){
+            window = new_window_function();
+            assert(window);
+
+        }
+
+        if(window){
+
+            if(startup_autojoin_servers)
+              window->AutoJoinServers();
+
+            if(startup_autojoin_channels)
+              window->AutoJoinChannels();
+
+        }
+
+
+    }
+
+    SetTheme(prefs);
 
     Fl::lock();
 
     Kashyyyk::Thread thread1(Kashyyyk::Thread::GetShortThreadPool());
 
     Kashyyyk::Thread thread2(Kashyyyk::Thread::GetLongThreadPool());
-
-    Kashyyyk::Launcher::CreatePlatformLauncher(group.get());
 
     while(Fl::wait()){
         Kashyyyk::Thread::PerformTask(group.get());

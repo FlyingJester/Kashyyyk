@@ -1,6 +1,7 @@
 #include "launcher.hpp"
 #include "platform/launcher.h"
 #include "window.hpp"
+#include "prefs.hpp"
 #include "background.hpp"
 #include <cstdlib>
 #include <forward_list>
@@ -35,6 +36,12 @@ struct Launcher::LauncherImpl{
     static void NewWindow_CB(Fl_Widget *w, void *p){
         Launcher *launch = static_cast<Launcher *>(p);
         launch->NewWindow();
+    }
+
+    //! Wraps Launcher::DirectConnect for use in an FLTK callback.
+    static void DirectConnect_CB(Fl_Widget *w, void *p){
+        Launcher *launch = static_cast<Launcher *>(p);
+        launch->DirectConnect();
     }
 
     //! Wraps Launcher::Quit for use in an FLTK callback.
@@ -88,7 +95,6 @@ struct WindowLauncherImpl : public Launcher::LauncherImpl{
 
 };
 
-#ifndef NO_ICONLAUNCHER
 
 template<unsigned icon_dimen_wT, unsigned icon_dimen_hT,  bool horozional=true>
 struct IconLauncherSpacingImpl : public WindowLauncherImpl {
@@ -111,11 +117,18 @@ struct IconLauncherSpacingImpl : public WindowLauncherImpl {
         buttons.ServerListButton.reset(new Fl_Button(   16+(icon_dimen_w*3*h), 16+(icon_dimen_h*3*v), icon_dimen_w, icon_dimen_h));
         buttons.PreferencesButton.reset(new Fl_Button(  16+(icon_dimen_w*4*h), 16+(icon_dimen_h*4*v), icon_dimen_w, icon_dimen_h));
         buttons.QuitButton.reset(new Fl_Button(         16+(icon_dimen_w*5*h), 16+(icon_dimen_h*5*v), icon_dimen_w, icon_dimen_h));
+
+        buttons.NewWindowButton->callback(NewWindow_CB, &launcher);
+        buttons.DirectConnectButton->callback(DirectConnect_CB, &launcher);
+        buttons.QuitButton->callback(Quit_CB, &launcher);
+
     }
 
     ~IconLauncherSpacingImpl() override {}
 
 };
+
+#ifndef NO_ICONLAUNCHER
 
 struct IconLauncher::IconLauncherImpl : public IconLauncherSpacingImpl<128, 128> {
 
@@ -127,8 +140,6 @@ struct IconLauncher::IconLauncherImpl : public IconLauncherSpacingImpl<128, 128>
       , NewWindowImage((uchar *)(kashyyyk_new_window_image.pixel_data), kashyyyk_new_window_image.width, kashyyyk_new_window_image.height, 4)
       , NewWindowImage_Scale(NewWindowImage.copy(128, 128)){
         buttons.NewWindowButton->image(NewWindowImage_Scale);
-        buttons.NewWindowButton->callback(NewWindow_CB, &launcher);
-        buttons.QuitButton->callback(Quit_CB, &launcher);
     }
 
     ~IconLauncherImpl() override {}
@@ -148,9 +159,6 @@ struct BoringLauncher::BoringLauncherImpl : public IconLauncherSpacingImpl<128, 
         buttons.ServerListButton->label("Server List");
         buttons.PreferencesButton->label("Preferences");
         buttons.QuitButton->label("Quit");
-
-        buttons.NewWindowButton->callback(NewWindow_CB, &launcher);
-        buttons.QuitButton->callback(Quit_CB, &launcher);
     }
 
     ~BoringLauncherImpl() override {}
@@ -187,7 +195,6 @@ IconLauncher::~IconLauncher(){}
 BoringLauncher::BoringLauncher(Thread::TaskGroup *g)
   : Launcher(new BoringLauncher::BoringLauncherImpl(*this, g)){
 
-    NewWindow();
     guts_<WindowLauncherImpl>()->window.show();
 
 }
@@ -214,11 +221,13 @@ Launcher::~Launcher(){
 }
 
 
-void Launcher::NewWindow(){
+Window *Launcher::NewWindow(){
 
     Kashyyyk::Window *window_new = new Kashyyyk::Window(1024, 600, guts->group, this);
     window_new->Show();
-    guts_<WindowLauncherImpl>()->windows.push_front(window_new);
+    guts->windows.push_front(window_new);
+
+    return window_new;
 
 }
 
@@ -229,6 +238,16 @@ Launcher *Launcher::CreatePlatformLauncher(Thread::TaskGroup *g){
 
 void Launcher::DirectConnect(){
 
+    Window *win = nullptr;
+
+    if(!guts->windows.empty())
+      win = guts->windows.front();
+    else
+      win = NewWindow();
+
+    assert(win);
+
+    WindowCallbacks::ConnectToServer(win);
 }
 
 
@@ -243,7 +262,7 @@ void Launcher::ServerList(){
 
 
 void Launcher::Preferences(){
-
+    OpenPreferencesWindow();
 }
 
 

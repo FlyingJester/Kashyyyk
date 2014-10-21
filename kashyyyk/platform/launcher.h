@@ -23,8 +23,9 @@ extern "C" {
 }
 #endif
 
-#ifdef __cplusplus
 typedef void Launcher;
+
+#ifdef __cplusplus
 extern "C"
 #endif
 Launcher *CreateLauncher(void /*Thread::TaskGroup*/ *);

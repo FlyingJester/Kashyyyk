@@ -12,6 +12,7 @@ if sys.platform == 'darwin':
   platform_files += ["mac_init.cpp"];
   platform_files += ["cocoa_about.m"];
   platform_files += ["mac_launcher.cpp"];
+  platform_files += ["cocoa_launcher.m"];
   platformenv.Append(FRAMEWORKS = ["Foundation", "AppKit"])
 
 elif sys.platform.startswith('win'):

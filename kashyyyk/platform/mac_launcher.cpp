@@ -1,8 +1,14 @@
 #include "../window.hpp"
 #include "../launcher.hpp"
+#include "cocoa_launcher.h"
 
 extern "C"
 Kashyyyk::Launcher *CreateLauncher(void /*Thread::TaskGroup*/ *a){
-    new Kashyyyk::Window(800, 600, static_cast<Kashyyyk::Thread::TaskGroup *>(a));
-    return new Kashyyyk::EmptyLauncher(static_cast<Kashyyyk::Thread::TaskGroup *>(a));
+
+    Kashyyyk::Launcher *launcher = new Kashyyyk::EmptyLauncher(static_cast<Kashyyyk::Thread::TaskGroup *>(a));
+
+    Kashyyyk_CreateOSXMenu(launcher);
+
+    return launcher;
+
 }
