@@ -31,6 +31,7 @@ const char *ExplainError_Socket(enum WSockErr err){
 
 #if defined(USE_BSDSOCK)
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
@@ -51,8 +52,12 @@ void InitSock(){}
 #define PRINT_LAST_ERROR perror
 
 static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
+#if (defined __APPLE__) || (defined __linux__)
     unsigned int llen = sizeof(unsigned long);
 	return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);
+#else
+    return ioctl(socket, FIONBIO, &len);
+#endif
 }
 
 #elif defined (USE_WINSOCK)
