@@ -24,6 +24,24 @@ class Fl_Text_Buffer;
 class Fl_Tree_Item;
 class Fl_Output;
 
+#ifdef High
+#undef High
+#endif
+
+#ifdef Medium
+#undef Medium
+#endif
+
+#ifdef Low
+#undef Low
+#endif
+
+#ifdef None
+#undef None
+#endif
+
+
+
 namespace Kashyyyk{
 
 //! @brief User Structure

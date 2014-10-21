@@ -1,10 +1,10 @@
 #pragma once
-#include <Fl/Fl_Group.H>
-#include <Fl/Fl_Hold_Browser.H>
-#include <Fl/Fl_Button.H>
-#include <Fl/Fl_Input.H>
-#include <Fl/Fl.H>
-#include <Fl/fl_ask.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl.H>
+#include <FL/fl_ask.H>
 #include <memory>
 #include <utility>
 #include <cstdlib>

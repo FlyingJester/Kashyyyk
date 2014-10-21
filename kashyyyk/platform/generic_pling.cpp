@@ -1,6 +1,6 @@
 #include "pling.h"
 
-#include <Fl/fl_ask.H>
+#include <FL/fl_ask.H>
 #include <cstdio>
 
 inline void GenericPling(void){

@@ -6,6 +6,9 @@ Import("environment kashyyyk_libs")
 localenv = environment.Clone()
 localenv.Append(LIBS = kashyyyk_libs)
 
+if 'bsd' in sys.platform:
+  localenv.Append(CCFLAGS = " -Wno-variadic-macros ")
+
 fltklib = ARGUMENTS.get('fltklib', '')
 if fltklib == '':
     localenv.Append(LIBS=['fltk'])

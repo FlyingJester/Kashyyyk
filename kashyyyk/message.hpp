@@ -11,6 +11,10 @@
 #include <string>
 #include <cassert>
 
+#ifdef Always
+#undef Always
+#endif
+
 namespace Kashyyyk {
 
 

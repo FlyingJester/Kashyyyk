@@ -21,7 +21,7 @@
 #include <FL/Fl_Tree.H>
 #include <FL/Fl_Tree_Item.H>
 #include <FL/Fl_Preferences.H>
-#include <FL/Fl_ask.H>
+#include <FL/fl_ask.H>
 
 #ifdef _WIN32
 // This include is necessary for std::min and std::max with MSVC.
@@ -30,6 +30,10 @@
 
 #ifdef SendMessage
 #undef SendMessage
+#endif
+
+#ifdef None
+#undef None
 #endif
 
 using namespace Kashyyyk::ChannelMessage;
