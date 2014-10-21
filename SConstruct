@@ -11,7 +11,7 @@ gcc_ccflags = "-pedantic -Werror -Wall -g -Os "
 
 def PrepareCompilerGPP(env):
   print "Preparing g++"
-  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags)
+  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH = ["/usr/local/include"])
 
 def PrepareCompilerGCC(env):
   print "Preparing gcc"
@@ -39,7 +39,7 @@ elif ARGUMENTS.get('CC', 'none') != 'none':
   print "using CC ", ARGUMENTS.get('CC', 'none')
   environment.Replace(CC = ARGUMENTS.get('CC', 'none'))
 else:
-  if sys.platform.startswith('linux') or sys.platform == 'darwin' or sys.platform == 'cygwin':
+  if sys.platform.startswith('linux') or 'bsd' in sys.platform or sys.platform == 'darwin' or sys.platform == 'cygwin':
     PrepareCompilerGCC(environment)
     environment.Replace(CC = 'cc')
   elif sys.platform.startswith('win'):
@@ -54,12 +54,13 @@ elif ARGUMENTS.get('CXX', 'none') != 'none':
   print "using CXX ", ARGUMENTS.get('CXX', 'none')
   environment.Replace(CXX = ARGUMENTS.get('CXX', 'none'))
 else:
-  if sys.platform.startswith('linux') or sys.platform == 'darwin' or sys.platform == 'cygwin':
+  if sys.platform.startswith('linux') or 'bsd' in sys.platform or sys.platform == 'darwin' or sys.platform == 'cygwin':
     PrepareCompilerGPP(environment)
     environment.Replace(CXX = 'c++')
   elif sys.platform.startswith('win'):
     PrepareCompilerMSVCpp(environment)
-
+  else:
+    print sys.platform
 if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
   PrepareEnvironmentUNIX(environment)
   if sys.platform != 'darwin':

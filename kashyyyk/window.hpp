@@ -9,6 +9,10 @@
 #include "background.hpp"
 #include "platform/pling.h"
 
+#ifdef __GNCU__
+#pragma GCC diagnostic ignored "-Wvariadic-macros"
+#endif
+
 #include <FL/Fl_Tree_Prefs.H>
 
 class Fl_Window;
