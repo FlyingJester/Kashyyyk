@@ -176,6 +176,7 @@ typedef ChannelMessage_Handler<IRC_part,    Channel::HighlightLevel::Low,    par
 //! not, so the message should have been correctly routed in the Server.
 typedef ChannelMessage_Handler<IRC_notice,  Channel::HighlightLevel::Low,    param_reader<1> > Notice_Handler;
 typedef ChannelMessage_Handler<IRC_your_host_num,  Channel::HighlightLevel::Low, param_reader<1> > YourHost_Handler;
+typedef ChannelMessage_Handler<IRC_topic_extra_num,  Channel::HighlightLevel::Low, param_reader<1> > TopicExtra_Handler;
 //! Prints information about JOIN messages. Does not modify the userlist.
 typedef ChannelMessage_Handler<IRC_join,    Channel::HighlightLevel::Low,    join_reader>      JoinPrint_Handler;
 

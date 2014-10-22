@@ -110,6 +110,13 @@ unsigned long IRC_CountParameters(const char * const text){
     if(*a=='\0')
       return 1;
 
+    /* Stop if we will hit /r/n
+      We know that a[0] is not NULL from the previous check, so if the string
+      really is null-terminated a[1] is fine to touch, too.
+    */
+    if((a[0]=='\r') && (a[1]=='\n'))
+      return 1;
+
     /* Count this word and continue.
       If we have hit a ':', it will be picked up by this new call.
     */
@@ -150,6 +157,9 @@ struct IRC_Message *IRC_ConsumeParse(struct IRC_ParseState *state){
     enum IRC_messageType msgtype;
     struct IRC_Message *msg;
     unsigned long l = IRC_GetNextLength(state);
+
+    printf("Length is %lu\n", l);
+    printf("Cursor is at %lu\n", state->cursor-state->text);
 
     if(state->status==IRC_unexpectedEnd)
       return NULL;
@@ -195,6 +205,7 @@ struct IRC_Message *IRC_ConsumeParse(struct IRC_ParseState *state){
     state->buffer[l] = '\0';
     memcpy(state->buffer, state->cursor, l);
 
+    printf("Dumping message.\n%s\n", state->buffer);
     state->cursor+=l+1;
 
     a = state->buffer;
@@ -247,10 +258,6 @@ struct IRC_Message *IRC_ConsumeParse(struct IRC_ParseState *state){
         printf("Type: (%s)\n", type);
 
         msgtype = IRC_GetTokenEnum(type);
-
-        if(msgtype==IRC_mt_null){
-            printf("Error with message. Dumping message.\n%s\n", state->buffer);
-        }
 
         Dealloc(type);
         /* Put `a' at the start of the next word.

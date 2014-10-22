@@ -90,6 +90,7 @@ class ServerTask : public Task {
 
     std::shared_ptr<PromiseValue<bool> > promise;
 
+    FILE *file;
 public:
 
     ServerTask(Server *aServer, WSocket *aSocket, bool *deded)
@@ -99,7 +100,8 @@ public:
     , server(aServer)
     , socket(aSocket)
     , task_died(deded)
-    , should_die(false) {
+    , should_die(false){
+        file = fopen("BUFFER", "w");
         repeating = true;
     }
 
@@ -110,6 +112,8 @@ public:
         free(buffer);
 
         *task_died = true;
+
+        fclose(file);
 
     }
 
@@ -141,7 +145,8 @@ public:
 
         Read_Socket(socket, &buffer);
 
-        printf("Dumping buffer:\n%s\n", buffer);
+        fwrite(buffer, strlen(buffer), 1, file);
+        fwrite("\a", 1, 1, file);
 
         struct IRC_ParseState *state;
         if(old_state==nullptr)
@@ -154,18 +159,20 @@ public:
         }
         struct IRC_Message *msg = IRC_ConsumeParse(state);
 
-        while(msg!=nullptr){
+        while((msg!=nullptr) || (IRC_GetParseStatus(state)==IRC_badMessage)){
 
             if(IRC_GetParseStatus(state)==IRC_unexpectedEnd){
                 old_state = state;
                 return;
             }
 
-            Fl::lock();
-            server->GiveMessage(msg);
-            Fl::unlock();
+            if(IRC_GetParseStatus(state)!=IRC_badMessage){
+                Fl::lock();
+                server->GiveMessage(msg);
+                Fl::unlock();
 
-            IRC_FreeMessage(msg);
+                IRC_FreeMessage(msg);
+            }
 
             msg = IRC_ConsumeParse(state);
         }
@@ -173,7 +180,9 @@ public:
 
         IRC_DestroyParseState(state);
 
+        fflush(file);
     }
+
 
     bool should_die;
 
@@ -199,6 +208,7 @@ Server::Server(WSocket *sock, const std::string &n, Window *w, long prt, const c
 
     channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::YourHost_Handler(channel)));
     channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::Notice_Handler(channel)));
+    channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::TopicExtra_Handler(channel)));
     AddChannel(channel);
 
     channel_list->user_data(channel);
