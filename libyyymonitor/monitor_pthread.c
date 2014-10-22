@@ -52,14 +52,17 @@ void Lock_RawMonitor(struct RawMonitor *monitor){
 void Unlock_RawMonitor(struct RawMonitor *monitor){
     pthread_mutex_unlock(&(monitor->mutex));
 }
+
 void Wait_RawMonitor(struct RawMonitor *monitor){
     int err = pthread_cond_wait(&(monitor->cv), &(monitor->mutex));
     assert(err==0);
 }
+
 void Notify_RawMonitor(struct RawMonitor *monitor){
     int err = pthread_cond_signal(&(monitor->cv));
     assert(err==0);
 }
+
 void NotifyAll_RawMonitor(struct RawMonitor *monitor){
     int err = pthread_cond_broadcast(&(monitor->cv));
     assert(err==0);
