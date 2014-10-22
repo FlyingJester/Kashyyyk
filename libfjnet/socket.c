@@ -76,6 +76,8 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 #include <stdio.h>
 #include <string.h>
 
+typedef unsigned long socklen_t;
+
 static void WSACleanupWrapper_Local(void){
 	WSACleanup();
 }
