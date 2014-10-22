@@ -1,8 +1,21 @@
 import os
 import sys
 
-Import("environment")
+Import("environment use_kqueue")
 
-libfjnet = environment.StaticLibrary("fjnet", ["socket.c"])
+conf = Configure(environment)
+
+fjnet_files = ["socket.c"]
+
+
+
+if use_kqueue:
+  fjnet_files += ["kqueue.c"]
+else:
+  fjnet_files += ["select.c"]
+
+conf.Finish()
+
+libfjnet = environment.StaticLibrary("fjnet", fjnet_files)
 
 Return("libfjnet")

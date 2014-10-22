@@ -207,7 +207,6 @@ Channel::Channel(Server *s, const std::string &channel_name)
 
     Handlers.push_back(std::unique_ptr<MessageHandler>(new PrivateMessage_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Part_Handler(this)));
-    Handlers.push_back(std::unique_ptr<MessageHandler>(new Notice_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new JoinPrint_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Join_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Quit_Handler(this)));

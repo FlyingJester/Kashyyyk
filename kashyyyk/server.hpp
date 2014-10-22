@@ -7,6 +7,7 @@
 
 #include <list>
 #include <memory>
+#include <atomic>
 #include <string>
 #include <mutex>
 #include <algorithm>
@@ -48,6 +49,7 @@ protected:
     Channel *last_channel;
 
     WSocket * const socket;
+    const long port;
 
     std::unique_ptr<Fl_Group> widget;
     std::unique_ptr<Fl_Tree_Item> channel_list;
@@ -69,7 +71,7 @@ public:
     friend class Window;
     friend class AutoLocker<Server *>;
 
-    Server(WSocket *socket, const std::string &name, Window *w, const char *uid=nullptr);
+    Server(WSocket *socket, const std::string &name, Window *w, long prt, const char *uid=nullptr);
     ~Server();
 
     std::string name;
@@ -86,6 +88,7 @@ public:
 
     // Informs us that we will be recieving a JOIN message for this channel.
     std::shared_ptr<PromiseValue<Channel *> > JoinChannel(const std::string &channel);
+    std::shared_ptr<PromiseValue<bool> >  Reconnect(bool reconnect_channels = true);
 
     void AddChannel(Channel *);
     void AddChannel_l(Channel *);
@@ -109,6 +112,7 @@ public:
     }
 
     void AutoJoinChannels(void);
+    bool SocketStatus();
 
 };
 

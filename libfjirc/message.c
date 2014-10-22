@@ -184,6 +184,8 @@ const char *IRC_GetMessageToken(enum IRC_messageType a){
         return "451";
       case IRC_welcome_num:
         return "001";
+      case IRC_your_host_num:
+        return "002";
       default:
         return NULL;
     }

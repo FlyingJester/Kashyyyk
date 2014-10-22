@@ -5,6 +5,7 @@
 #include "channel.hpp"
 #include "message.hpp"
 #include "message.h"
+#include <atomic>
 
 #ifdef SendMessage
 #undef SendMessage
@@ -205,6 +206,7 @@ public:
     std::shared_ptr<PromiseValue<Channel *> > promise;
 
 };
+
 
 class Ping_Handler : public Message_Handler {
 public:

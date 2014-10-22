@@ -248,6 +248,10 @@ struct IRC_Message *IRC_ConsumeParse(struct IRC_ParseState *state){
 
         msgtype = IRC_GetTokenEnum(type);
 
+        if(msgtype==IRC_mt_null){
+            printf("Error with message. Dumping message.\n%s\n", state->buffer);
+        }
+
         Dealloc(type);
         /* Put `a' at the start of the next word.
         */

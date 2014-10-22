@@ -168,7 +168,7 @@ try_connect:
 
         err = Connect_Socket(sock, server_name.c_str(), port, 10000);
         if(!err){
-            Server * s = new Server(sock, server_name, window);
+            Server * s = new Server(sock, server_name, window, port);
             window->AddServer(s);
         }
         else{

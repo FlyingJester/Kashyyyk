@@ -7,14 +7,14 @@ if ARGUMENTS.get('pandoc_readme', '0') == '1':
 
 environment = Environment(ENV=os.environ)
 
-
+use_kqueue = False
 
 AddOption('--enable-debug', dest = 'enabledebug', default=True, help=\
 "Enables building with debug symbols.\n")
 
 enabledebug = GetOption('enabledebug')
 
-gcc_ccflags = "-pedantic -Werror -Wall -O2 "
+gcc_ccflags = "-pedantic -Werror -Wall "
 
 if enabledebug:
   gcc_ccflags += " -g "
@@ -88,6 +88,15 @@ if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
       environment.Append(CPPDEFINES = ["USE_PTHREAD"])
   if (sys.platform == 'darwin' or 'bsd' in sys.platform) and conf.CheckCHeader("kqueue.h"):
       environment.Append(CPPDEFINES = ["USE_KQUEUE"])
+
+  if conf.CheckCHeader("strings.h"):
+      environment.Append(CPPDEFINES = ["HAS_STRINGS"])
+  if False and ((conf.CheckFunc('kqueue') and conf.CheckFunc('kevent') ) or conf.CheckCHeader('kqueue.h') ):
+    environment.Append(CPPDEFINES = ["NEEDS_FJNET_POLL_TIMEOUT=0"])
+    use_kqueue = True
+  else:
+    environment.Append(CPPDEFINES = ["NEEDS_FJNET_POLL_TIMEOUT=1"])
+  conf.Finish()
 elif sys.platform.startswith('win'):
   PrepareEnvironmentWin(environment)
 
@@ -101,16 +110,21 @@ if disableicon:
   environment.Append(CPPDEFINES=["NO_ICONLAUNCHER"])
 
 
-libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment'])
+libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment', 'use_kqueue'])
 libfjirc = SConscript(dirs = ['libfjirc'], exports = ['environment'])
 libfjcsv = SConscript(dirs = ['libfjcsv'], exports = ['environment'])
+libyyymonitor = SConscript(dirs = ['libyyymonitor'], exports = ['environment'])
 
-kashyyyk_libs = [libfjirc, libfjnet, libfjcsv]
+kashyyyk_libs = [libfjirc, libfjnet, libfjcsv, libyyymonitor]
 
 if not disableicon:
 	yyyicons = SConscript(dirs = [os.path.join('extra', 'icons')],    exports = ['environment'])
 	kashyyyk_libs += [yyyicons]
 
-environment.Append(CPPPATH = [os.path.join(os.getcwd(), 'libfjirc'), os.path.join(os.getcwd(), 'libfjnet'), os.path.join(os.getcwd(), 'extra'), os.path.join(os.getcwd(), 'libfjcsv'), os.getcwd()])
+environment.Append(CPPPATH = [os.path.join(os.getcwd(), 'libfjirc'),
+                              os.path.join(os.getcwd(), 'libfjnet'),
+                              os.path.join(os.getcwd(), 'libfjcsv'),
+                              os.path.join(os.getcwd(), 'extra'),
+                              os.getcwd(), os.path.join(os.getcwd(), 'libyyymonitor'), os.getcwd()])
 
 SConscript(dirs = ['kashyyyk'], exports = ['kashyyyk_libs', 'environment'])

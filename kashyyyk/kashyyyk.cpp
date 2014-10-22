@@ -1,5 +1,6 @@
 #include "window.hpp"
 #include "background.hpp"
+#include "networkwatch.hpp"
 #include "prefs.hpp"
 #include "launcher.hpp"
 #include "platform/notification.h"
@@ -78,6 +79,8 @@ int main(int argc, char *argv[]){
     std::unique_ptr<Kashyyyk::Thread::TaskGroup, void(*)(Kashyyyk::Thread::TaskGroup*)>
       group(Kashyyyk::Thread::CreateTaskGroup(), Kashyyyk::Thread::DestroyTaskGroup);
 
+    Kashyyyk::Thread::TaskGroup *group_raw = group.get();
+
     {
 
         Kashyyyk::Window *window = nullptr;
@@ -99,23 +102,22 @@ int main(int argc, char *argv[]){
         if(startup_launcher){
             switch(startup_launchertype){
             case 1:
-                launcher = new Kashyyyk::BoringLauncher(group.get());
+                launcher = new Kashyyyk::BoringLauncher(group_raw);
             break;
 #ifndef NO_ICONLAUNCHER
             case 2:
-                launcher = new Kashyyyk::IconLauncher(group.get());
+                launcher = new Kashyyyk::IconLauncher(group_raw);
             break
 #endif
             break;
             case 0:
             default:
-                launcher = Kashyyyk::Launcher::CreatePlatformLauncher(group.get());
+                launcher = Kashyyyk::Launcher::CreatePlatformLauncher(group_raw);
             }
 
             new_window_function = std::bind(std::mem_fn(&Kashyyyk::Launcher::NewWindow), launcher);
         }
         else{
-            Kashyyyk::Thread::TaskGroup *group_raw = group.get();
             new_window_function = std::bind([=](){return new Kashyyyk::Window(800, 600, group_raw, nullptr, false);});
         }
 
@@ -142,16 +144,19 @@ int main(int argc, char *argv[]){
 
     Fl::lock();
 
-    Kashyyyk::Thread thread1(Kashyyyk::Thread::GetShortThreadPool());
+    Kashyyyk::NetworkWatch watch(Kashyyyk::Thread::GetShortThreadPool());
+    Kashyyyk::Thread::AddWatchToTaskGroup(&watch, Kashyyyk::Thread::GetShortThreadPool());
+    {
+        Kashyyyk::Thread thread1(Kashyyyk::Thread::GetShortThreadPool());
 
-    Kashyyyk::Thread thread2(Kashyyyk::Thread::GetLongThreadPool());
+        Kashyyyk::Thread thread2(Kashyyyk::Thread::GetLongThreadPool());
 
-    while(Fl::wait()){
-        Kashyyyk::Thread::PerformTask(group.get());
+        while(Fl::wait()){
+            Kashyyyk::Thread::PerformTask(group_raw);
+        }
+
+        Kashyyyk::Close();
     }
-
-    Kashyyyk::Close();
-
     return EXIT_SUCCESS;
 
 }

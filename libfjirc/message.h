@@ -22,7 +22,7 @@ enum IRC_messageType {IRC_mt_null, IRC_error_m, IRC_ping, IRC_pong, IRC_pass,
   IRC_nick, IRC_user, IRC_oper, IRC_mode, IRC_service, IRC_quit, IRC_squit,
   IRC_join, IRC_part, IRC_topic, IRC_privmsg, IRC_notice,
   IRC_namelist_start_num, IRC_namelist_end_num, IRC_topic_num,
-  IRC_no_topic_num, IRC_not_registered_num, IRC_welcome_num,
+  IRC_no_topic_num, IRC_not_registered_num, IRC_welcome_num, IRC_your_host_num,
 
 /*Aliases*/
   IRC_namelist_num = IRC_namelist_start_num

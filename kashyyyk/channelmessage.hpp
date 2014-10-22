@@ -152,16 +152,16 @@ public:
         const char *from = r(msg);
 
         channel->WriteLine(from, t(msg));
-		
+
         if(strcasestr(t(msg), channel->server()->nick.c_str())!=nullptr){
             channel->Highlight(Channel::HighlightLevel::High);
         }
         else{
             channel->Highlight(level);
         }
-		
+
 		t.Reset();
-		
+
         return false;
     }
 
@@ -175,6 +175,7 @@ typedef ChannelMessage_Handler<IRC_part,    Channel::HighlightLevel::Low,    par
 //! @note The channel doesn't care if it is the Server's `server` channel or
 //! not, so the message should have been correctly routed in the Server.
 typedef ChannelMessage_Handler<IRC_notice,  Channel::HighlightLevel::Low,    param_reader<1> > Notice_Handler;
+typedef ChannelMessage_Handler<IRC_your_host_num,  Channel::HighlightLevel::Low, param_reader<1> > YourHost_Handler;
 //! Prints information about JOIN messages. Does not modify the userlist.
 typedef ChannelMessage_Handler<IRC_join,    Channel::HighlightLevel::Low,    join_reader>      JoinPrint_Handler;
 

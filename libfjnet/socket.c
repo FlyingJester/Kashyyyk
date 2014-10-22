@@ -1,6 +1,8 @@
 #include "socket.h"
 #include <assert.h>
 #include <errno.h>
+#define LIBFJNET_INTERNAL
+#include "socket_definition.h"
 
 /*
 enum WSockErr {eSuccess, eFailure, eNotConnected, eAlreadyConnected};
@@ -42,12 +44,6 @@ const char *ExplainError_Socket(enum WSockErr err){
 #include <fcntl.h>
 #include <netdb.h>
 
-#if defined USE_KQUEUE
-#include <sys/kqueue.h>
-#endif
-
-typedef int FJNET_SOCKET;
-
 void InitSock(){}
 
 #define MakeNonBlocking(S) fcntl(S, F_SETFL, O_NONBLOCK)
@@ -80,8 +76,6 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 #include <stdio.h>
 #include <string.h>
 
-typedef SOCKET FJNET_SOCKET;
-
 static void WSACleanupWrapper_Local(void){
 	WSACleanup();
 }
@@ -109,7 +103,6 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 	return ioctlsocket(socket, FIONREAD, len);
 }
 
-
 #elif defined (USE_CYGSOCK)
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -122,8 +115,6 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 #include <unistd.h>
 #include <fcntl.h>
 #include <netdb.h>
-
-typedef int FJNET_SOCKET;
 
 void InitSock(){}
 
@@ -152,12 +143,14 @@ static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 
 #endif
 
-struct WSocket{
-    char hostname[0xFF];
-    struct sockaddr_in *sockaddr;
-    struct hostent *host;
-    FJNET_SOCKET sock;
-};
+static enum WSockErr CheckError(FJNET_SOCKET socket){
+    int status = 0;
+    socklen_t len = sizeof(int);
+    int err = getsockopt(socket, SOL_SOCKET, SO_ERROR, &status, &len);
+    if(err!=0)
+      return eFailure;
+    return status;
+}
 
 struct WSocket *Create_Socket(void){
 
@@ -330,6 +323,11 @@ enum WSockErr Write_Socket(struct WSocket *aSocket, const char *aToWrite){
 		return eFailure;
 	}
     return eSuccess;
+}
+
+
+enum WSockErr State_Socket(struct WSocket *aSocket){
+    return CheckError(aSocket->sock);
 }
 
 /* Gets the number of pending bytes. This can increase at any time, so

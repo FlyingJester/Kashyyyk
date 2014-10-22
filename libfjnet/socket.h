@@ -1,7 +1,5 @@
 #pragma once
-
-struct WSocket;
-enum WSockErr {eSuccess, eFailure, eNotConnected, eRefused, eTimeout, eAlreadyConnected};
+#include "status.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +29,8 @@ enum WSockErr Disconnect_Socket(struct WSocket *aSocket);
 */
 enum WSockErr Read_Socket(struct WSocket *aSocket, char **aTo);
 enum WSockErr Write_Socket(struct WSocket *aSocket, const char *aToWrite);
+
+enum WSockErr State_Socket(struct WSocket *aSocket);
 
 /* Gets the number of pending bytes. This can increase at any time, so
  you should only trust this to see if there are any pending bytes at all,

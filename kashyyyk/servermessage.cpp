@@ -40,7 +40,7 @@ Notice_Handler::Notice_Handler(Server *s)
 
 bool Notice_Handler::HandleMessage(IRC_Message *msg){
 
-    if(msg->type==IRC_notice){
+    if((msg->type==IRC_notice) || (msg->type==IRC_your_host_num)){
         Server::ChannelList::const_iterator server_chan =
           std::find_if(server->Channels.cbegin(), server->Channels.cend(), Server::find_channel(server_s));
 

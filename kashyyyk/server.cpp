@@ -1,5 +1,6 @@
 #include "server.hpp"
 #include "servermessage.hpp"
+#include "channelmessage.hpp"
 #include "channel.hpp"
 #include "prefs.hpp"
 #include "background.hpp"
@@ -40,6 +41,45 @@ bool Server::find_channel::operator () (const std::unique_ptr<Channel> &a){
 }
 
 
+class ServerConnectTask : public Task {
+
+    Server *server;
+    WSocket *socket;
+    bool reconnect_channels;
+    long port;
+public:
+
+    ServerConnectTask(Server *aServer, WSocket *aSocket, long prt, bool rc)
+      : server(aServer)
+      , socket(aSocket)
+      , reconnect_channels(rc)
+      , port(prt)
+      , promise(new PromiseValue<bool>(false)) {
+
+    }
+
+    void Run() override {
+        int err = Connect_Socket(socket, server->name.c_str(), port, 10000);
+
+        if(err){
+            repeating = true;
+            return;
+        }
+
+        promise->SetReady();
+        promise->Finalize(true);
+        repeating = false;
+        reconnect_channels = true;
+    }
+
+
+    virtual ~ServerConnectTask() {}
+
+    std::shared_ptr<PromiseValue<bool> > promise;
+
+};
+
+
 class ServerTask : public Task {
 
     char *buffer;
@@ -47,6 +87,8 @@ class ServerTask : public Task {
     Server *server;
     WSocket *socket;
     bool *task_died;
+
+    std::shared_ptr<PromiseValue<bool> > promise;
 
 public:
 
@@ -81,10 +123,25 @@ public:
                 repeating = false;
             }
         }
+
+        if(promise){
+            if(promise->IsReady()){
+                promise.reset();
+                return;
+            }
+        }
+
+        if(!server->SocketStatus()){
+            promise = server->Reconnect();
+            return;
+        }
+
         if(Length_Socket(socket)==0)
           return;
 
         Read_Socket(socket, &buffer);
+
+        printf("Dumping buffer:\n%s\n", buffer);
 
         struct IRC_ParseState *state;
         if(old_state==nullptr)
@@ -122,10 +179,11 @@ public:
 
 };
 
-Server::Server(WSocket *sock, const std::string &n, Window *w, const char *uid)
+Server::Server(WSocket *sock, const std::string &n, Window *w, long prt, const char *uid)
   : LockingReciever<Window, std::mutex> (w)
   , last_channel(nullptr)
   , socket(sock)
+  , port(prt)
   , widget(new Fl_Group(0, 0, 800, 600))
   , channel_list(new Fl_Tree_Item(tree_prefs))
   , tree_prefs()
@@ -138,6 +196,9 @@ Server::Server(WSocket *sock, const std::string &n, Window *w, const char *uid)
 
 
     Channel *channel = new Channel(this, "server");
+
+    channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::YourHost_Handler(channel)));
+    channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::Notice_Handler(channel)));
     AddChannel(channel);
 
     channel_list->user_data(channel);
@@ -145,6 +206,8 @@ Server::Server(WSocket *sock, const std::string &n, Window *w, const char *uid)
     w->SetChannel(channel);
 
     Thread::AddShortRunningTask(network_task);
+
+    Thread::AddSocketToTaskGroup(socket, Thread::GetShortThreadPool());
 
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Ping_Handler(this)));
 
@@ -360,6 +423,19 @@ std::shared_ptr<PromiseValue<Channel *> > Server::JoinChannel(const std::string 
     unlock();
 
     return handler_raw->promise;
+}
+
+
+std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc){
+    ServerConnectTask *task = new ServerConnectTask(this, socket, port, rc);
+
+    Thread::AddLongRunningTask(task);
+
+    return task->promise;
+}
+
+bool Server::SocketStatus(){
+    return State_Socket(socket)==eConnected;
 }
 
 }

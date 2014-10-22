@@ -8,7 +8,11 @@
 //! @date      2014
 //! @copyright GNU Public License 2.0
 
+struct WSocket;
+
 namespace Kashyyyk {
+
+class NetworkWatch;
 
 //!
 //! @brief Basic Task object. Designed to work with Thread and
@@ -135,6 +139,9 @@ public:
     //! @warning All remaining queued tasks are dropped when this is called,
     //! so it is best to ensure that all tasks have completed before this.
     static void DestroyTaskGroup(TaskGroup *task);
+
+    static void AddWatchToTaskGroup(NetworkWatch *watch, TaskGroup *group);
+    static void AddSocketToTaskGroup(WSocket *socket, TaskGroup *group);
 
     //! @cond
 

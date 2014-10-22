@@ -1,9 +1,13 @@
 #include "background.hpp"
+#include "networkwatch.hpp"
 #include "autolocker.hpp"
+#include "monitor.hpp"
 #include <TSPR/concurrent_queue.h>
 
 #include <mutex>
 #include <thread>
+#include <condition_variable>
+#include <atomic>
 
 #ifdef _WIN32
 
@@ -24,42 +28,65 @@ Task::~Task(){}
 
 //! @cond
 
+typedef std::pair<Thread::Thread_Impl &, std::atomic<bool> &> ThreadFunctionArg;
+static void ThreadFunction(ThreadFunctionArg);
+
 class Thread::TaskGroup{
   public:
     concurrent_queue<Task *> queue;
+    Monitor monitor;
+    NetworkWatch *watch;
+
+    TaskGroup()
+      : watch(nullptr){}
+
 };
 
 struct Thread::Thread_Impl{
-    concurrent_queue<Task *> *queue;
-    std::mutex mutex;
-    std::thread *thread;
-    bool live;
+    concurrent_queue<Task *> &queue;
+    Monitor monitor;
+    std::atomic<bool> live;
+    std::atomic<bool> started;
+    std::thread thread;
+
+    Thread_Impl(concurrent_queue<Task *> &q, Monitor &mon)
+      : queue(q)
+      , monitor(mon.GetMutex())
+      , live(true)
+      , started(false)
+      , thread(ThreadFunction, ThreadFunctionArg(*this, started)) {
+        while(!started){
+            monitor.NotifyAll();
+        }
+    }
+
 };
 
 //! @endcond
 
-static void ThreadFunction(Thread::Thread_Impl *thimble){
-    while(true){
-        Task * task;
+static void ThreadFunction(ThreadFunctionArg input){
+    Thread::Thread_Impl &thimble = input.first;
+    // Call monitor.NotifyAll() until stated equals true to ensure the thread has started.
 
-        MILLISLEEP(10);
+    thimble.monitor.UnboundWait();
+    input.second = true;
 
-        {
-            AutoLocker<std::mutex *> locker(&thimble->mutex);
-            if(!thimble->live)
-              break;
+    Task * task;
+
+    while(thimble.live){
+
+        if(thimble.queue.try_pop(task)){
+
+            task->Run();
+
+            if(task->repeating)
+                thimble.queue.push(task);
+            else
+              delete task;
+
         }
 
-        if(!thimble->queue->try_pop(task))
-          continue;
-
-        task->Run();
-
-        if(task->repeating)
-          thimble->queue->push(task);
-        else
-          delete task;
-
+        thimble.monitor.UnboundWait();
     }
 }
 
@@ -78,32 +105,34 @@ Thread::TaskGroup *Thread::GetLongThreadPool(){
 
 void Thread::AddLongRunningTask(Task *task){
     Thread::GetLongThreadPool()->queue.push(task);
+    Thread::GetLongThreadPool()->monitor.Notify();
 }
 
 
 void Thread::AddShortRunningTask(Task *task){
     Thread::GetShortThreadPool()->queue.push(task);
+    Thread::GetShortThreadPool()->monitor.Notify();
 }
 
 
 Thread::Thread(TaskGroup *group)
-  : guts(new Thread::Thread_Impl()){
-    guts->queue = &(group->queue);
-    guts->live = true;
-    guts->thread = new std::thread((void(*)(Thread::Thread_Impl *))ThreadFunction, guts.get());
+  : guts(new Thread::Thread_Impl(group->queue, group->monitor)){
 
 }
 
 
 Thread::~Thread(){
     guts->live = false;
-    guts->thread->join();
-    delete guts->thread;
+    guts->monitor.NotifyAll();
+    guts->thread.join();
 }
+
 
 void Thread::AddTask(TaskGroup *pool, Task *task){
     pool->queue.push(task);
+    pool->monitor.Notify();
 }
+
 
 void Thread::PerformTask(TaskGroup *pool){
     while(true){
@@ -120,11 +149,81 @@ void Thread::PerformTask(TaskGroup *pool){
     }
 }
 
+
 Thread::TaskGroup *Thread::CreateTaskGroup(){
-    return new Thread::TaskGroup();
+    Thread::TaskGroup *group = new Thread::TaskGroup();
+    assert(group);
+    return group;
 }
+
+
 void Thread::DestroyTaskGroup(Thread::TaskGroup *a){
     delete a;
 }
+
+
+void NetworkWatch::ThreadFunction(NetworkWatch *that){
+    while(that->live){
+#if NEEDS_FJNET_POLL_TIMEOUT
+        if(PollSet(eRead, that->socket_set, 100))
+#else
+        if(PollSet(eRead, that->socket_set, 0))
+#endif
+            that->monitor.Notify();
+
+    }
+}
+
+
+NetworkWatch::NetworkWatch(Thread::TaskGroup *group)
+  : live(true)
+  , monitor(group->monitor.GetMutex())
+  , socket_set(GenerateSocketSet(nullptr, 0))
+  , thread(NetworkWatch::ThreadFunction, this){
+
+}
+
+
+NetworkWatch::NetworkWatch(std::shared_ptr<struct Monitor::MutexHolder> &mutex)
+  : live(true)
+  , monitor(mutex)
+  , socket_set(GenerateSocketSet(nullptr, 0))
+  , thread(NetworkWatch::ThreadFunction, this){
+
+}
+
+NetworkWatch::~NetworkWatch(){
+    live = false;
+    monitor.NotifyAll();
+    thread.join();
+    FreeSocketSet(socket_set);
+
+    monitor.NotifyAll();
+}
+
+
+void NetworkWatch::AddSocket(WSocket *socket){
+    assert(!IsPartOfSet(socket, socket_set));
+    AddToSet(socket, socket_set);
+    assert(IsPartOfSet(socket, socket_set));
+}
+
+
+void NetworkWatch::DelSocket(WSocket *socket){
+    assert(IsPartOfSet(socket, socket_set));
+    RemoveFromSet(socket, socket_set);
+    assert(!IsPartOfSet(socket, socket_set));
+
+}
+
+void Thread::AddWatchToTaskGroup(NetworkWatch *watch, TaskGroup *group){
+    group->watch = watch;
+}
+
+
+void Thread::AddSocketToTaskGroup(WSocket *socket, TaskGroup *group){
+    group->watch->AddSocket(socket);
+}
+
 
 }
