@@ -270,14 +270,22 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
     channel_list->showroot(0);
     channel_list->callback(WindowCallbacks::ChannelList_CB, this);
 
-    Fl_Menu_Bar *menubar = (osx)?new Fl_Sys_Menu_Bar(-2, 0, w+4, 24):new Fl_Menu_Bar(-2, 0, w+4, 24);
+    Fl_Menu_Bar *menubar = (osx)?new Fl_Sys_Menu_Bar(0, 0, 0, 30):new Fl_Menu_Bar(-2, 0, w+4, 24);
 
-    menubar->add("File/Connect To...", 0, WindowCallbacks::ConnectToServer_CB, this);
-    menubar->add("File/Server List", 0, ServerList, this);
-    menubar->add("Edit/Preferences", 0, OpenPreferencesWindow_CB, this);
-    menubar->add("Server/Change Nick", 0, WindowCallbacks::ChangeNick_CB, this);
-    menubar->add("Server/Join Channel", 0, WindowCallbacks::JoinChannel_CB, this);
-    widget->add(menubar);
+    Fl_Menu_Item *items = new Fl_Menu_Item[11];
+        items[0] = {"&File",0,0,0,FL_SUBMENU},
+            items[1] = {"Connect To...", 0, WindowCallbacks::ConnectToServer_CB, this};
+            items[2] = {"Server List", 0, ServerList, this};
+        items[3] = {0};
+        items[4] = {"&Edit",0,0,0,FL_SUBMENU},
+            items[5] = {"Preferences", 0, OpenPreferencesWindow_CB, this};
+        items[6] = {0};
+        items[7] = {"&Server",0,0,0,FL_SUBMENU},
+            items[8] = {"Change Nick", 0, WindowCallbacks::ChangeNick_CB, this};
+            items[9] = {"Join Channel", 0, WindowCallbacks::JoinChannel_CB, this};
+    items[10] = {0};
+
+    menubar->menu(items);
 
     widget->resizable(chat_holder);
     widget->show();
