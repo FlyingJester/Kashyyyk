@@ -11,11 +11,19 @@
 
 #include <FL/Fl_Tree.H>
 
+#ifdef __APPLE__
+#define IS_OSX true
+#else
+#define IS_OSX false
+#endif
+
 class Fl_Window;
 class Fl_Group;
 class Fl_Tree;
 class Fl_Tree_Item;
 class Fl_Scroll;
+
+struct Fl_Menu_Item;
 
 namespace Kashyyyk {
 
@@ -34,8 +42,6 @@ public:
     static void ConnectToServer_CB(Fl_Widget *w, void *p);
     static void ConnectToServer(Window *p);
 };
-
-
 
 
 class Window {
@@ -70,14 +76,20 @@ protected:
 
     Server *last_server;
 
+    static std::mutex order_mutex;
+    static std::list<Window *> window_order;
+
 public:
 
     friend class AutoLocker<Window *>;
     friend class WindowCallbacks;
 
     Window();
-    Window(int w, int h, Thread::TaskGroup *g, Launcher *l = nullptr, bool osx = true);
+    Window(int w, int h, Thread::TaskGroup *g, Launcher *l = nullptr, bool osx = IS_OSX);
     ~Window();
+
+    Fl_Menu_Item   *reconnect_item;
+    Fl_Menu_Item   *disconnect_item;
 
     std::list<Channel *> Channels;
     std::list<std::unique_ptr<Server> > Servers;

@@ -31,6 +31,32 @@ void Window::WindowDeleteTask::Run(){
     window->widget->do_callback();
 }
 
+template<class T = Fl_Window>
+class K_Window : public T {
+public:
+    Window *owner;
+
+    K_Window(int x, int y, int w, int h, Window *own, const char * title = nullptr)
+      : T(x, y, w, h, title)
+      , owner(own){
+
+    }
+
+    K_Window(int w, int h, Window *own, const char * title = nullptr)
+      : T(w, h, title)
+      , owner(own){
+
+    }
+
+    int handle(int event) override {
+
+        return T::handle(event);
+
+    }
+
+};
+
+
 void WindowCallbacks::JoinChannel_CB(Fl_Widget *, void *p){
 
     assert(p);
@@ -255,7 +281,7 @@ void WindowCallbacks::WindowCallback(Fl_Widget *w, void *arg){
 
 Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
   : task_group(tg)
-  , widget(new Fl_Double_Window(w, h, "Kashyyyk IRC Client"))
+  , widget(new K_Window<Fl_Double_Window>(w, h, this, "Kashyyyk IRC Client"))
   , launcher(l)
   , chat_holder(new Fl_Group(128+8, 8+(osx?0:24), w-128-16, h-16-(osx?0:24)))
   , last_server(nullptr)
@@ -270,32 +296,35 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
     channel_list->showroot(0);
     channel_list->callback(WindowCallbacks::ChannelList_CB, this);
 
-    Fl_Menu_Bar *menubar;
+    if(!osx){
 
-    Fl_Menu_Item *items = new Fl_Menu_Item[11];
-        items[0] = {"&File",0,0,0,FL_SUBMENU},
-            items[1] = {"Connect To...", 0, WindowCallbacks::ConnectToServer_CB, this};
-            items[2] = {"Server List", 0, ServerList, this};
-        items[3] = {0};
-        items[4] = {"&Edit",0,0,0,FL_SUBMENU},
-            items[5] = {"Preferences", 0, OpenPreferencesWindow_CB, this};
-        items[6] = {0};
-        items[7] = {"&Server",0,0,0,FL_SUBMENU},
-            items[8] = {"Change Nick", 0, WindowCallbacks::ChangeNick_CB, this};
-            items[9] = {"Join Channel", 0, WindowCallbacks::JoinChannel_CB, this};
-    items[10] = {0};
+        int i = 0;
 
-    if(osx){
-        Fl_Sys_Menu_Bar *mb = new Fl_Sys_Menu_Bar(0, 0, 0, 30);
-        mb->menu(items);
-        menubar = mb;
-    }
-    else{
+        Fl_Menu_Bar *menubar;
+
+        Fl_Menu_Item *items = new Fl_Menu_Item[64];
+            items[i++] = {"&File",0,0,0,FL_SUBMENU},
+                items[i++] = {"New Window", 0, Launcher::NewWindow_CB, launcher};
+                items[i++] = {"Server List", 0, ServerList, this};
+                items[i++] = {"Connect To...", 0, WindowCallbacks::ConnectToServer_CB, this};
+                items[i++] = {"Server List", 0, ServerList, this};
+                items[i++] = {"Quit", 0, Launcher::Quit_CB, launcher};
+            items[i++] = {0};
+            items[i++] = {"&Edit",0,0,0,FL_SUBMENU},
+                items[i++] = {"Preferences", 0, OpenPreferencesWindow_CB, this};
+            items[i++] = {0};
+            items[i++] = {"&Server",0,0,0,FL_SUBMENU},
+                items[i++] = {"Reconnect", 0, WindowCallbacks::ChangeNick_CB, this};
+                items[i++] = {"Disconnect", 0, WindowCallbacks::ChangeNick_CB, this};
+                items[i++] = {"Change Nick", 0, WindowCallbacks::ChangeNick_CB, this};
+                items[i++] = {"Join Channel", 0, WindowCallbacks::JoinChannel_CB, this};
+        items[i++] = {0};
+
         menubar = new Fl_Menu_Bar(-2, 0, w+4, 24);
         menubar->menu(items);
-    }
 
-    widget->add(menubar);
+        widget->add(menubar);
+    }
 
     widget->resizable(chat_holder);
     widget->show();
