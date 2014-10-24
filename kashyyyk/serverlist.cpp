@@ -430,10 +430,12 @@ void ServerList(Fl_Widget *w, void *p){
         } // Server Setting Tab
 
         { // Group Info Tab
-            tabs->begin();
-            new Fl_Group((8*2)+256, 24, 256, H-32, "Group Info");
+            Fl_Group *g = new Fl_Group((8*2)+256, 24, 256, H-32, "Group Info");
+            tabs->add(g);
 
-            new EditList<>(8, 24, 256, H-32, "Groups");
+            Fl_Group *rg = new Fl_Group((8*2)+4+256, 48, 256-(4*2), H-32);
+            EditList<> *groups = new EditList<>((8*2)+4+256, 48, 256-(4*2), H-60, "Groups");
+            rg->add(groups);
 
         } // Group Info Tab
 
