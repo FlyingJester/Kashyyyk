@@ -270,7 +270,7 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
     channel_list->showroot(0);
     channel_list->callback(WindowCallbacks::ChannelList_CB, this);
 
-    Fl_Menu_Bar *menubar = (osx)?new Fl_Sys_Menu_Bar(0, 0, 0, 30):new Fl_Menu_Bar(-2, 0, w+4, 24);
+    Fl_Menu_Bar *menubar;
 
     Fl_Menu_Item *items = new Fl_Menu_Item[11];
         items[0] = {"&File",0,0,0,FL_SUBMENU},
@@ -285,7 +285,15 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
             items[9] = {"Join Channel", 0, WindowCallbacks::JoinChannel_CB, this};
     items[10] = {0};
 
-    menubar->menu(items);
+    if(osx){
+        Fl_Sys_Menu_Bar *mb = new Fl_Sys_Menu_Bar(0, 0, 0, 30);
+        mb->menu(items);
+        menubar = mb;
+    }
+    else{
+        menubar = new Fl_Menu_Bar(-2, 0, w+4, 24);
+        menubar->menu(items);
+    }
 
     widget->add(menubar);
 
