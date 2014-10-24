@@ -39,6 +39,7 @@ Kashyyyk::Launcher *CreateLauncher(void /*Thread::TaskGroup*/ *a){
             items[i++] = {"&File",0,0,0,FL_SUBMENU},
                 items[i++] = {"New Window", FL_COMMAND + 'm', Launcher::NewWindow_CB, launcher};
                 items[i++] = {"Connect To...", FL_COMMAND + 'g', Launcher::DirectConnect_CB, launcher};
+                items[i++] = {"Server List", FL_COMMAND + 'l', Launcher::DirectConnect_CB, launcher};
             items[i++] = {0};
             items[i++] = {"&Edit",0,0,0,FL_SUBMENU},
                 items[i++] = {"Preferences", FL_COMMAND + ',', Launcher::Preferences_CB, launcher};
