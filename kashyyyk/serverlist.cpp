@@ -344,88 +344,98 @@ void ServerList(Fl_Widget *w, void *p){
 
         Fl_Tabs *tabs = new Fl_Tabs((8*2)+256, 8, 256, H-16);
 
-        Fl_Group *g = new Fl_Group((8*2)+256, 24, 256, H-32, "Server Settings");
+        { // Server Setting Tab
+            Fl_Group *g = new Fl_Group((8*2)+256, 24, 256, H-32, "Server Settings");
 
-        tabs->add(g);
-        Fl_Pack *propertypack = new Fl_Pack((8*2)+4+256, 48, 256-(4*2), H-32);
-        propertypack->spacing(4);
-        propertypack->add(new Fl_Box(0, 0, 0, 0));
+            tabs->add(g);
+            Fl_Pack *propertypack = new Fl_Pack((8*2)+4+256, 48, 256-(4*2), H-32);
+            propertypack->spacing(4);
+            propertypack->add(new Fl_Box(0, 0, 0, 0));
 
 
-        {
+            {
 
-            struct ServerData *first_server_deleter = nullptr;
-            ServerDB::iterator server_iter = pref_items->DataBase->begin();
-            if(server_iter==pref_items->DataBase->end()){
-                first_server_deleter = new struct ServerData();
-                pref_items->Data = first_server_deleter;
-                pref_items->Data->Name = nullptr;
-                pref_items->Data->Nick = strdup("KashyyykUser");
-                pref_items->Data->User = strdup("KashyyykName");
-                pref_items->Data->Real = strdup("KashyyykReal");
-                pref_items->Data->UserGlobalIdentity = 1;
+                struct ServerData *first_server_deleter = nullptr;
+                ServerDB::iterator server_iter = pref_items->DataBase->begin();
+                if(server_iter==pref_items->DataBase->end()){
+                    first_server_deleter = new struct ServerData();
+                    pref_items->Data = first_server_deleter;
+                    pref_items->Data->Name = nullptr;
+                    pref_items->Data->Nick = strdup("KashyyykUser");
+                    pref_items->Data->User = strdup("KashyyykName");
+                    pref_items->Data->Real = strdup("KashyyykReal");
+                    pref_items->Data->UserGlobalIdentity = 1;
+                }
+                else{
+                    pref_items->Data = server_iter->get();
+                }
+
+                auto NickWidget = CreatePackWidget("Nick", pref_items->Data->Nick);
+                propertypack->add(NickWidget.first);
+                pref_items->Nick = NickWidget.second;
+                NickWidget.first->callback(InputCallback<offsetof(ServerData, Nick)>, pref_items);
+
+                auto NameWidget = CreatePackWidget("Name", pref_items->Data->User);
+                propertypack->add(NameWidget.first);
+                pref_items->Name = NameWidget.second;
+                NameWidget.first->callback(InputCallback<offsetof(ServerData, User)>, pref_items);
+
+                auto RealWidget = CreatePackWidget("Real", pref_items->Data);
+                propertypack->add(RealWidget.first);
+                pref_items->Real = RealWidget.second;
+                RealWidget.first->callback(InputCallback<offsetof(ServerData, Real)>, pref_items);
+
+                auto GlobalWidget = CreatePackWidget<Fl_Check_Button, 224>
+                  ("Use Global Settings", pref_items->Data->UserGlobalIdentity,
+                  GlobalCheckboxCallback, pref_items);
+
+                propertypack->add(GlobalWidget.first);
+                GlobalWidget.second->do_callback();
+                pref_items->Global = GlobalWidget.second;
+
+
+                auto SSLWidget   = CreatePackWidget<Fl_Check_Button, 224>
+                  ("Use SSL", pref_items->Data->SSL);
+                propertypack->add(SSLWidget.first);
+                pref_items->SSL = SSLWidget.second;
+                SSLWidget.first->callback(SSLCheckboxCallback, pref_items->Data);
+
+
+                delete first_server_deleter;
+
             }
-            else{
-                pref_items->Data = server_iter->get();
+
+            propertypack->add(new Fl_Box(0, 0, 0, 8));
+
+            EditList<> *autojoin = new EditList<>(8, 24, 256, H-216, "AutoJoin Channels");
+            pref_items->AutoJoin = autojoin;
+
+            printf("AutoJoin: %p\n", static_cast<void *>(autojoin));
+
+            servers->SetNumCallback(ServerListNumCallback, pref_items);
+            servers->SetAddCallback(ServerListAddCallback, pref_items);
+            servers->SetSelCallback(ServerListSelCallback, pref_items);
+            servers->SetEdtCallback(ServerListEdtCallback, pref_items);
+            autojoin->SetDelCallback(AutoJoinDelCallback, pref_items);
+            autojoin->SetEdtCallback(AutoJoinEdtCallback, pref_items);
+            autojoin->SetAddCallback(AutoJoinAddCallback, pref_items);
+
+            if(servers->GetNumItems()==0){
+                autojoin->Deactivate();
+                pref_items->Global->deactivate();
             }
 
-            auto NickWidget = CreatePackWidget("Nick", pref_items->Data->Nick);
-            propertypack->add(NickWidget.first);
-            pref_items->Nick = NickWidget.second;
-            NickWidget.first->callback(InputCallback<offsetof(ServerData, Nick)>, pref_items);
+            propertypack->add(autojoin);
 
-            auto NameWidget = CreatePackWidget("Name", pref_items->Data->User);
-            propertypack->add(NameWidget.first);
-            pref_items->Name = NameWidget.second;
-            NameWidget.first->callback(InputCallback<offsetof(ServerData, User)>, pref_items);
+        } // Server Setting Tab
 
-            auto RealWidget = CreatePackWidget("Real", pref_items->Data);
-            propertypack->add(RealWidget.first);
-            pref_items->Real = RealWidget.second;
-            RealWidget.first->callback(InputCallback<offsetof(ServerData, Real)>, pref_items);
+        { // Group Info Tab
+            tabs->begin();
+            new Fl_Group((8*2)+256, 24, 256, H-32, "Group Info");
 
-            auto GlobalWidget = CreatePackWidget<Fl_Check_Button, 224>
-              ("Use Global Settings", pref_items->Data->UserGlobalIdentity,
-              GlobalCheckboxCallback, pref_items);
+            new EditList<>(8, 24, 256, H-32, "Groups");
 
-            propertypack->add(GlobalWidget.first);
-            GlobalWidget.second->do_callback();
-            pref_items->Global = GlobalWidget.second;
-
-
-            auto SSLWidget   = CreatePackWidget<Fl_Check_Button, 224>
-              ("Use SSL", pref_items->Data->SSL);
-            propertypack->add(SSLWidget.first);
-            pref_items->SSL = SSLWidget.second;
-            SSLWidget.first->callback(SSLCheckboxCallback, pref_items->Data);
-
-
-            delete first_server_deleter;
-
-        }
-
-        propertypack->add(new Fl_Box(0, 0, 0, 8));
-
-        EditList<> *autojoin = new EditList<>(8, 24, 256, 130, "AutoJoin Channels");
-        pref_items->AutoJoin = autojoin;
-
-        printf("AutoJoin: %p\n", static_cast<void *>(autojoin));
-
-        servers->SetNumCallback(ServerListNumCallback, pref_items);
-        servers->SetAddCallback(ServerListAddCallback, pref_items);
-        servers->SetSelCallback(ServerListSelCallback, pref_items);
-        servers->SetEdtCallback(ServerListEdtCallback, pref_items);
-        autojoin->SetDelCallback(AutoJoinDelCallback, pref_items);
-        autojoin->SetEdtCallback(AutoJoinEdtCallback, pref_items);
-        autojoin->SetAddCallback(AutoJoinAddCallback, pref_items);
-
-        if(servers->GetNumItems()==0){
-            autojoin->Deactivate();
-            pref_items->Global->deactivate();
-        }
-        propertypack->add(autojoin);
-
-        tabs->add(new Fl_Group((8*2)+256, 24, 256, H-32, "Group Info"));
+        } // Group Info Tab
 
         serverlist_window->callback(WindowCallback, pref_items->DataBase);
 
