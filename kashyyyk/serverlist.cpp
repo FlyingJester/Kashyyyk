@@ -16,6 +16,7 @@
 #include <FL/Fl_Pack.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Preferences.H>
+#include <FL/Fl_Tabs.H>
 
 namespace Kashyyyk {
 
@@ -298,19 +299,6 @@ static void ServerListSelCallback(EditList<>::ItemType in, void *p) {
 
     pref_items->Global->do_callback();
 
-    /*
-    if(data->UserGlobalIdentity){
-        pref_items->Nick->deactivate();
-        pref_items->Name->deactivate();
-        pref_items->Real->deactivate();
-    }
-    else{
-        pref_items->Nick->activate();
-        pref_items->Name->activate();
-        pref_items->Real->activate();
-    }
-    */
-
     pref_items->AutoJoin->Clear();
 
     for(std::vector<std::string>::iterator string_iter=data->AutoJoins.begin();
@@ -339,7 +327,7 @@ void ServerList(Fl_Widget *w, void *p){
         pref_items->DataBase->open(prefs);
         pref_items->DataBase->CallBacks.push_back({ServerDataChangedCallback, pref_items});
 
-        const unsigned H = (24*6)+(16*8)+(8*9);
+        const unsigned H = (24*6)+(16*8)+(8*9)+(2*1);
 
         Fl_Window *serverlist = new Fl_Window((256*2)+(8*3), H);
         serverlist_window.reset(serverlist);
@@ -354,11 +342,12 @@ void ServerList(Fl_Widget *w, void *p){
 
         serverlist->begin();
 
-        Fl_Group *g = new Fl_Group((8*2)+256, 24, 256, H-32, "Server Settings");
-        g->box(FL_DOWN_FRAME);
+        Fl_Tabs *tabs = new Fl_Tabs((8*2)+256, 8, 256, H-16);
 
-        serverlist->add(g);
-        Fl_Pack *propertypack = new Fl_Pack((8*2)+4+256, 24, 256-(4*2), H-32);
+        Fl_Group *g = new Fl_Group((8*2)+256, 24, 256, H-32, "Server Settings");
+
+        tabs->add(g);
+        Fl_Pack *propertypack = new Fl_Pack((8*2)+4+256, 48, 256-(4*2), H-32);
         propertypack->spacing(4);
         propertypack->add(new Fl_Box(0, 0, 0, 0));
 
@@ -417,7 +406,7 @@ void ServerList(Fl_Widget *w, void *p){
 
         propertypack->add(new Fl_Box(0, 0, 0, 8));
 
-        EditList<> *autojoin = new EditList<>(8, 24, 256, 156, "AutoJoin Channels");
+        EditList<> *autojoin = new EditList<>(8, 24, 256, 130, "AutoJoin Channels");
         pref_items->AutoJoin = autojoin;
 
         printf("AutoJoin: %p\n", static_cast<void *>(autojoin));
@@ -436,6 +425,7 @@ void ServerList(Fl_Widget *w, void *p){
         }
         propertypack->add(autojoin);
 
+        tabs->add(new Fl_Group((8*2)+256, 24, 256, H-32, "Group Info"));
 
         serverlist_window->callback(WindowCallback, pref_items->DataBase);
 
