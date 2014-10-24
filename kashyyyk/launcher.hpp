@@ -27,14 +27,27 @@ public:
 
     Window *NewWindow();
     void DirectConnect();
-    void JoinChannel();
     void ServerList();
     void Preferences();
+    void JoinChannel();
     void Quit();
 
     void Release(Window *);
 
     static Launcher *CreatePlatformLauncher(Thread::TaskGroup *a);
+    static const Fl_Menu_Item * const GetLauncherMenu(Launcher *l);
+
+    //! Wraps Launcher::NewWindow for use in an FLTK callback.
+    static void NewWindow_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::DirectConnect for use in an FLTK callback.
+    static void DirectConnect_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::Quit for use in an FLTK callback.
+    static void Quit_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::Preferences for use in an FLTK callback.
+    static void Preferences_CB(Fl_Widget *w, void *p);
 
 };
 

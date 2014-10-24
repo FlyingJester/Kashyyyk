@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Button.H>
+#include <FL/Fl_Menu.H>
 #include <FL/Fl_RGB_Image.H>
 
 #include <icons/index.h>
@@ -37,30 +38,6 @@ struct Launcher::LauncherImpl{
 
     };
 
-    //! Wraps Launcher::NewWindow for use in an FLTK callback.
-    static void NewWindow_CB(Fl_Widget *w, void *p){
-        Launcher *launch = static_cast<Launcher *>(p);
-        launch->NewWindow();
-    }
-
-    //! Wraps Launcher::DirectConnect for use in an FLTK callback.
-    static void DirectConnect_CB(Fl_Widget *w, void *p){
-        Launcher *launch = static_cast<Launcher *>(p);
-        launch->DirectConnect();
-    }
-
-    //! Wraps Launcher::Quit for use in an FLTK callback.
-    static void Quit_CB(Fl_Widget *w, void *p){
-        Launcher *launch = static_cast<Launcher *>(p);
-        launch->Quit();
-    }
-
-    //! Wraps Launcher::Preferences for use in an FLTK callback.
-    static void Preferences_CB(Fl_Widget *w, void *p){
-        Launcher *launch = static_cast<Launcher *>(p);
-        launch->Preferences();
-    }
-
     Launcher &launcher;
     Thread::TaskGroup *group;
     std::forward_list<Window *> windows;
@@ -75,6 +52,35 @@ struct Launcher::LauncherImpl{
     }
 
 };
+
+
+//! Wraps Launcher::NewWindow for use in an FLTK callback.
+void Launcher::NewWindow_CB(Fl_Widget *w, void *p){
+    Launcher *launch = static_cast<Launcher *>(p);
+    assert(launch);
+    launch->NewWindow();
+}
+
+//! Wraps Launcher::DirectConnect for use in an FLTK callback.
+void Launcher::DirectConnect_CB(Fl_Widget *w, void *p){
+    Launcher *launch = static_cast<Launcher *>(p);
+    assert(launch);
+    launch->DirectConnect();
+}
+
+//! Wraps Launcher::Quit for use in an FLTK callback.
+void Launcher::Quit_CB(Fl_Widget *w, void *p){
+    Launcher *launch = static_cast<Launcher *>(p);
+    assert(launch);
+    launch->Quit();
+}
+
+//! Wraps Launcher::Preferences for use in an FLTK callback.
+void Launcher::Preferences_CB(Fl_Widget *w, void *p){
+    Launcher *launch = static_cast<Launcher *>(p);
+    assert(launch);
+    launch->Preferences();
+}
 
 
 struct LauncherButtons {
@@ -129,10 +135,10 @@ struct IconLauncherSpacingImpl : public WindowLauncherImpl {
         buttons.PreferencesButton.reset(new Fl_Button(  16+(icon_dimen_w*4*h), 16+(icon_dimen_h*4*v), icon_dimen_w, icon_dimen_h));
         buttons.QuitButton.reset(new Fl_Button(         16+(icon_dimen_w*5*h), 16+(icon_dimen_h*5*v), icon_dimen_w, icon_dimen_h));
 
-        buttons.NewWindowButton->callback(NewWindow_CB, &launcher);
-        buttons.DirectConnectButton->callback(DirectConnect_CB, &launcher);
-        buttons.QuitButton->callback(Quit_CB, &launcher);
-        buttons.PreferencesButton->callback(Preferences_CB, &launcher);
+        buttons.NewWindowButton->callback(Launcher::NewWindow_CB, &launcher);
+        buttons.DirectConnectButton->callback(Launcher::DirectConnect_CB, &launcher);
+        buttons.QuitButton->callback(Launcher::Quit_CB, &launcher);
+        buttons.PreferencesButton->callback(Launcher::Preferences_CB, &launcher);
 
     }
 
@@ -228,7 +234,7 @@ Launcher::~Launcher(){
 
 	while(!guts->windows.empty())
 	  Release(guts->windows.front());
-	
+
     delete guts;
 }
 

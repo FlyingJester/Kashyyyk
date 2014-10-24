@@ -11,6 +11,7 @@
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Tree_Item.H>
+#include <FL/Fl_Menu.H>
 #include <FL/Fl_Browser.H>
 
 #include <stack>
@@ -41,6 +42,19 @@ bool Server::find_channel::operator () (const std::unique_ptr<Channel> &a){
 }
 
 
+void Server::ReconnectServer_CB(Fl_Widget *, void *p){
+
+    assert(p);
+
+    Server *server = static_cast<Server *>(p);
+
+    server->Reconnect(true);
+
+    server->Parent->reconnect_item->deactivate();
+
+}
+
+
 class ServerConnectTask : public Task {
 
     Server *server;
@@ -61,8 +75,9 @@ public:
     void Run() override {
         int err = Connect_Socket(socket, server->name.c_str(), port, 10000);
 
-        if(err){
+        if(err!=eAlreadyConnected){
             repeating = true;
+            server->connected = false;
             return;
         }
 
@@ -70,8 +85,8 @@ public:
         promise->Finalize(true);
         repeating = false;
         reconnect_channels = true;
+        server->connected = true;
     }
-
 
     virtual ~ServerConnectTask() {}
 
@@ -437,15 +452,32 @@ std::shared_ptr<PromiseValue<Channel *> > Server::JoinChannel(const std::string 
 
 
 std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc){
-    ServerConnectTask *task = new ServerConnectTask(this, socket, port, rc);
 
-    Thread::AddLongRunningTask(task);
+    if((last_reconnect.get()) && (!last_reconnect->IsReady())){
+        ServerConnectTask *task = new ServerConnectTask(this, socket, port, rc);
 
-    return task->promise;
+        Thread::AddLongRunningTask(task);
+
+        last_reconnect.reset(task->promise.get());
+    }
+
+    return last_reconnect;
+
 }
 
+
+bool Server::IsConnected(){
+    return connected;
+}
+
+
 bool Server::SocketStatus(){
-    return State_Socket(socket)==eConnected;
+    WSockErr e = State_Socket(socket);
+    if(e!=eConnected)
+      connected = false;
+    else
+      connected = true;
+    return e==eConnected;
 }
 
 }

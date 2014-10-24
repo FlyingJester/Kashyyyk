@@ -21,6 +21,8 @@ class Fl_Group;
 class Fl_Tree_Item;
 struct WSocket;
 
+namespace std {class atomic_flag;}
+
 namespace Kashyyyk{
 
 class Channel;
@@ -42,7 +44,9 @@ class ServerTask;
 class Server : public LockingReciever<Window, std::mutex> {
 public:
 
-    typedef std::list<std::unique_ptr<Channel> >        ChannelList;
+    typedef std::list<std::unique_ptr<Channel> > ChannelList;
+
+    static void ReconnectServer_CB(Fl_Widget *, void *p);
 
 protected:
 
@@ -65,10 +69,13 @@ protected:
 
     void FocusChanged();
 
+    std::shared_ptr<PromiseValue<bool> > last_reconnect;
+    std::atomic_bool connected;
 
 public:
     friend class Channel;
     friend class Window;
+    friend class ServerConnectTask;
     friend class AutoLocker<Server *>;
 
     Server(WSocket *socket, const std::string &name, Window *w, long prt, const char *uid=nullptr);
@@ -78,6 +85,8 @@ public:
     std::string nick;
 
     ChannelList Channels;
+
+    bool IsConnected();
 
      // Registers a new chat group.
      // Resizes the group given to the correct proportions.
