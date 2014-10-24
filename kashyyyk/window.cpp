@@ -287,6 +287,8 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
 
     menubar->menu(items);
 
+    widget->add(menubar);
+
     widget->resizable(chat_holder);
     widget->show();
 

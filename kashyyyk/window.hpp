@@ -76,7 +76,7 @@ public:
     friend class WindowCallbacks;
 
     Window();
-    Window(int w, int h, Thread::TaskGroup *g, Launcher *l = nullptr, bool osx = false);
+    Window(int w, int h, Thread::TaskGroup *g, Launcher *l = nullptr, bool osx = true);
     ~Window();
 
     std::list<Channel *> Channels;
