@@ -55,44 +55,30 @@ void Server::ReconnectServer_CB(Fl_Widget *, void *p){
 }
 
 
-class ServerConnectTask : public Task {
+ServerConnectTask::ServerConnectTask(Server *aServer, WSocket *aSocket, long prt, bool rc, bool SSL)
+  : server(aServer)
+  , socket(aSocket)
+  , reconnect_channels(rc)
+  , port(prt)
+  , promise(new PromiseValue<bool>(false)) {
 
-    Server *server;
-    WSocket *socket;
-    bool reconnect_channels;
-    long port;
-public:
+}
 
-    ServerConnectTask(Server *aServer, WSocket *aSocket, long prt, bool rc)
-      : server(aServer)
-      , socket(aSocket)
-      , reconnect_channels(rc)
-      , port(prt)
-      , promise(new PromiseValue<bool>(false)) {
+void ServerConnectTask::Run(){
+    int err = Connect_Socket(socket, server->name.c_str(), port, 10000);
 
+    if(err!=eAlreadyConnected){
+        repeating = true;
+        server->connected = false;
+        return;
     }
 
-    void Run() override {
-        int err = Connect_Socket(socket, server->name.c_str(), port, 10000);
-
-        if(err!=eAlreadyConnected){
-            repeating = true;
-            server->connected = false;
-            return;
-        }
-
-        promise->SetReady();
-        promise->Finalize(true);
-        repeating = false;
-        reconnect_channels = true;
-        server->connected = true;
-    }
-
-    virtual ~ServerConnectTask() {}
-
-    std::shared_ptr<PromiseValue<bool> > promise;
-
-};
+    promise->SetReady();
+    promise->Finalize(true);
+    repeating = false;
+    reconnect_channels = true;
+    server->connected = true;
+}
 
 
 class ServerTask : public Task {
@@ -203,7 +189,7 @@ public:
 
 };
 
-Server::Server(WSocket *sock, const std::string &n, Window *w, long prt, const char *uid)
+Server::Server(WSocket *sock, const std::string &n, Window *w, long prt, const char *uid, bool SSL)
   : LockingReciever<Window, std::mutex> (w)
   , last_channel(nullptr)
   , socket(sock)

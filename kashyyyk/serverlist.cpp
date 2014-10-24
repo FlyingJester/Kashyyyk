@@ -4,7 +4,9 @@
 #include "prefs.hpp"
 #include "doubleinput.hpp"
 #include "serverdatabase.hpp"
+#include "server.hpp"
 #include "csv.h"
+#include "socket.h"
 #include <cassert>
 #include <cstdio>
 #include <string>
@@ -27,6 +29,7 @@ struct ServerPrefItems {
     Fl_Input_ *Real;
     Fl_Button *Global;
     Fl_Button *SSL;
+    Fl_Button *Connect;
     ServerData *Data;
     EditList<> *AutoJoin;
     EditList<> *Servers;
@@ -97,6 +100,99 @@ void InputCallback(Fl_Widget *w, void *p){
     const char ** value= (const char **)(pref_items->Data)+s;
 
     GetPreferences().set(*value, input->value());
+
+}
+
+/*
+    const char *UID;
+    char *Name;             //!< Human-readable name
+    char *Address;          //!< Network address
+    int  port;              //!< Port to connect on
+    int SSL;                //!< Use SSL
+    int UserGlobalIdentity; //!< Use global identity information
+    char *Nick;             //!< Default nickname on connecting
+    char *User;             //!< Default username on connecting
+    char *Real;             //!< Default realname on connecting
+*/
+
+class ConnectCallback_Task : public Task{
+
+    class AddServerTask : public Task{
+
+    WSocket *socket;
+    ServerData *data;
+    public:
+        AddServerTask(WSocket *sock, ServerData *dat)
+          : socket(sock)
+          , data(dat){
+
+        }
+
+        void Run() override {
+            repeating = false;
+            Window *to = const_cast<Window *>(Window::window_order.front());
+            to->AddServer(new Server(socket, data->Address, to, data->port, data->UID, data->SSL));
+        }
+
+    };
+
+void *p;
+public:
+
+    ConnectCallback_Task(void *arg)
+      : p(arg){}
+
+    void Run() override {
+        assert(p);
+
+        repeating = false;
+        ServerData *data = static_cast<ServerData *>(p);
+
+        WSocket *sock;
+        int err;
+
+try_connect:
+        sock = Create_Socket();
+
+        if(!sock){
+            printf("Could not create a socket.\n");
+        }
+
+        err = Connect_Socket(sock, data->Address, data->port, 10000);
+        if(!err){
+            Task *task = new AddServerTask(sock, data);
+            Thread::AddTask(serverlist_associated_window->task_group, task);
+        }
+        else{
+            printf("Couldn't connect. Asking if we should try again.\n");
+
+            PromiseValue<int> promise(0);
+
+            Task *task = new AskToConnectAgain_Task(promise, data->Name);
+
+            Thread::AddTask(serverlist_associated_window->task_group, task);
+
+            Fl::awake();
+
+            while(!promise.IsReady()){}
+
+            bool again = (promise.Finish()==1);
+            if(again){
+                Destroy_Socket(sock);
+                goto try_connect;
+            }
+        }
+
+
+
+
+    }
+};
+
+
+void ConnectCallback_CB(Fl_Widget *w, void *p){
+
+    Thread::AddLongRunningTask(new ConnectCallback_Task(p));
 
 }
 
@@ -301,6 +397,8 @@ static void ServerListSelCallback(EditList<>::ItemType in, void *p) {
 
     pref_items->AutoJoin->Clear();
 
+    pref_items->Connect->user_data(data);
+
     for(std::vector<std::string>::iterator string_iter=data->AutoJoins.begin();
     string_iter!=data->AutoJoins.end(); string_iter++){
         pref_items->AutoJoin->AddItem({string_iter->c_str(), nullptr});
@@ -332,7 +430,12 @@ void ServerList(Fl_Widget *w, void *p){
         Fl_Window *serverlist = new Fl_Window((256*2)+(8*3), H);
         serverlist_window.reset(serverlist);
 
-        EditList<> *servers = new EditList<>(8, 24, 256, H-32, "Servers");
+        EditList<> *servers = new EditList<>(8, 24, 256, H-32-32, "Servers");
+
+        Fl_Button *connect_button = new Fl_Button(8, H-32, 256, 24, "Connect");
+        serverlist->add(connect_button);
+        connect_button->callback(ConnectCallback_CB);
+        pref_items->Connect = connect_button;
 
         pref_items->Servers = servers;
 

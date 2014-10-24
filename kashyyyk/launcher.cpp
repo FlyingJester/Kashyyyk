@@ -3,6 +3,7 @@
 #include "window.hpp"
 #include "prefs.hpp"
 #include "background.hpp"
+#include "serverlist.hpp"
 #include <cstdlib>
 #include <cassert>
 #include <forward_list>
@@ -53,35 +54,23 @@ struct Launcher::LauncherImpl{
 
 };
 
-
-//! Wraps Launcher::NewWindow for use in an FLTK callback.
-void Launcher::NewWindow_CB(Fl_Widget *w, void *p){
-    Launcher *launch = static_cast<Launcher *>(p);
-    assert(launch);
-    launch->NewWindow();
+// Macro up some wrappers
+#define DEFINE_CB(OF)\
+void Launcher::OF##_CB(Fl_Widget *w, void *p){\
+    Launcher *launch = static_cast<Launcher *>(p);\
+    assert(launch);\
+    launch->OF();\
 }
 
-//! Wraps Launcher::DirectConnect for use in an FLTK callback.
-void Launcher::DirectConnect_CB(Fl_Widget *w, void *p){
-    Launcher *launch = static_cast<Launcher *>(p);
-    assert(launch);
-    launch->DirectConnect();
-}
+DEFINE_CB(NewWindow)
+DEFINE_CB(DirectConnect)
+DEFINE_CB(ServerList)
+DEFINE_CB(Quit)
+DEFINE_CB(Preferences)
+DEFINE_CB(JoinChannel)
+DEFINE_CB(ChangeNick)
 
-//! Wraps Launcher::Quit for use in an FLTK callback.
-void Launcher::Quit_CB(Fl_Widget *w, void *p){
-    Launcher *launch = static_cast<Launcher *>(p);
-    assert(launch);
-    launch->Quit();
-}
-
-//! Wraps Launcher::Preferences for use in an FLTK callback.
-void Launcher::Preferences_CB(Fl_Widget *w, void *p){
-    Launcher *launch = static_cast<Launcher *>(p);
-    assert(launch);
-    launch->Preferences();
-}
-
+#undef DEFINE_CB
 
 struct LauncherButtons {
 
@@ -269,13 +258,18 @@ void Launcher::DirectConnect(){
 }
 
 
-void Launcher::JoinChannel(){
+void Launcher::ChangeNick(){
+    WindowCallbacks::ChangeNick_CB(nullptr, const_cast<Window *>(Window::window_order.back()));
+}
 
+
+void Launcher::JoinChannel(){
+    WindowCallbacks::JoinChannel_CB(nullptr, const_cast<Window *>(Window::window_order.back()));
 }
 
 
 void Launcher::ServerList(){
-
+    Kashyyyk::ServerList(nullptr, const_cast<Window *>(Window::window_order.back()));
 }
 
 

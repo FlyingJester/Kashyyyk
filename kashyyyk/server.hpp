@@ -28,6 +28,23 @@ namespace Kashyyyk{
 class Channel;
 class ServerTask;
 
+
+class ServerConnectTask : public Task {
+
+    Server *server;
+    WSocket *socket;
+    bool reconnect_channels;
+    long port;
+public:
+
+    ServerConnectTask(Server *aServer, WSocket *aSocket, long prt = 6665, bool reconnect_chans = true, bool SSL = false);
+
+    void Run() override;
+
+    std::shared_ptr<PromiseValue<bool> > promise;
+
+};
+
 //
 // The MessageHandlers in a Server should only very rarely need to actually see
 // much about the Server's Channels. In the case of server-only messages, such
@@ -78,7 +95,7 @@ public:
     friend class ServerConnectTask;
     friend class AutoLocker<Server *>;
 
-    Server(WSocket *socket, const std::string &name, Window *w, long prt, const char *uid=nullptr);
+    Server(WSocket *socket, const std::string &name, Window *w, long prt, const char *uid=nullptr, bool SSL=false);
     ~Server();
 
     std::string name;

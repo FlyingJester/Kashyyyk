@@ -1,13 +1,15 @@
 #pragma once
 
+#include "autolocker.hpp"
+#include "background.hpp"
+#include "promise.hpp"
+#include "platform/pling.h"
+
 #include <list>
 #include <vector>
 #include <memory>
 #include <mutex>
-
-#include "autolocker.hpp"
-#include "background.hpp"
-#include "platform/pling.h"
+#include <string>
 
 #include <FL/Fl_Tree.H>
 
@@ -44,6 +46,20 @@ public:
 };
 
 
+class AskToConnectAgain_Task : public Task {
+    PromiseValue<int> &promise;
+    const std::string &name;
+public:
+    AskToConnectAgain_Task(PromiseValue<int> &p, const std::string &n)
+      : promise(p)
+      , name(n) {}
+
+    virtual ~AskToConnectAgain_Task(){}
+
+    void Run() override;
+};
+
+
 class Window {
 public:
     Thread::TaskGroup *task_group;
@@ -75,9 +91,6 @@ protected:
     Fl_Tree_Prefs prefs;
 
     Server *last_server;
-
-    static std::mutex order_mutex;
-    static std::list<Window *> window_order;
 
 public:
 
@@ -122,6 +135,9 @@ public:
     void AutoJoinChannels(void);
 
     void ForgetLauncher();
+
+    // Does not need locking, since all callbacks are on the main thread.
+    static std::list<const Window *> window_order;
 
 };
 

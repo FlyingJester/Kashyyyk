@@ -27,6 +27,8 @@
 
 namespace Kashyyyk {
 
+std::list<const Window *> Window::window_order;
+
 void Window::WindowDeleteTask::Run(){
     window->widget->do_callback();
 }
@@ -34,22 +36,27 @@ void Window::WindowDeleteTask::Run(){
 template<class T = Fl_Window>
 class K_Window : public T {
 public:
-    Window *owner;
+    const Window *owner;
 
-    K_Window(int x, int y, int w, int h, Window *own, const char * title = nullptr)
+    K_Window(int x, int y, int w, int h, const Window *own, const char * title = nullptr)
       : T(x, y, w, h, title)
       , owner(own){
-
+        assert(owner);
     }
 
-    K_Window(int w, int h, Window *own, const char * title = nullptr)
+    K_Window(int w, int h, const Window *own, const char * title = nullptr)
       : T(w, h, title)
       , owner(own){
-
+        assert(owner);
     }
 
     int handle(int event) override {
-
+        assert(owner);
+        if(event==FL_FOCUS){
+            Window::window_order.remove(owner);
+            Window::window_order.push_back(owner);
+            printf("Focusing %p\n", static_cast<const void *>(owner));
+        }
         return T::handle(event);
 
     }
@@ -143,27 +150,11 @@ void WindowCallbacks::ChannelList_CB(Fl_Widget *w, void *p){
 }
 
 
-class AskToConnectAgain_Task : public Task {
-    PromiseValue<int> &promise;
-    const std::string &name;
-public:
-    AskToConnectAgain_Task(PromiseValue<int> &p, const std::string &n)
-      : promise(p)
-      , name(n) {
-
-    }
-
-    virtual ~AskToConnectAgain_Task(){
-
-    }
-
-    void Run() override {
-        promise.Finalize(fl_choice("Could not connect to %s. Try again?", fl_no, fl_yes, nullptr, name.c_str()));
-        promise.SetReady();
-        Fl::awake();
-    }
-
-};
+void AskToConnectAgain_Task::Run(){
+    promise.Finalize(fl_choice("Could not connect to %s. Try again?", fl_no, fl_yes, nullptr, name.c_str()));
+    promise.SetReady();
+    Fl::awake();
+}
 
 
 // Considered a long-running task.
@@ -172,7 +163,7 @@ class ConnectToServer_Task : public Task {
     std::string server_name;
     long port;
 public:
-    ConnectToServer_Task(Window * win, const char *name, long p = 6667)
+    ConnectToServer_Task(Window * win, const char *name, long p = 6667, bool SSL = false)
         : window(win)
         , server_name(name){
         port = p;
@@ -286,6 +277,8 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
   , chat_holder(new Fl_Group(128+8, 8+(osx?0:24), w-128-16, h-16-(osx?0:24)))
   , last_server(nullptr)
   , Servers() {
+
+    window_order.push_back(this);
 
     osx_style = osx;
 
