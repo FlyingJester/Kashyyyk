@@ -88,7 +88,7 @@ int main(int argc, char *argv[]){
 
         Kashyyyk::Launcher *launcher;
         int startup_launcher         = 1;
-        int startup_launchertype     = 1;
+        int startup_launchertype     = 0;
         int startup_window           = 1;
         int startup_autojoin_servers = 1;
         int startup_autojoin_channels= 1;
