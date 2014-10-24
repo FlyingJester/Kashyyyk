@@ -1,6 +1,7 @@
 #include "poll.h"
 #include "socket.h"
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef USE_WINSOCK
 #include <Winsock2.h>
