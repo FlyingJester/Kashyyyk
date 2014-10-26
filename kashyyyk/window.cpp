@@ -186,7 +186,9 @@ try_connect:
         err = Connect_Socket(sock, server_name.c_str(), port, 10000);
         if(!err){
             Server * s = new Server(sock, server_name, window, port);
+            Fl::lock();
             window->AddServer(s);
+            Fl::unlock();
         }
         else{
             printf("Couldn't connect. Asking if we should try again.\n");

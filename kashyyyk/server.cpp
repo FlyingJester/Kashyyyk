@@ -310,6 +310,9 @@ Server::~Server(){
 
     lock();
     network_task->should_die = true;
+
+    Thread::RemoveSocketFromTaskGroup(socket, Thread::GetShortThreadPool());
+
     while(!task_died){
         unlock();
 

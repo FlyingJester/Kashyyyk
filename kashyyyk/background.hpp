@@ -142,6 +142,8 @@ public:
 
     static void AddWatchToTaskGroup(NetworkWatch *watch, TaskGroup *group);
     static void AddSocketToTaskGroup(WSocket *socket, TaskGroup *group);
+    static void RemoveSocketFromTaskGroup(WSocket *socket, TaskGroup *group);
+
 
     //! @cond
 

@@ -14,7 +14,7 @@ AddOption('--enable-debug', dest = 'enabledebug', default=True, help=\
 
 enabledebug = GetOption('enabledebug')
 
-gcc_ccflags = "-pedantic -Werror -Wall "
+gcc_ccflags = " -pedantic -Werror -Wall "
 
 if enabledebug:
   gcc_ccflags += " -g "
@@ -22,7 +22,7 @@ if enabledebug:
 def PrepareCompilerGPP(env):
   print "Preparing g++"
   env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH =
-["/usr/local/include"], LIBPATH = ["/usr/local/lib"])
+["/usr/local/include"])
   if enabledebug:
     env.Append(LINKFLAGS = " -g ")
 
@@ -79,23 +79,27 @@ else:
 if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
   PrepareEnvironmentUNIX(environment)
   conf = Configure(environment)
-  if sys.platform != 'darwin':
-    if conf.CheckLib("tbb"):
-      environment.Append(LIBS = ["tbb"], CPPDEFINES = ["USE_TBB"])
-    elif conf.CheckCXXHeader("mutex"):
-      environment.Append(CPPDEFINES = ["USE_MUTEX"])
-    elif conf.CheckCHeader("pthread.h"):
-      environment.Append(CPPDEFINES = ["USE_PTHREAD"])
-  if (sys.platform == 'darwin' or 'bsd' in sys.platform) and conf.CheckCHeader("kqueue.h"):
-      environment.Append(CPPDEFINES = ["USE_KQUEUE"])
 
-  if conf.CheckCHeader("strings.h"):
-      environment.Append(CPPDEFINES = ["HAS_STRINGS"])
-  if False and ((conf.CheckFunc('kqueue') and conf.CheckFunc('kevent') ) or conf.CheckCHeader('kqueue.h') ):
+  if conf.CheckLib("tbb"):
+    environment.Append(LIBS = ["tbb"], CPPDEFINES = ["USE_INTEL_TBB"])
+  if ((conf.CheckFunc('kqueue') and conf.CheckFunc('kevent') ) or conf.CheckCHeader('sys/kqueue.h') ):
+    environment.Append(CPPDEFINES = ["USE_KQUEUE"])
     environment.Append(CPPDEFINES = ["NEEDS_FJNET_POLL_TIMEOUT=0"])
     use_kqueue = True
   else:
     environment.Append(CPPDEFINES = ["NEEDS_FJNET_POLL_TIMEOUT=1"])
+
+  if sys.platform != 'darwin':
+    if not conf.CheckLib("tbb"):
+      if conf.CheckCXXHeader("mutex"):
+        environment.Append(CPPDEFINES = ["USE_MUTEX"])
+      elif conf.CheckCHeader("pthread.h"):
+        environment.Append(CPPDEFINES = ["USE_PTHREAD"])
+
+  if (sys.platform == 'darwin' or 'bsd' in sys.platform) and conf.CheckCHeader("kqueue.h"):
+    if conf.CheckCHeader("strings.h"):
+      environment.Append(CPPDEFINES = ["HAS_STRINGS"])
+
   conf.Finish()
 elif sys.platform.startswith('win'):
   PrepareEnvironmentWin(environment)

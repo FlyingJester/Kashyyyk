@@ -21,6 +21,8 @@ int  IsPartOfSet(struct WSocket *sockets, struct SocketSet *set);
 
 int  PollSet(enum WSockType t, struct SocketSet *set, unsigned ms_timeout);
 
+void PokeSet(struct SocketSet *set);
+
 #ifdef __cplusplus
 }
 #endif

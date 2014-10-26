@@ -33,7 +33,7 @@ static void ThreadFunction(ThreadFunctionArg);
 
 class Thread::TaskGroup{
   public:
-    concurrent_queue<Task *> queue;
+    tbb::concurrent_queue<Task *> queue;
     Monitor monitor;
     NetworkWatch *watch;
 
@@ -43,13 +43,13 @@ class Thread::TaskGroup{
 };
 
 struct Thread::Thread_Impl{
-    concurrent_queue<Task *> &queue;
+    tbb::concurrent_queue<Task *> &queue;
     Monitor monitor;
     std::atomic<bool> live;
     std::atomic<bool> started;
     std::thread thread;
 
-    Thread_Impl(concurrent_queue<Task *> &q, Monitor &mon)
+    Thread_Impl(tbb::concurrent_queue<Task *> &q, Monitor &mon)
       : queue(q)
       , monitor(mon.GetMutex())
       , live(true)
@@ -195,6 +195,7 @@ NetworkWatch::NetworkWatch(std::shared_ptr<struct Monitor::MutexHolder> &mutex)
 NetworkWatch::~NetworkWatch(){
     live = false;
     monitor.NotifyAll();
+    PokeSet(socket_set);
     thread.join();
     FreeSocketSet(socket_set);
 
@@ -213,7 +214,7 @@ void NetworkWatch::DelSocket(WSocket *socket){
     assert(IsPartOfSet(socket, socket_set));
     RemoveFromSet(socket, socket_set);
     assert(!IsPartOfSet(socket, socket_set));
-
+    PokeSet(socket_set);
 }
 
 void Thread::AddWatchToTaskGroup(NetworkWatch *watch, TaskGroup *group){
@@ -223,6 +224,10 @@ void Thread::AddWatchToTaskGroup(NetworkWatch *watch, TaskGroup *group){
 
 void Thread::AddSocketToTaskGroup(WSocket *socket, TaskGroup *group){
     group->watch->AddSocket(socket);
+}
+
+void Thread::RemoveSocketFromTaskGroup(WSocket *socket, TaskGroup *group){
+    group->watch->DelSocket(socket);
 }
 
 
