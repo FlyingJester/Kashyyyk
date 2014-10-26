@@ -7,7 +7,7 @@ if ARGUMENTS.get('pandoc_readme', '0') == '1':
 
 environment = Environment(ENV=os.environ)
 
-use_kqueue = False
+poll_api = 'select'
 
 AddOption('--enable-debug', dest = 'enabledebug', default=True, help=\
 "Enables building with debug symbols.\n")
@@ -82,10 +82,12 @@ if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
 
   if conf.CheckLib("tbb"):
     environment.Append(LIBS = ["tbb"], CPPDEFINES = ["USE_INTEL_TBB"])
-  if ((conf.CheckFunc('kqueue') and conf.CheckFunc('kevent') ) or conf.CheckCHeader('sys/kqueue.h') ):
+  if ((conf.CheckFunc('kqueue') and conf.CheckFunc('kevent') ) or conf.CheckCHeader('sys/kqueue.h') ) and ARGUMENTS.get('poll', 'kqueue') == 'kqueue':
     environment.Append(CPPDEFINES = ["USE_KQUEUE"])
     environment.Append(CPPDEFINES = ["NEEDS_FJNET_POLL_TIMEOUT=0"])
-    use_kqueue = True
+    poll_api = 'kqueue'
+  elif (conf.CheckFunc('poll') or conf.CheckCHeader('poll.h') ) and ARGUMENTS.get('poll', 'poll') == 'poll':
+    poll_api = 'poll'
   else:
     environment.Append(CPPDEFINES = ["NEEDS_FJNET_POLL_TIMEOUT=1"])
 
@@ -114,7 +116,7 @@ if disableicon:
   environment.Append(CPPDEFINES=["NO_ICONLAUNCHER"])
 
 
-libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment', 'use_kqueue'])
+libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment', 'poll_api'])
 libfjirc = SConscript(dirs = ['libfjirc'], exports = ['environment'])
 libfjcsv = SConscript(dirs = ['libfjcsv'], exports = ['environment'])
 libyyymonitor = SConscript(dirs = ['libyyymonitor'], exports = ['environment'])

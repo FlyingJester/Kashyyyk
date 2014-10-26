@@ -2,7 +2,6 @@
 
 extern "C" {
 
-
     Kashyyyk::Monitor::Mutex *Create_RawMonitor();
 
     void Destroy_RawMonitor(Kashyyyk::Monitor::Mutex *m);
