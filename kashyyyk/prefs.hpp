@@ -26,8 +26,6 @@ inline void GetAndExist(Fl_Preferences &prefs, const std::string &name, T1 &item
       prefs.set(name.c_str(), def);
 }
 
-//void (Fl_Preferences &, const std::string &, std::__1::basic_string<char> &, char *const)  ' against '
-//void (Fl_Preferences &, const std::string &, std::string &,                  const char *)
 
 template <>
 inline void GetAndExist<std::string, const char *>(Fl_Preferences &prefs, const std::string &name, std::string &item, const char * const def){

@@ -50,9 +50,23 @@ if os.getenv('CC', 'none') != 'none':
   print "using CC ", os.environ.get('CC')
   environment.Replace(CC = os.environ.get('CC'))
   environment.Append(CFLAGS = os.getenv('CFLAGS', ''))
+  if ARGUMENTS.get('gccflags', '0') == '1':
+    PrepareCompilerGCC(environment)
+  elif ARGUMENTS.get('msvcflags', '0') == '1':
+    PrepareCompilerMSVC(environment)
+  else:
+    print "No preset flags used for CC."
+
 elif ARGUMENTS.get('CC', 'none') != 'none':
   print "using CC ", ARGUMENTS.get('CC', 'none')
-  environment.Replace(CC = ARGUMENTS.get('CC', 'none'))
+  environment.Replace(CC = ARGUMENTS.get('CC', 'none'), CFLAGS = ARGUMENTS.get('CFLAGS', ''))
+  if ARGUMENTS.get('gccflags', '0') == '1':
+    PrepareCompilerGCC(environment)
+  elif ARGUMENTS.get('msvcflags', '0') == '1':
+    PrepareCompilerMSVC(environment)
+  else:
+    print "No preset flags used for CC."
+
 else:
   if sys.platform.startswith('linux') or 'bsd' in sys.platform or sys.platform == 'darwin' or sys.platform == 'cygwin':
     PrepareCompilerGCC(environment)
@@ -65,10 +79,24 @@ if os.getenv('CXX', 'none') != 'none':
   print "using CXX ", os.environ.get('CXX')
   environment.Replace(CXX = os.environ.get('CXX'))
   environment.Append(CXXFLAGS = os.getenv('CXXFLAGS', ''))
+  if ARGUMENTS.get('g++flags', '0') == '1':
+    PrepareCompilerGPP(environment)
+  elif ARGUMENTS.get('msvcflags', '0') == '1':
+    PrepareCompilerMSVC(environment)
+  else:
+    print "No preset flags used for CXX."
+
 elif ARGUMENTS.get('CXX', 'none') != 'none':
   print "using CXX ", ARGUMENTS.get('CXX', 'none')
-  environment.Replace(CXX = ARGUMENTS.get('CXX', 'none'))
-else:
+  environment.Replace(CXX = ARGUMENTS.get('CXX', 'none'), CXXFLAGS = ARGUMENTS.get('CXXFLAGS', ''))
+  if ARGUMENTS.get('g++flags', '0') == '1':
+    PrepareCompilerGPP(environment)
+  elif ARGUMENTS.get('msvcflags', '0') == '1':
+    PrepareCompilerMSVC(environment)
+  else:
+    print "No preset flags used for CXX."
+
+if True:
   if sys.platform.startswith('linux') or 'bsd' in sys.platform or sys.platform == 'darwin' or sys.platform == 'cygwin':
     PrepareCompilerGPP(environment)
     environment.Replace(CXX = 'c++')
