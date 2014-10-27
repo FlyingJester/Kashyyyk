@@ -33,7 +33,7 @@ static void ThreadFunction(ThreadFunctionArg);
 
 class Thread::TaskGroup{
   public:
-    tbb::concurrent_queue<Task *> queue;
+    concurrent_queue<Task *> queue;
     Monitor monitor;
     NetworkWatch *watch;
 
@@ -43,13 +43,13 @@ class Thread::TaskGroup{
 };
 
 struct Thread::Thread_Impl{
-    tbb::concurrent_queue<Task *> &queue;
+    concurrent_queue<Task *> &queue;
     Monitor monitor;
     std::atomic<bool> live;
     std::atomic<bool> started;
     std::thread thread;
 
-    Thread_Impl(tbb::concurrent_queue<Task *> &q, Monitor &mon)
+    Thread_Impl(concurrent_queue<Task *> &q, Monitor &mon)
       : queue(q)
       , monitor(mon.GetMutex())
       , live(true)

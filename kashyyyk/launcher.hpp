@@ -4,6 +4,8 @@
 
 #include <FL/Fl_Window.H>
 
+struct Fl_Menu_Item;
+
 namespace Kashyyyk {
 
 class Window;

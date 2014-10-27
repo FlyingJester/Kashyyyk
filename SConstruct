@@ -41,7 +41,7 @@ def PrepareEnvironmentUNIX(env):
   if sys.platform == 'cygwin':
     env.Append(CPPDEFINES = ["USE_CYGSOCK", "WIN32"], CCFLAGS = " -mwindows ")
   else:
-    env.Append(CPPDEFINES = ["USE_BSDSOCK"])
+    env.Append(CPPDEFINES = ["USE_BSDSOCK"], LIBPATH=["/usr/local/lib"])
 def PrepareEnvironmentWin(env):
   env.Append(LIBPATH = [os.path.join(os.getcwd(), "lib")], LIBS = ["Gdi32.lib", "User32.lib", "Ole32.lib", "Advapi32.lib", "Shell32.lib", "Ws2_32.lib"], CPPDEFINES = ["WIN32"])
   env.Append(CPPDEFINES = ["USE_WINSOCK"])
