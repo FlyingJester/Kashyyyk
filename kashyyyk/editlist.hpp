@@ -5,6 +5,7 @@
 #include <FL/Fl_Input.H>
 #include <FL/Fl.H>
 #include <FL/fl_ask.H>
+#include <algorithm>
 #include <memory>
 #include <utility>
 #include <cstdlib>
