@@ -291,7 +291,9 @@ public:
     void SortUsers_l();
 
     //! @brief Removes a user from the Channel
-    //! @todo Documentation on blocking of this function
+    void RemoveUser_l(const char *user);
+
+    //! @brief Removes a user from the Channel
     void RemoveUser(const char *user);
 
     //! @brief Get the nickname for this Channel
