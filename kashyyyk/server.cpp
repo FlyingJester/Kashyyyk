@@ -91,7 +91,6 @@ class ServerTask : public Task {
 
     std::shared_ptr<PromiseValue<bool> > promise;
 
-    FILE *file;
 public:
 
     ServerTask(Server *aServer, WSocket *aSocket, bool *deded)
@@ -102,7 +101,6 @@ public:
     , socket(aSocket)
     , task_died(deded)
     , should_die(false){
-        file = fopen("BUFFER", "w");
         repeating = true;
     }
 
@@ -113,8 +111,6 @@ public:
         free(buffer);
 
         *task_died = true;
-
-        fclose(file);
 
     }
 
@@ -145,9 +141,6 @@ public:
           return;
 
         Read_Socket(socket, &buffer);
-
-        fwrite(buffer, strlen(buffer), 1, file);
-        fwrite("\a", 1, 1, file);
 
         struct IRC_ParseState *state;
         if(old_state==nullptr)
@@ -181,7 +174,6 @@ public:
 
         IRC_DestroyParseState(state);
 
-        fflush(file);
     }
 
 
