@@ -1,5 +1,8 @@
+#include "serverdatabase.hpp"
 #include "serverlist.hpp"
+#include "editlist.hpp"
 #include "prefs.hpp"
+#include "doubleinput.hpp"
 #include "csv.h"
 
 #include <vector>
@@ -15,6 +18,7 @@
 #include <FL/Fl_Tabs.H>
 #include <FL/Fl_Preferences.H>
 
+/*
 struct ServerData {
 
     const char * UID;
@@ -31,10 +35,10 @@ struct ServerData {
     std::string user;
     std::string real;
 };
-
+*/
 
 static std::unique_ptr<Fl_Window> serverlist_window = nullptr;
-static struct ServerData selected_server_data;
+static struct Kashyyyk::ServerData selected_server_data;
 
 
 static const int WindowWidth  = 400;
@@ -128,6 +132,51 @@ void InputCallback_CB(Fl_Widget *w, long index){
 
 }
 
+
+static EditList<>::ItemType ServerListAddCallback(EditList<>::ItemType item, void *p){
+
+    DoubleInput_Return r = DoubleInput("Add a New Server", "Server Name", item.first, "Server Address", "", nullptr);
+
+    if(r.value==0){
+        free((void *)r.one);
+        free((void *)r.two);
+        return {nullptr, nullptr};
+    }
+
+    //struct ServerData *data = pref_items->DataBase->GenerateServer();
+    //ServerDB::LoadServer(data, GetPreferences());
+
+        return {nullptr, nullptr};
+
+}
+
+
+Fl_Group *GenerateServerListFrame(int x, int y, int w, int h){
+
+    EditList<> *servers_editlist = new EditList<>(x, y, w, h, "Servers");
+
+    char *serverlist = nullptr;
+    GetPreferences().get("sys.server_uids", serverlist, "");
+
+    const char **servers = FJ::CSV::ParseString(serverlist);
+
+    for(int i = 0; servers[i]!=nullptr; i++){
+        char *name = nullptr;
+
+        GetPreferences().get((std::string("server.")+servers[i]+".name").c_str(), name, "Unnamed Server");
+
+        servers_editlist->AddItem({name, const_cast<char *>(servers[i])});
+    }
+
+    free(servers);
+
+    servers_editlist->SetAddCallback(ServerListAddCallback, nullptr);
+
+    return servers_editlist;
+
+}
+
+
 Fl_Group *GenerateIdentityFrame(int x, int y, int w, int h){
     Fl_Group *group = new Fl_Pack(x, y, w, h, "Identity");
     group->box(FL_DOWN_FRAME);
@@ -168,7 +217,7 @@ void ServerList(Fl_Widget *w, void *p){
 
         serverlist_window.reset(new Fl_Window(WindowWidth, WindowHeight, "Server List"));
 
-        GenerateIdentityFrame(0, 0, WindowWidth/2, WindowHeight);
+        GenerateServerListFrame(0, 0, WindowWidth/2, WindowHeight);
         GenerateIdentityFrame(WindowWidth/2, 0, WindowWidth/2, WindowHeight);
 
     }
