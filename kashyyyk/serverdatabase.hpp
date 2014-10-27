@@ -6,6 +6,7 @@
 #include <iterator>
 #include <vector>
 #include <list>
+#include <string>
 
 #include <FL/Fl_Preferences.H>
 
@@ -23,12 +24,31 @@ struct ServerData;
 //! servers.
 //! @sa ServerDB::GenerateServer
 struct ServerData {
+
     //! Universal identifier for this server data. Because it is possible for
     //! two servers to have the same name or address, this is the recommended
     //! way to identify the server uniquely.
+    const char * UID;
+    std::string name;       //!< Human-readable name
+    std::string address;    //!< Network address
+    int port;              //!< Port to connect on
+
+    std::vector<std::string>group_UIDs;
+    std::vector<std::string>autojoin_channels;
+
+    bool SSL;               //!< Use SSL
+    bool global;            //!< Use global identity information
+    std::string nick;       //!< Default nickname on connecting
+    std::string user;       //!< Default username on connecting
+    std::string real;       //!< Default realname on connecting
+
+    const ServerDB *owner;  //!< Server's human-readable name
+};
+/*
+struct ServerData {
     const char *UID;
-    char *Name;             //!< Human-readable name
-    char *Address;          //!< Network address
+    std::string name;
+    std::string address;          //!< Network address
     int  port;              //!< Port to connect on
     int SSL;                //!< Use SSL
     int UserGlobalIdentity; //!< Use global identity information
@@ -37,10 +57,9 @@ struct ServerData {
     char *Real;             //!< Default realname on connecting
     //! Vector of channel names to join automatically on connecting
     std::vector<std::string> AutoJoins;
-    const ServerDB *owner;  //!< Server's human-readable name
 
 };
-
+*/
 class ServerDB{
     struct ServerDB_Impl;
     std::unique_ptr<struct ServerDB_Impl> guts;

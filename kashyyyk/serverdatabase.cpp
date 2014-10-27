@@ -64,28 +64,20 @@ ServerDB::~ServerDB(){
 
 }
 
-
-template <typename T1, typename T2>
-static inline void GetAndExist(Fl_Preferences &prefs, const std::string &name, T1 &item, const T2 &def){
-    if(!prefs.get(name.c_str(), item, def))
-      prefs.set(name.c_str(), def);
-}
-
-
 void ServerDB::LoadServer(struct ServerData *server, Fl_Preferences &prefs){
 
     assert(server);
 
     const std::string ServerPrefix = std::string("server.")+server->UID + ".";
 
-    GetAndExist(prefs, ServerPrefix+"name",     server->Name,   "New Server");
-    GetAndExist(prefs, ServerPrefix+"nickname", server->Nick,   "KashyyykUser");
-    GetAndExist(prefs, ServerPrefix+"username", server->User,   "KashyyykName");
-    GetAndExist(prefs, ServerPrefix+"realname", server->Real,   "KashyyykReal");
-    GetAndExist(prefs, ServerPrefix+"address",  server->Address,"irc.website.net");
+    GetAndExist(prefs, ServerPrefix+"name",     server->name,   "New Server");
+    GetAndExist(prefs, ServerPrefix+"nickname", server->nick,   "KashyyykUser");
+    GetAndExist(prefs, ServerPrefix+"username", server->user,   "KashyyykName");
+    GetAndExist(prefs, ServerPrefix+"realname", server->real,   "KashyyykReal");
+    GetAndExist(prefs, ServerPrefix+"address",  server->address,"irc.website.net");
     GetAndExist(prefs, ServerPrefix+"port",     server->port,   6665);
-    GetAndExist(prefs, ServerPrefix+"ssl",      server->SSL,    0);
-    GetAndExist(prefs, ServerPrefix+"globalidentity", server->UserGlobalIdentity, 1);
+    GetAndExist(prefs, ServerPrefix+"ssl",      server->SSL,    false);
+    GetAndExist(prefs, ServerPrefix+"globalidentity", server->global, true);
 
     char *autojoin;
     GetAndExist(prefs, ServerPrefix+"autojoin", autojoin, "");
@@ -93,7 +85,7 @@ void ServerDB::LoadServer(struct ServerData *server, Fl_Preferences &prefs){
     const char **channels = FJ::CSV::ParseString(autojoin);
 
     for(int i = 0; channels[i]!=nullptr; i++){
-        server->AutoJoins.push_back(std::string(channels[i]));
+        server->autojoin_channels.push_back(std::string(channels[i]));
     }
 
     FJ::CSV::FreeParse(channels);
@@ -109,15 +101,15 @@ struct ServerData *ServerDB::GenerateServer() const{
     ret->UID = GenerateUID();
 
      // Cleat data
-    ret->Name = nullptr;
-    ret->Address = nullptr;
+    ret->name = nullptr;
+    ret->address = nullptr;
     ret->port = 0;
     ret->SSL = -1;
-    ret->UserGlobalIdentity = -1;
-    ret->Nick = nullptr;
-    ret->User = nullptr;
-    ret->Real = nullptr;
-    ret->AutoJoins.clear();
+    ret->global = true;
+    ret->nick = nullptr;
+    ret->user = nullptr;
+    ret->real = nullptr;
+    ret->autojoin_channels.clear();
 
     return ret;
 }
@@ -184,23 +176,20 @@ void ServerDB::save(Fl_Preferences &prefs) const {
 void ServerDB::SaveServer(struct ServerData *server, Fl_Preferences &prefs){
         const std::string ServerPrefix = std::string("server.")+server->UID + ".";
 
-        printf("%s|%s(%p)(save)\n", server->Name, server->Address, 
-		  static_cast<void *>(&(server->Name)));
-
-        prefs.set((ServerPrefix+"name").c_str(),     server->Name);
-        prefs.set((ServerPrefix+"nickname").c_str(), server->Nick);
-        prefs.set((ServerPrefix+"username").c_str(), server->User);
-        prefs.set((ServerPrefix+"realname").c_str(), server->Real);
-        prefs.set((ServerPrefix+"address").c_str(),  server->Address);
+        prefs.set((ServerPrefix+"name").c_str(),     server->name.c_str());
+        prefs.set((ServerPrefix+"nickname").c_str(), server->nick.c_str());
+        prefs.set((ServerPrefix+"username").c_str(), server->user.c_str());
+        prefs.set((ServerPrefix+"realname").c_str(), server->real.c_str());
+        prefs.set((ServerPrefix+"address").c_str(),  server->address.c_str());
         prefs.set((ServerPrefix+"port").c_str(),     server->port);
         prefs.set((ServerPrefix+"ssl").c_str(),      server->SSL);
-        prefs.set((ServerPrefix+"globalidentity").c_str(), server->UserGlobalIdentity);
+        prefs.set((ServerPrefix+"globalidentity").c_str(), server->global);
 
-        if(server->AutoJoins.empty())
+        if(server->autojoin_channels.empty())
           return;
 
         std::string autojoin;
-        for(std::vector<std::string>::iterator iter = server->AutoJoins.begin(); iter!=server->AutoJoins.end(); iter++){
+        for(std::vector<std::string>::iterator iter = server->autojoin_channels.begin(); iter!=server->autojoin_channels.end(); iter++){
             autojoin+=*iter;
             autojoin+=",";
         }
