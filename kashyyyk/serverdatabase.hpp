@@ -65,6 +65,9 @@ public:
     void open(Fl_Preferences &);
     void save(Fl_Preferences &) const;
 
+    struct ServerData *GetGlobal();
+    void SetGlobal(struct ServerData *);
+
     static void LoadServer(struct ServerData *, Fl_Preferences &);
     inline static void LoadServer(ServerDataP &server, Fl_Preferences &prefs){
         LoadServer(server.get(), prefs);

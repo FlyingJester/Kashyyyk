@@ -41,13 +41,15 @@ typedef unsigned long long rand_holder;
 
 
 //! This is the number you adjust to change the end size of UIDs.
-static const unsigned uid_coefficient = 32;
+static const unsigned uid_coefficient = 16;
 //! This is the number of calls for entropy that will be made to fill a UID.
 static const size_t uid_len = uid_coefficient/sizeof(rand_holder);
 
 struct ServerDB::ServerDB_Impl{
     std::mutex mutex;
+    ServerData global;
     std::vector<ServerDataP> list;
+    std::vector<std::string>groups;
 };
 
 const char *ServerDB::GenerateUID(){
@@ -75,6 +77,11 @@ ServerDB::ServerDB()
 ServerDB::~ServerDB(){
 
 }
+
+
+    struct ServerData *GetGlobal();
+    void SetGlobal(struct ServerData *);
+
 
 void ServerDB::LoadServer(struct ServerData *server, Fl_Preferences &prefs){
 
@@ -111,7 +118,6 @@ void ServerDB::LoadServer(struct ServerData *server, Fl_Preferences &prefs){
 
     free(autojoin);
     free(groupuids);
-
 }
 
 
@@ -159,18 +165,41 @@ void ServerDB::open(Fl_Preferences &prefs){
     const char **server_uids = FJ::CSV::ParseString(uid_list);
     free(uid_list);
 
+    char *groups;
+    GetAndExist(prefs, "sys.groupuids", groups, "");
+    const char **group_uids = FJ::CSV::ParseString(groups);
+    free(groups);
+
+    for(int i = 0; group_uids[i]!=nullptr; i++){
+        guts->groups.push_back(group_uids[i]);
+    }
+
+    FJ::CSV::FreeParse(group_uids);
+
     for(int i = 0; server_uids[i]!=nullptr; i++){
-        ServerDataP server(new ServerData());
+        struct ServerData *server = new ServerData();
         server->UID = server_uids[i];
         server->owner = this;
-        LoadServer(server.get(), prefs);
+        LoadServer(server, prefs);
 
-        push_back(std::move(server));
+        for(std::vector<std::string>::const_iterator iter = server->group_UIDs.cbegin();
+              iter != server->group_UIDs.cend(); iter++){
+start:
+            if(std::find(guts->groups.cbegin(), guts->groups.cend(), *iter)==guts->groups.cend()){
+                guts->groups.push_back(*iter);
+                goto start;
+            }
+        }
+
+        push_back(ServerDataP(server));
     }
 
     // The individual items are now owned by the ServerData.
     free(server_uids);
 
+    GetAndExist(prefs, "sys.global.nickname", guts->global.nick, "KashyyykUser");
+    GetAndExist(prefs, "sys.global.username", guts->global.user, "KashyyykUser");
+    GetAndExist(prefs, "sys.global.realname", guts->global.real, "KashyyykUser");
 
 }
 
@@ -189,6 +218,10 @@ void ServerDB::save(Fl_Preferences &prefs) const {
     prefs.set("sys.server_uids", UIDs.c_str());
 
     std::for_each(begin(), end(), [&prefs](const ServerDataP& server){SaveServer(server.get(), prefs);});
+
+    prefs.set("sys.global.nickname", guts->global.nick.c_str());
+    prefs.set("sys.global.username", guts->global.user.c_str());
+    prefs.set("sys.global.realname", guts->global.real.c_str());
 
 }
 
