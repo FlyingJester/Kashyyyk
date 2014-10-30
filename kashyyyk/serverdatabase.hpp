@@ -18,6 +18,12 @@ typedef std::unique_ptr<struct ServerData> ServerDataP;
 class ServerDB;
 struct ServerData;
 
+struct equals_uid{
+    const char * &uid;
+    equals_uid(const char * &target);
+    bool operator() (const ServerDataP &data);
+};
+
 //! @brief The data about a server stored in the server database
 //!
 //! This is used together with a ServerDB to record and retrieve data about
@@ -44,22 +50,8 @@ struct ServerData {
 
     const ServerDB *owner;  //!< Server's human-readable name
 };
-/*
-struct ServerData {
-    const char *UID;
-    std::string name;
-    std::string address;          //!< Network address
-    int  port;              //!< Port to connect on
-    int SSL;                //!< Use SSL
-    int UserGlobalIdentity; //!< Use global identity information
-    char *Nick;             //!< Default nickname on connecting
-    char *User;             //!< Default username on connecting
-    char *Real;             //!< Default realname on connecting
-    //! Vector of channel names to join automatically on connecting
-    std::vector<std::string> AutoJoins;
 
-};
-*/
+
 class ServerDB{
     struct ServerDB_Impl;
     std::unique_ptr<struct ServerDB_Impl> guts;

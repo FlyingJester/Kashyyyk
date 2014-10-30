@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <string>
+#include <functional>
 
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Pack.H>
@@ -17,6 +18,7 @@
 #include <FL/Fl_Tile.H>
 #include <FL/Fl_Tabs.H>
 #include <FL/Fl_Preferences.H>
+#include <FL/fl_ask.H>
 
 /*
 struct ServerData {
@@ -37,8 +39,18 @@ struct ServerData {
 };
 */
 
+struct IdentityFrame {
+    Fl_Group *group;
+    Fl_Button *global;
+    Fl_Group *resize_group;
+    Fl_Input *nick;
+    Fl_Input *user;
+    Fl_Input *real;
+} identity_frame;
+
 static std::unique_ptr<Fl_Window> serverlist_window = nullptr;
-static struct Kashyyyk::ServerData selected_server_data;
+static struct Kashyyyk::ServerData *selected_server_data;
+static Kashyyyk::ServerDB server_db;
 
 
 static const int WindowWidth  = 400;
@@ -59,59 +71,26 @@ static const char *const server_property_names[] = {
 };
 
 
-#define GET_SERVER_PROPERTY(INDEX, INTO, MEMBER, DEFAULT)\
-        GetPreferences().get((std::string("server.") + selected_server_data.UID + "." + server_property_names[INDEX]).c_str(), INTO, DEFAULT);\
-        selected_server_data.MEMBER = INTO;\
-
-#define GET_SERVER_PROPERTY_CHAR(INDEX, MEMBER, DEFAULT)\
-do{ char *c;\
-        GET_SERVER_PROPERTY(INDEX, c, MEMBER, DEFAULT);\
-free(c);}while(0)
-
-#define GET_SERVER_PROPERTY_INT(INDEX, MEMBER, DEFAULT)\
-do{ int i;\
-        GET_SERVER_PROPERTY(INDEX, i, MEMBER, DEFAULT);\
-}while(0)
-
-
 namespace Kashyyyk {
 
 
-void SelectServer(const char *UID){
+void UpdateIdentity(){
+    identity_frame.global->value(selected_server_data->global);
 
-    const std::string prefix = std::string("server.") + UID + ".";
+    auto func = std::mem_fn(selected_server_data->global?&Fl_Widget::deactivate:&Fl_Widget::activate);
 
-    selected_server_data.UID = UID;
+    func(identity_frame.nick);
+    func(identity_frame.user);
+    func(identity_frame.real);
+}
 
-    GET_SERVER_PROPERTY_CHAR(0, name, "Unnamed Server");
-    GET_SERVER_PROPERTY_CHAR(1, nick, "KashyyykUser");
-    GET_SERVER_PROPERTY_CHAR(2, user, "KashyyykName");
-    GET_SERVER_PROPERTY_CHAR(3, real, "KashyyykReal");
-    GET_SERVER_PROPERTY_CHAR(4, address, "irc.server.net");
-    GET_SERVER_PROPERTY_INT( 5, port, 6665);
-    GET_SERVER_PROPERTY_INT( 6, SSL, 0);
-    GET_SERVER_PROPERTY_INT( 7, global, 1);
 
-    {
-        char *autojoin;
-        char *group_uids;
-        GetPreferences().get((prefix+server_property_names[8]).c_str(), autojoin,  "");
-        GetPreferences().get((prefix+server_property_names[9]).c_str(), group_uids,"");
+void SelectServer(const char * UID){
 
-        const char **channels = FJ::CSV::ParseString(autojoin);
-        const char **groups = FJ::CSV::ParseString(group_uids);
+    struct equals_uid predicate(UID);
+    ServerDB::iterator iter = std::find_if(server_db.begin(), server_db.end(), predicate);
 
-        for(int i = 0; channels[i]!=nullptr; i++)
-          selected_server_data.autojoin_channels.push_back(channels[i]);
-
-        for(int i = 0; groups[i]!=nullptr; i++)
-          selected_server_data.group_UIDs.push_back(groups[i]);
-
-        free(autojoin);
-        free(group_uids);
-        FJ::CSV::FreeParse(channels);
-        FJ::CSV::FreeParse(groups);
-    }
+    selected_server_data = iter->get();
 
 }
 
@@ -126,12 +105,25 @@ void InputCallback_CB(Fl_Widget *w, long index){
     T *widget = static_cast<T *>(w);
     as value = widget->value();
 
-    std::string to_set = std::string("server.") + selected_server_data.UID + "." + server_property_names[index];
+    std::string to_set = std::string("server.") + selected_server_data->UID + "." + server_property_names[index];
 
     GetPreferences().set(to_set.c_str(), value);
 
 }
 
+/*
+    struct CallBacks_T {
+            ItemCallback AddCallback;
+            void *AddCallbackArg;
+            ItemCallback EdtCallback;
+            void *EdtCallbackArg;
+            NoReturnItemCallback DelCallback;
+            void *DelCallbackArg;
+            NoReturnItemCallback SelCallback;
+            void *SelCallbackArg;
+            NumCallbackT  NumCallback;
+            void *NumCallbackArg;
+*/
 
 static EditList<>::ItemType ServerListAddCallback(EditList<>::ItemType item, void *p){
 
@@ -143,68 +135,113 @@ static EditList<>::ItemType ServerListAddCallback(EditList<>::ItemType item, voi
         return {nullptr, nullptr};
     }
 
-    //struct ServerData *data = pref_items->DataBase->GenerateServer();
-    //ServerDB::LoadServer(data, GetPreferences());
+    Fl_Preferences &prefs = GetPreferences();
 
-        return {nullptr, nullptr};
+    struct ServerData *data = server_db.GenerateServer();
+    assert(data);
+
+    ServerDB::LoadServer(data, prefs);
+    server_db.push_back(data);
+
+    data->name = r.one;
+    data->address = r.two;
+
+    free((void *)r.two);
+
+    return {r.one, data};
+
+}
+
+
+static EditList<>::ItemType ServerListEdtCallback(EditList<>::ItemType item, void *p){
+
+    struct ServerData *data = static_cast<struct ServerData *>(item.second);
+    assert(data);
+
+    DoubleInput_Return r = DoubleInput("Edit Server", "Server Name", item.first, "Server Address", data->address.c_str());
+
+    if(r.value==0){
+
+        free((void *)r.one);
+        free((void *)r.two);
+        return item;
+
+    }
+
+    data->name    = r.one;
+    data->address = r.two;
+
+    free((void *)r.two);
+
+    return {r.one, data};
+
+}
+
+
+void ServerListDelCallback(EditList<>::ItemType item, void *p){
+
+    struct equals_uid predicate(static_cast<struct ServerData *>(item.second)->UID);
+    server_db.erase(std::find_if(server_db.begin(), server_db.end(), predicate));
+
+}
+
+
+void ServerListSelCallback(EditList<>::ItemType item, void *p){
+
+    const struct ServerData *data = static_cast<struct ServerData*>(item.second);
+    assert(data);
+    SelectServer(data->UID);
 
 }
 
 
 Fl_Group *GenerateServerListFrame(int x, int y, int w, int h){
 
-    EditList<> *servers_editlist = new EditList<>(x, y, w, h, "Servers");
+    EditList<> *servers_editlist = new EditList<>(x, y+24, w, h-24, "Servers");
+    servers_editlist->end();
+    Fl_Preferences &prefs = GetPreferences();
 
-    char *serverlist = nullptr;
-    GetPreferences().get("sys.server_uids", serverlist, "");
-
-    const char **servers = FJ::CSV::ParseString(serverlist);
-
-    for(int i = 0; servers[i]!=nullptr; i++){
-        char *name = nullptr;
-
-        GetPreferences().get((std::string("server.")+servers[i]+".name").c_str(), name, "Unnamed Server");
-
-        servers_editlist->AddItem({name, const_cast<char *>(servers[i])});
-    }
-
-    free(servers);
+    server_db.open(prefs);
 
     servers_editlist->SetAddCallback(ServerListAddCallback, nullptr);
+    servers_editlist->SetEdtCallback(ServerListEdtCallback, nullptr);
+    servers_editlist->SetDelCallback(ServerListDelCallback, nullptr);
+    servers_editlist->SetSelCallback(ServerListSelCallback, nullptr);
+    servers_editlist->Activate();
+
+    for(ServerDB::iterator iter = server_db.begin(); iter!=server_db.end(); iter++){
+        servers_editlist->AddItem({iter->get()->name.c_str(), iter->get()});
+    }
 
     return servers_editlist;
 
 }
 
 
-Fl_Group *GenerateIdentityFrame(int x, int y, int w, int h){
-    Fl_Group *group = new Fl_Pack(x, y, w, h, "Identity");
-    group->box(FL_DOWN_FRAME);
+struct IdentityFrame GenerateIdentityFrame(int x, int y, int w, int h){
 
-    Fl_Check_Button *global_button = new Fl_Check_Button(0, 0, 32, 24, "Use Global Identity");
-    global_button->callback(InputCallback_CB<Fl_Button, int>, 7l);
-    global_button->deactivate();
+    struct IdentityFrame frame;
+    frame.group  = new Fl_Pack(x, y+24, w, h-24, "Identity");
+    frame.group->box(FL_DOWN_FRAME);
 
-    {
-        Fl_Group *input_group = new Fl_Group(0, 0, 32, 24*3);
-        input_group->resizable(nullptr);
-        Fl_Input *nick_input = new Fl_Input(48,  0, w-48, 24, "Nick");
-        Fl_Input *user_input = new Fl_Input(48, 24, w-48, 24, "User");
-        Fl_Input *real_input = new Fl_Input(48, 48, w-48, 24, "Real");
-        input_group->end();
+    frame.global = new Fl_Check_Button(0, 0, 32, 24, "Use Global Identity");
+    frame.global->callback(InputCallback_CB<Fl_Button, int>, 7l);
 
-        nick_input->callback(InputCallback_CB<Fl_Input>, 1l);
-        user_input->callback(InputCallback_CB<Fl_Input>, 2l);
-        real_input->callback(InputCallback_CB<Fl_Input>, 3l);
+    frame.resize_group = new Fl_Group(0, 0, 32, 24*3);
+    frame.resize_group->resizable(nullptr);
 
-        nick_input->deactivate();
-        user_input->deactivate();
-        real_input->deactivate();
+    frame.nick = new Fl_Input(44,  0, w-48, 24, "Nick");
+    frame.user = new Fl_Input(44, 24, w-48, 24, "User");
+    frame.real = new Fl_Input(44, 48, w-48, 24, "Real");
 
-    }
+    frame.nick->callback(InputCallback_CB<Fl_Input>, 1l);
+    frame.user->callback(InputCallback_CB<Fl_Input>, 2l);
+    frame.real->callback(InputCallback_CB<Fl_Input>, 3l);
 
-    group->end();
-    return group;
+    frame.resize_group->end();
+    frame.group->end();
+
+    return frame;
 }
 
 
@@ -214,11 +251,10 @@ void ServerList(Fl_Widget *w, void *p){
     if(first){
         first = false;
 
-
         serverlist_window.reset(new Fl_Window(WindowWidth, WindowHeight, "Server List"));
 
-        GenerateServerListFrame(0, 0, WindowWidth/2, WindowHeight);
-        GenerateIdentityFrame(WindowWidth/2, 0, WindowWidth/2, WindowHeight);
+        identity_frame = GenerateIdentityFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
+        GenerateServerListFrame(8, 8, WindowWidth/2-12, WindowHeight-16);
 
     }
 

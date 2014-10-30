@@ -15,6 +15,18 @@
 
 namespace Kashyyyk {
 
+
+equals_uid::equals_uid(const char * &target)
+  : uid(target){
+
+}
+
+bool equals_uid::operator() (const ServerDataP &data){
+    return strcmp(data->UID, uid)==0;
+}
+
+
+
 //! @typedef rand_holder
 //! A type that is as close as possible to the maximum entropy value.
 #if USHRT_MAX >= RAND_MAX
@@ -79,18 +91,26 @@ void ServerDB::LoadServer(struct ServerData *server, Fl_Preferences &prefs){
     GetAndExist(prefs, ServerPrefix+"ssl",      server->SSL,    false);
     GetAndExist(prefs, ServerPrefix+"globalidentity", server->global, true);
 
-    char *autojoin;
+    char *autojoin, *groupuids;
     GetAndExist(prefs, ServerPrefix+"autojoin", autojoin, "");
+    GetAndExist(prefs, ServerPrefix+"groupuids", groupuids, "");
 
     const char **channels = FJ::CSV::ParseString(autojoin);
+    const char **groups   = FJ::CSV::ParseString(groupuids);
 
     for(int i = 0; channels[i]!=nullptr; i++){
         server->autojoin_channels.push_back(std::string(channels[i]));
     }
 
+    for(int i = 0; groups[i]!=nullptr; i++){
+        server->group_UIDs.push_back(std::string(groups[i]));
+    }
+
     FJ::CSV::FreeParse(channels);
+    FJ::CSV::FreeParse(groups);
 
     free(autojoin);
+    free(groupuids);
 
 }
 
@@ -100,15 +120,15 @@ struct ServerData *ServerDB::GenerateServer() const{
     ret->owner = this;
     ret->UID = GenerateUID();
 
-     // Cleat data
-    ret->name = nullptr;
-    ret->address = nullptr;
+     // Clean data
+    ret->name = '\0';
+    ret->address = '\0';
     ret->port = 0;
     ret->SSL = -1;
     ret->global = true;
-    ret->nick = nullptr;
-    ret->user = nullptr;
-    ret->real = nullptr;
+    ret->nick = '\0';
+    ret->user = '\0';
+    ret->real = '\0';
     ret->autojoin_channels.clear();
 
     return ret;
