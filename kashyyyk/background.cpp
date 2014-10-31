@@ -8,7 +8,7 @@
 #include <thread>
 #include <condition_variable>
 #include <atomic>
-#include <assert>
+#include <cassert>
 
 #ifdef _WIN32
 

@@ -15,5 +15,5 @@ before_install:
 install:
 - "mkdir fltklib"
 - "cd fltklib && wget fltk.org/pub/fltk/snapshots/fltk-1.3.x-r10425.tar.bz2 && cd .."
-- "cd fltklib && tar -xvf `ls` > /dev/null && cd `ls` && make && cp lib/libfltk.a ../../libfltk.a && cd ../../"
-script: "scons -j8 fltklib=./libfltk.a"
+- "cd fltklib && tar -xvf `ls` > /dev/null && cd `ls` && make && cp lib/libfltk.a ../../libfltk.a && ln -s FL ../../FL && cd ../../"
+script: "scons -j8 fltklib=./libfltk.a --with-include=./"

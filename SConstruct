@@ -145,10 +145,17 @@ AddOption('--enable-iconlauncher', dest = 'enableicon', default=False, help=\
 "Disable compiling the Icon Launcher.\n"
 "This is useful for when using older or less capable compilers that can't handle string literals longer than 65k characters long.")
 
+AddOption('--with-include', dest = 'withinclude', default="", help=\
+"One additional include directory. Make it count.")
+
 disableicon = not GetOption('enableicon')
+withinclude = GetOption('withinclude')
 
 if disableicon:
   environment.Append(CPPDEFINES=["NO_ICONLAUNCHER"])
+
+if withinclude != "":
+  environment.Append(CPPPATH=[withinclude])
 
 
 libfjnet = SConscript(dirs = ['libfjnet'], exports = ['environment', 'poll_api'])
