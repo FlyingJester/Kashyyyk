@@ -24,6 +24,8 @@ struct equals_uid{
     bool operator() (const ServerDataP &data);
 };
 
+enum AuthType {Nothing, NickServ, ServerPassword, NumAuthTypes};
+
 //! @brief The data about a server stored in the server database
 //!
 //! This is used together with a ServerDB to record and retrieve data about
@@ -47,6 +49,9 @@ struct ServerData {
     std::string nick;       //!< Default nickname on connecting
     std::string user;       //!< Default username on connecting
     std::string real;       //!< Default realname on connecting
+
+    std::string username, password; //!< Authentication info
+    enum AuthType auth_type; //!< Authetication type
 
     const ServerDB *owner;  //!< Server's human-readable name
 };

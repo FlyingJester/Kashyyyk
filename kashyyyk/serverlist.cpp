@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <string>
+#include <array>
 #include <functional>
 
 #include <FL/Fl_Window.H>
@@ -15,7 +16,8 @@
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Input.H>
-#include <FL/Fl_Tile.H>
+#include <FL/Fl_Secret_Input.H>
+#include <FL/Fl_Choice.H>
 #include <FL/Fl_Tabs.H>
 #include <FL/Fl_Preferences.H>
 #include <FL/fl_ask.H>
@@ -46,6 +48,10 @@ struct IdentityFrame {
     Fl_Input *nick;
     Fl_Input *user;
     Fl_Input *real;
+    Fl_Group *signon_group;
+    Fl_Choice *signon_type;
+    Fl_Input *username;
+    Fl_Input *password;
 } identity_frame;
 
 static std::unique_ptr<Fl_Window> serverlist_window = nullptr;
@@ -74,6 +80,11 @@ static const char *const server_property_names[] = {
 namespace Kashyyyk {
 
 
+enum {NoPassNoName, PassOnly, NameOnly, PassAndName, NumAuthOptions};
+
+std::array<Fl_Menu_Item, AuthType::NumAuthTypes> AuthTypeMenuItems;
+
+
 void UpdateIdentity(){
 
     auto func = std::mem_fn(selected_server_data->global?&Fl_Widget::deactivate:&Fl_Widget::activate);
@@ -94,6 +105,27 @@ void UpdateIdentity(){
         identity_frame.user->value(selected_server_data->user.c_str());
         identity_frame.real->value(selected_server_data->real.c_str());
     }
+
+    int type_enum = *static_cast<int *>(identity_frame.signon_type->menu()[identity_frame.signon_type->value()].user_data_);
+
+    if(type_enum&1){
+        identity_frame.password->value(selected_server_data->password.c_str());
+        identity_frame.password->activate();
+    }
+    else{
+        identity_frame.password->value("");
+        identity_frame.password->deactivate();
+    }
+
+    if(type_enum&2){
+        identity_frame.username->value(selected_server_data->username.c_str());
+        identity_frame.username->activate();
+    }
+    else{
+        identity_frame.username->value("");
+        identity_frame.username->deactivate();
+    }
+
 
 }
 
@@ -266,6 +298,30 @@ struct IdentityFrame GenerateIdentityFrame(int x, int y, int w, int h){
     frame.real->callback(InputCallback_CB<Fl_Input>, 3l);
 
     frame.resize_group->end();
+
+    frame.signon_group = new Fl_Group(0, 0, 32, 24*3);
+    frame.signon_group->resizable(nullptr);
+    frame.signon_type = new Fl_Choice(0, 0, w-4, 24);
+
+    {
+        int i = -1;
+        Fl_Menu_Item *items = new Fl_Menu_Item[64];
+            AuthTypeMenuItems[AuthType::Nothing]        = items[++i] = {"No Password", 0,0,new int(NoPassNoName)};
+            AuthTypeMenuItems[AuthType::NickServ]       = items[++i] = {"NickServ",0,0,new int(PassOnly),FL_MENU_INACTIVE};
+            AuthTypeMenuItems[AuthType::ServerPassword] = items[++i] = {"Server Password",0,0,new int(PassOnly),FL_MENU_INACTIVE};
+            items[++i] = {"SASL",0,0,new int(PassAndName),FL_MENU_INACTIVE};
+            items[++i] = {"SASL with Certificate",0,0,new int(NoPassNoName),FL_MENU_INACTIVE};
+            items[++i] = {"SASL with SSL or TLS",0,0,new int(NoPassNoName),FL_MENU_INACTIVE};
+            items[++i] = {"SASL with Mozilla Persona",0,0,new int(NoPassNoName),FL_MENU_INACTIVE};
+
+        items[++i] = {0};
+        frame.signon_type->menu(items);
+    }
+
+    frame.username = new Fl_Input(44, 24, w-48, 24, "Name");
+    frame.password = new Fl_Secret_Input(44, 48, w-48, 24, "Key");
+
+    frame.signon_group->end();
     frame.group->end();
 
     return frame;

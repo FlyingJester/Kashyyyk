@@ -1,0 +1,19 @@
+# whitelist
+branches:
+only:
+- galileo
+- master
+compiler:
+- clang
+- gcc
+before_script:
+- "scons -c"
+before_install:
+- "git submodule init"
+- "git submodule update"
+- "sudo apt-get update -qq"
+install:
+- "mkdir fltklib"
+- "cd fltklib && wget fltk.org/pub/fltk/snapshots/fltk-1.3.x-r10425.tar.bz2 && cd .."
+- "cd fltklib && tar -xvf `ls` && cd `ls` && make && cp lib/libfltk.a ../../libfltk.a && cd ../../"
+script: "scons fltklib=./libfltk.a"
