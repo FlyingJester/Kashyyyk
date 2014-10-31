@@ -1,5 +1,6 @@
 import os
 import sys
+import commands
 import readmegen
 
 if ARGUMENTS.get('pandoc_readme', '0') == '1':
@@ -21,7 +22,13 @@ if enabledebug:
 
 def PrepareCompilerGPP(env):
   print "Preparing g++"
-  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH =
+
+  if 'clang' in commands.getoutput('g++ -l') or float(commands.getoutput('g++ -dumpversion')) >= 4.7:
+    version_set = " -std=c++11 "
+  else:
+    version_set = " -std=gnu0x "
+
+  env.Append(CXXFLAGS = version_set + "-Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH =
 ["/usr/local/include"])
   if enabledebug:
     env.Append(LINKFLAGS = " -g ")
