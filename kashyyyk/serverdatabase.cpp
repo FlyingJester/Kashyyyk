@@ -166,7 +166,7 @@ void ServerDB::open(Fl_Preferences &prefs){
     free(uid_list);
 
     char *groups;
-    GetAndExist(prefs, "sys.groupuids", groups, "");
+    GetAndExist(prefs, "sys.group_uids", groups, "");
     const char **group_uids = FJ::CSV::ParseString(groups);
     free(groups);
 
@@ -207,7 +207,7 @@ start:
 void ServerDB::save(Fl_Preferences &prefs) const {
     AutoLocker<const ServerDB * const> locker(this);
 
-    std::string UIDs;
+    std::string UIDs, group_UIDs;
 
     for(iterator iter = begin(); iter!= end(); iter++){
         UIDs+= iter->get()->UID;
@@ -215,7 +215,15 @@ void ServerDB::save(Fl_Preferences &prefs) const {
     }
     UIDs.pop_back();
 
-    prefs.set("sys.server_uids", UIDs.c_str());
+    for(std::vector<std::string>::const_iterator iter = guts->groups.cbegin();
+      iter!= guts->groups.cend(); iter++){
+        group_UIDs+= *iter;
+        group_UIDs.push_back(',');
+    }
+    group_UIDs.pop_back();
+
+    prefs.set("sys.server_uids",   UIDs.c_str());
+    prefs.set("sys.sys.group_uids",group_UIDs.c_str());
 
     std::for_each(begin(), end(), [&prefs](const ServerDataP& server){SaveServer(server.get(), prefs);});
 

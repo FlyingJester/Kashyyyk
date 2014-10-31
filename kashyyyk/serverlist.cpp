@@ -75,13 +75,26 @@ namespace Kashyyyk {
 
 
 void UpdateIdentity(){
-    identity_frame.global->value(selected_server_data->global);
 
     auto func = std::mem_fn(selected_server_data->global?&Fl_Widget::deactivate:&Fl_Widget::activate);
 
     func(identity_frame.nick);
     func(identity_frame.user);
     func(identity_frame.real);
+
+    identity_frame.global->value(selected_server_data->global);
+
+    if(selected_server_data->global){
+        identity_frame.nick->value("");
+        identity_frame.user->value("");
+        identity_frame.real->value("");
+    }
+    else{
+        identity_frame.nick->value(selected_server_data->nick.c_str());
+        identity_frame.user->value(selected_server_data->user.c_str());
+        identity_frame.real->value(selected_server_data->real.c_str());
+    }
+
 }
 
 
@@ -91,6 +104,8 @@ void SelectServer(const char * UID){
     ServerDB::iterator iter = std::find_if(server_db.begin(), server_db.end(), predicate);
 
     selected_server_data = iter->get();
+
+    UpdateIdentity();
 
 }
 
