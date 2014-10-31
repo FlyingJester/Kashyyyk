@@ -98,6 +98,16 @@ void UpdateIdentity(){
 }
 
 
+void UpdateServerIdentity(){
+
+    selected_server_data->global = identity_frame.global->value();
+    selected_server_data->nick   = identity_frame.nick->value();
+    selected_server_data->user   = identity_frame.user->value();
+    selected_server_data->real   = identity_frame.real->value();
+
+}
+
+
 void SelectServer(const char * UID){
 
     struct equals_uid predicate(UID);
@@ -116,6 +126,8 @@ void InputCallback_CB(Fl_Widget *w, long index){
     assert(w);
     assert(index>=0);
     assert(index<=7);
+
+    UpdateServerIdentity();
 
     T *widget = static_cast<T *>(w);
     as value = widget->value();
