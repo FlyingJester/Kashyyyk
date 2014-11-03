@@ -21,12 +21,6 @@ equals_uid::equals_uid(const char * &target)
 
 }
 
-bool equals_uid::operator() (const ServerDataP &data){
-    return strcmp(data->UID, uid)==0;
-}
-
-
-
 //! @typedef rand_holder
 //! A type that is as close as possible to the maximum entropy value.
 #if USHRT_MAX >= RAND_MAX
@@ -314,6 +308,165 @@ void ServerDB::clear(){
 
 size_t ServerDB::size() const{
     return guts->list.size();
+}
+
+
+struct ServerDB::GroupDB::GroupDB_Impl{
+    std::mutex mutex;
+    ServerData global;
+    std::vector<GroupDataP> list;
+};
+
+
+void ServerDB::GroupDB::lock() const {
+    guts->mutex.lock();
+}
+
+
+void ServerDB::GroupDB::unlock() const{
+    guts->mutex.unlock();
+}
+
+
+template<typename T1, typename T2>
+void GetAndExistGroup(Fl_Preferences &prefs, const std::string &valuename, struct OptData<T1> &into, bool def1, T2 def2){
+    int i;
+    GetAndExist(prefs, valuename+".enabled", i, def1);
+    into.apply = i;
+    GetAndExist(prefs, valuename, into.value, def2);
+}
+
+
+void ServerDB::GroupDB::LoadGroup(struct GroupData *group, Fl_Preferences &prefs){
+
+    assert(group);
+
+    const std::string GroupPrefix = std::string("group.")+group->UID + ".";
+
+
+    GetAndExist(prefs, GroupPrefix+"name", group->name, "New Group");
+
+    GetAndExistGroup(prefs, GroupPrefix+"nickname", group->nick, false, "KashyyykUser");
+    GetAndExistGroup(prefs, GroupPrefix+"username", group->user, false, "KashyyykName");
+    GetAndExistGroup(prefs, GroupPrefix+"realname", group->real, false, "KashyyykReal");
+    GetAndExistGroup(prefs, GroupPrefix+"ssl",      group->SSL, false, false);
+    GetAndExistGroup(prefs, GroupPrefix+"globalidentity", group->global, true, false);
+
+    GetAndExist(prefs, GroupPrefix+"authtype.enabled", group->auth_type.apply, false);
+    GetAndExist(prefs, GroupPrefix+"auth.enabled",  group->auth.apply, false);
+    GetAndExist(prefs, GroupPrefix+"auth.username", group->auth.value[0], "");
+    GetAndExist(prefs, GroupPrefix+"auth.password", group->auth.value[1], "");
+
+    {
+        int i;
+        GetAndExist(prefs, GroupPrefix+"authtype", i, (int)AuthType::Nothing);
+        group->auth_type.value = static_cast<enum AuthType>(i);
+    }
+
+}
+
+
+template<typename T>
+void GroupSet(Fl_Preferences &prefs, const std::string &valuename, struct OptData<T> &into){
+    int i = into.apply;
+    prefs.set((valuename+".enabled").c_str(), i);
+    prefs.set(valuename.c_str(), into.value);
+}
+
+template<>
+void GroupSet<std::string>(Fl_Preferences &prefs, const std::string &valuename, struct OptData<std::string> &into){
+    int i = into.apply;
+    prefs.set((valuename+".enabled").c_str(), i);
+    prefs.set(valuename.c_str(), into.value.c_str());
+}
+
+template<>
+void GroupSet<bool>(Fl_Preferences &prefs, const std::string &valuename, struct OptData<bool> &into){
+    int i = into.apply;
+    prefs.set((valuename+".enabled").c_str(), i);
+    i = into.value;
+    prefs.set(valuename.c_str(), i);
+}
+
+template<>
+void GroupSet<std::string[2]>(Fl_Preferences &prefs, const std::string &valuename, struct OptData<std::string[2]> &into){
+    int i = into.apply;
+    prefs.set((valuename+".enabled").c_str(), i);
+    prefs.set((valuename+"username").c_str(), into.value[0].c_str());
+    prefs.set((valuename+"password").c_str(), into.value[1].c_str());
+}
+
+
+void ServerDB::GroupDB::SaveGroup(struct GroupData *group, Fl_Preferences &prefs){
+        const std::string GroupPrefix = std::string("group.")+group->UID + ".";
+
+        prefs.set((GroupPrefix+"name").c_str(),     group->name.c_str());
+
+        GroupSet(prefs, GroupPrefix+"nickname", group->nick);
+        GroupSet(prefs, GroupPrefix+"username", group->user);
+        GroupSet(prefs, GroupPrefix+"realname", group->real);
+        GroupSet(prefs, GroupPrefix+"ssl", group->SSL);
+        GroupSet(prefs, GroupPrefix+"globalidentity", group->global);
+        GroupSet(prefs, GroupPrefix+"authtype", group->auth_type);
+        GroupSet(prefs, GroupPrefix+"auth", group->auth);
+
+}
+
+
+struct GroupData *ServerDB::GroupDB::GenerateGroup() const {
+    struct GroupData *ret = new struct GroupData();
+    ret->UID = GenerateUID();
+
+    LoadGroup(ret, GetPreferences());
+
+    return ret;
+
+};
+
+
+void ServerDB::GroupDB::push_back(GroupDataP data){
+    push_back(data.get());
+}
+
+
+void ServerDB::GroupDB::push_back(struct GroupData *group){
+    guts->list.push_back(GroupDataP(group));
+}
+
+
+void ServerDB::GroupDB::clear(){
+    guts->list.clear();
+}
+
+
+size_t ServerDB::GroupDB::size() const{
+    return guts->list.size();
+}
+
+
+ServerDB::GroupDB::iterator ServerDB::GroupDB::begin(void) const{
+    return guts->list.begin();
+
+}
+
+
+ServerDB::GroupDB::iterator ServerDB::GroupDB::end(void) const{
+    return guts->list.end();
+}
+
+
+ServerDB::GroupDB::reverse_iterator ServerDB::GroupDB::rbegin(void) const{
+    return guts->list.rbegin();
+}
+
+
+ServerDB::GroupDB::reverse_iterator ServerDB::GroupDB::rend(void) const{
+    return guts->list.rend();
+}
+
+
+ServerDB::GroupDB::iterator ServerDB::GroupDB::erase(iterator i){
+    return guts->list.erase(i);
 }
 
 

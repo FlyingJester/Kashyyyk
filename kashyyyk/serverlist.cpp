@@ -3,6 +3,7 @@
 #include "editlist.hpp"
 #include "prefs.hpp"
 #include "doubleinput.hpp"
+#include "identityframe.hpp"
 #include "csv.h"
 
 #include <vector>
@@ -41,25 +42,20 @@ struct ServerData {
 };
 */
 
-struct IdentityFrame {
+struct Kashyyyk::IdentityFrame identity_frame;
+
+struct GroupFrame {
     Fl_Group *group;
-    Fl_Button *global;
-    Fl_Group *resize_group;
-    Fl_Input *nick;
-    Fl_Input *user;
-    Fl_Input *real;
-    Fl_Group *signon_group;
-    Fl_Choice *signon_type;
-    Fl_Input *username;
-    Fl_Input *password;
-} identity_frame;
+    Kashyyyk::EditList<Fl_Browser> *group_list;
+    Fl_Button *edit_groups;
+} group_frame;
 
 static std::unique_ptr<Fl_Window> serverlist_window = nullptr;
 static struct Kashyyyk::ServerData *selected_server_data;
 static Kashyyyk::ServerDB server_db;
 
 
-static const int WindowWidth  = 400;
+static const int WindowWidth  = 600;
 static const int WindowHeight = 400;
 
 
@@ -80,31 +76,13 @@ static const char *const server_property_names[] = {
 namespace Kashyyyk {
 
 
-enum {NoPassNoName, PassOnly, NameOnly, PassAndName, NumAuthOptions};
-
-std::array<Fl_Menu_Item, AuthType::NumAuthTypes> AuthTypeMenuItems;
-
-
-void UpdateIdentity(){
+void UpdateEnabled(){
 
     auto func = std::mem_fn(selected_server_data->global?&Fl_Widget::deactivate:&Fl_Widget::activate);
 
     func(identity_frame.nick);
     func(identity_frame.user);
     func(identity_frame.real);
-
-    identity_frame.global->value(selected_server_data->global);
-
-    if(selected_server_data->global){
-        identity_frame.nick->value("");
-        identity_frame.user->value("");
-        identity_frame.real->value("");
-    }
-    else{
-        identity_frame.nick->value(selected_server_data->nick.c_str());
-        identity_frame.user->value(selected_server_data->user.c_str());
-        identity_frame.real->value(selected_server_data->real.c_str());
-    }
 
     int type_enum = *static_cast<int *>(identity_frame.signon_type->menu()[identity_frame.signon_type->value()].user_data_);
 
@@ -126,6 +104,25 @@ void UpdateIdentity(){
         identity_frame.username->deactivate();
     }
 
+}
+
+
+void UpdateIdentity(){
+
+    identity_frame.global->value(selected_server_data->global);
+
+    if(selected_server_data->global){
+        identity_frame.nick->value("");
+        identity_frame.user->value("");
+        identity_frame.real->value("");
+    }
+    else{
+        identity_frame.nick->value(selected_server_data->nick.c_str());
+        identity_frame.user->value(selected_server_data->user.c_str());
+        identity_frame.real->value(selected_server_data->real.c_str());
+    }
+
+    UpdateEnabled();
 
 }
 
@@ -168,21 +165,10 @@ void InputCallback_CB(Fl_Widget *w, long index){
 
     GetPreferences().set(to_set.c_str(), value);
 
+    UpdateEnabled();
+
 }
 
-/*
-    struct CallBacks_T {
-            ItemCallback AddCallback;
-            void *AddCallbackArg;
-            ItemCallback EdtCallback;
-            void *EdtCallbackArg;
-            NoReturnItemCallback DelCallback;
-            void *DelCallbackArg;
-            NoReturnItemCallback SelCallback;
-            void *SelCallbackArg;
-            NumCallbackT  NumCallback;
-            void *NumCallbackArg;
-*/
 
 static EditList<>::ItemType ServerListAddCallback(EditList<>::ItemType item, void *p){
 
@@ -276,53 +262,14 @@ Fl_Group *GenerateServerListFrame(int x, int y, int w, int h){
 
 }
 
+struct GroupFrame GenerateGroupFrame(int x, int y, int w, int h){
+    struct GroupFrame frame;
+    frame.group  = new Fl_Group(x, y+24, w, h-24, "Groups");
 
-struct IdentityFrame GenerateIdentityFrame(int x, int y, int w, int h){
+    frame.group_list = new EditList<Fl_Browser>(x+4, y+28, w-8, h-24-28-8);
 
-    struct IdentityFrame frame;
-    frame.group  = new Fl_Pack(x, y+24, w, h-24, "Identity");
-    frame.group->box(FL_DOWN_FRAME);
-
-    frame.global = new Fl_Check_Button(0, 0, 32, 24, "Use Global Identity");
-    frame.global->callback(InputCallback_CB<Fl_Button, int>, 7l);
-
-    frame.resize_group = new Fl_Group(0, 0, 32, 24*3);
-    frame.resize_group->resizable(nullptr);
-
-    frame.nick = new Fl_Input(44,  0, w-48, 24, "Nick");
-    frame.user = new Fl_Input(44, 24, w-48, 24, "User");
-    frame.real = new Fl_Input(44, 48, w-48, 24, "Real");
-
-    frame.nick->callback(InputCallback_CB<Fl_Input>, 1l);
-    frame.user->callback(InputCallback_CB<Fl_Input>, 2l);
-    frame.real->callback(InputCallback_CB<Fl_Input>, 3l);
-
-    frame.resize_group->end();
-
-    frame.signon_group = new Fl_Group(0, 0, 32, 24*3);
-    frame.signon_group->resizable(nullptr);
-    frame.signon_type = new Fl_Choice(0, 0, w-4, 24);
-
-    {
-        int i = -1;
-        Fl_Menu_Item *items = new Fl_Menu_Item[64];
-            AuthTypeMenuItems[AuthType::Nothing]        = items[++i] = {"No Password", 0,0,new int(NoPassNoName)};
-            AuthTypeMenuItems[AuthType::NickServ]       = items[++i] = {"NickServ",0,0,new int(PassOnly),FL_MENU_INACTIVE};
-            AuthTypeMenuItems[AuthType::ServerPassword] = items[++i] = {"Server Password",0,0,new int(PassOnly),FL_MENU_INACTIVE};
-            items[++i] = {"SASL",0,0,new int(PassAndName),FL_MENU_INACTIVE};
-            items[++i] = {"SASL with Certificate",0,0,new int(NoPassNoName),FL_MENU_INACTIVE};
-            items[++i] = {"SASL with SSL or TLS",0,0,new int(NoPassNoName),FL_MENU_INACTIVE};
-            items[++i] = {"SASL with Mozilla Persona",0,0,new int(NoPassNoName),FL_MENU_INACTIVE};
-
-        items[++i] = {0};
-        frame.signon_type->menu(items);
-    }
-
-    frame.username = new Fl_Input(44, 24, w-48, 24, "Name");
-    frame.password = new Fl_Secret_Input(44, 48, w-48, 24, "Key");
-
-    frame.signon_group->end();
-    frame.group->end();
+    frame.edit_groups = new Fl_Button(x+4, y+28+h-24-28-8+4, (w/2)-12, 24, "Edit Groups");
+    frame.edit_groups->deactivate();
 
     return frame;
 }
@@ -335,8 +282,10 @@ void ServerList(Fl_Widget *w, void *p){
         first = false;
 
         serverlist_window.reset(new Fl_Window(WindowWidth, WindowHeight, "Server List"));
-
-        identity_frame = GenerateIdentityFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
+        Fl_Tabs *server_property_tab = new Fl_Tabs(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
+        identity_frame = GenerateIdentityFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16, InputCallback_CB<Fl_Input>, InputCallback_CB<Fl_Button, bool>, 1l, 2l, 3l, 7l);
+        group_frame = GenerateGroupFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
+        server_property_tab->end();
         GenerateServerListFrame(8, 8, WindowWidth/2-12, WindowHeight-16);
 
     }

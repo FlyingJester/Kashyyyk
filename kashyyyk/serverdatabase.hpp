@@ -7,24 +7,47 @@
 #include <vector>
 #include <list>
 #include <string>
+#include <cstring>
 
 #include <FL/Fl_Preferences.H>
 
 namespace Kashyyyk {
 
 struct ServerData;
+struct GroupData;
 typedef std::unique_ptr<struct ServerData> ServerDataP;
+typedef std::unique_ptr<struct GroupData>  GroupDataP;
 
 class ServerDB;
 struct ServerData;
 
+//! @brief A predicate class to check UID of a ServerDataP
+//!
+//! This is intended for use with ServerDataP and GroupDataP, specifically when
+//! using a ServerDB iterator. Useful for find_if and foreach.
 struct equals_uid{
     const char * &uid;
     equals_uid(const char * &target);
-    bool operator() (const ServerDataP &data);
+
+    template<class T>
+    bool operator() (const T &data){
+        return strcmp(data->UID, uid)==0;
+    }
+};
+
+//! @brief A data holder that represents an optional piece of data
+//!
+//! Represents a piece of optional data that might not be used.
+//! This is used to override the settings of a server from a group.
+template<typename T>
+struct OptData {
+    bool apply; //!< Whether the data applies or not
+    T value; //!< Value to override with
 };
 
 enum AuthType {Nothing, NickServ, ServerPassword, NumAuthTypes};
+enum AuthStyle {NoPassNoName, PassOnly, NameOnly, PassAndName, NumAuthOptions};
+
 
 //! @brief The data about a server stored in the server database
 //!
@@ -50,10 +73,27 @@ struct ServerData {
     std::string user;       //!< Default username on connecting
     std::string real;       //!< Default realname on connecting
 
-    std::string username, password; //!< Authentication info
     enum AuthType auth_type; //!< Authetication type
+    std::string username, password; //!< Authentication info
 
-    const ServerDB *owner;  //!< Server's human-readable name
+    const ServerDB *owner;
+};
+
+
+struct GroupData {
+
+    const char *UID;
+    std::string name;
+
+    struct OptData<bool> SSL;
+    struct OptData<bool> global;
+    struct OptData<std::string> nick;
+    struct OptData<std::string> user;
+    struct OptData<std::string> real;
+
+    struct OptData<enum AuthType> auth_type;
+    struct OptData<std::string[2]> auth; //!< 0: Username, 1: Password
+
 };
 
 
@@ -125,6 +165,54 @@ public:
     //! These are called when the ServerData is modified. They are all called
     //! when ServerDB::MarkDirty is called.
     CallBackVector CallBacks;
+
+    class GroupDB {
+        struct GroupDB_Impl;
+        std::unique_ptr<struct GroupDB_Impl> guts;
+
+    public:
+
+        void lock() const;
+        void unlock() const;
+
+        typedef std::vector<GroupDataP>::iterator iterator;
+        typedef std::reverse_iterator<iterator> reverse_iterator;
+
+        static void LoadGroup(struct GroupData *, Fl_Preferences &);
+        inline static void LoadGroup(GroupDataP &group, Fl_Preferences &prefs){
+            LoadGroup(group.get(), prefs);
+        }
+
+        static void SaveGroup(struct GroupData *, Fl_Preferences &);
+        inline static void SaveGroup(iterator iter, Fl_Preferences &prefs){
+            SaveGroup(iter->get(), prefs);
+        }
+        static void SaveGroup(const GroupDataP &autoServer, Fl_Preferences &prefs){
+            SaveGroup(autoServer.get(), prefs);
+        }
+
+        struct GroupData *GenerateGroup() const;
+        void push_back(GroupDataP);
+        void push_back(struct GroupData *);
+
+        void clear();
+
+        size_t size() const;
+
+        iterator begin(void) const;
+        iterator end(void) const;
+        reverse_iterator rbegin(void) const;
+        reverse_iterator rend(void) const;
+
+        iterator erase(iterator);
+
+        inline reverse_iterator erase(reverse_iterator iter){
+            return reverse_iterator(erase(iter.base()));
+        }
+
+
+
+    } group;
 
 };
 
