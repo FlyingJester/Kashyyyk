@@ -15,7 +15,7 @@ namespace Kashyyyk{
 
 std::array<Fl_Menu_Item, AuthType::NumAuthTypes> AuthTypeMenuItems;
 
-struct IdentityFrame GenerateIdentityFrame(int x, int y, int w, int h, void (*Input_CB)(Fl_Widget *, long), void (Button_CB)(Fl_Widget *, long), long a, long b, long c, long d){
+struct IdentityFrame GenerateIdentityFrame(int x, int y, int w, int h, struct IdentityFrameCallbacks callbacks){
 
     struct IdentityFrame frame;
     frame.group  = new Fl_Group(x, y+24, w, h-24, "Identity");
@@ -25,7 +25,6 @@ struct IdentityFrame GenerateIdentityFrame(int x, int y, int w, int h, void (*In
     pack->spacing(4);
 
     frame.global = new Fl_Check_Button(0, 0, 32, 24, "Use Global Identity");
-    frame.global->callback(Button_CB, d);
 
     frame.resize_group = new Fl_Group(0, 0, 32, 28*3);
     frame.resize_group->resizable(nullptr);
@@ -34,9 +33,18 @@ struct IdentityFrame GenerateIdentityFrame(int x, int y, int w, int h, void (*In
     frame.user = new Fl_Input(44, 28, w-48, 24, "User");
     frame.real = new Fl_Input(44, 56, w-48, 24, "Real");
 
-    frame.nick->callback(Input_CB, a);
-    frame.user->callback(Input_CB, b);
-    frame.real->callback(Input_CB, c);
+    if(callbacks.type==IdentityFrameCallbacks::Long){
+        frame.global->callback(callbacks.Button_CB.Long_CB, callbacks.GlobalArg.Long);
+        frame.nick->callback(callbacks.Input_CB.Long_CB, callbacks.NickArg.Long);
+        frame.user->callback(callbacks.Input_CB.Long_CB, callbacks.UserArg.Long);
+        frame.real->callback(callbacks.Input_CB.Long_CB, callbacks.RealArg.Long);
+    }
+    else{
+        frame.global->callback(callbacks.Button_CB.Ptr_CB, callbacks.GlobalArg.Ptr);
+        frame.nick->callback(callbacks.Input_CB.Ptr_CB, callbacks.NickArg.Ptr);
+        frame.user->callback(callbacks.Input_CB.Ptr_CB, callbacks.UserArg.Ptr);
+        frame.real->callback(callbacks.Input_CB.Ptr_CB, callbacks.RealArg.Ptr);
+    }
 
     frame.resize_group->end();
 

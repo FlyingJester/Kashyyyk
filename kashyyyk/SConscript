@@ -36,6 +36,7 @@ kashyyyk_files = ["kashyyyk.cpp",
                   "prefs.cpp",
                   "doubleinput.cpp",
                   "serverlist.cpp",
+                  "groupeditor.cpp",
                   "server.cpp",
                   "channel.cpp",
                   "window.cpp"]

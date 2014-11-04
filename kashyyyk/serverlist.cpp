@@ -4,6 +4,10 @@
 #include "prefs.hpp"
 #include "doubleinput.hpp"
 #include "identityframe.hpp"
+#include "background.hpp"
+#include "server.hpp"
+#include "window.hpp"
+#include "socket.h"
 #include "csv.h"
 
 #include <vector>
@@ -51,7 +55,7 @@ struct GroupFrame {
 } group_frame;
 
 static std::unique_ptr<Fl_Window> serverlist_window = nullptr;
-static struct Kashyyyk::ServerData *selected_server_data;
+static struct Kashyyyk::ServerData * selected_server_data;
 static Kashyyyk::ServerDB server_db;
 
 
@@ -74,6 +78,9 @@ static const char *const server_property_names[] = {
 
 
 namespace Kashyyyk {
+
+
+Window * serverlist_associated_window;
 
 
 void UpdateEnabled(){
@@ -240,9 +247,90 @@ void ServerListSelCallback(EditList<>::ItemType item, void *p){
 }
 
 
+class ConnectCallback_Task : public Task{
+
+    class AddServerTask : public Task{
+
+    WSocket *socket;
+    ServerData *data;
+    public:
+        AddServerTask(WSocket *sock, ServerData *dat)
+          : socket(sock)
+          , data(dat){
+
+        }
+
+        void Run() override {
+            repeating = false;
+            Window *to = const_cast<Window *>(Window::window_order.front());
+            to->AddServer(new Server(socket, data->address, to, data->port, data->UID, data->SSL));
+        }
+
+    };
+
+    void *p;
+public:
+
+    ConnectCallback_Task(void *arg)
+      : p(arg){}
+
+    void Run() override {
+        assert(p);
+
+        repeating = false;
+        ServerData *data = *static_cast<ServerData **>(p);
+        assert(data);
+
+        WSocket *sock;
+        int err;
+
+try_connect:
+        sock = Create_Socket();
+
+        if(!sock){
+            printf("Could not create a socket.\n");
+        }
+
+        err = Connect_Socket(sock, data->address.c_str(), data->port, 10000);
+        if(!err){
+            Task *task = new AddServerTask(sock, data);
+            Thread::AddTask(serverlist_associated_window->task_group, task);
+        }
+        else{
+            printf("Couldn't connect. Asking if we should try again.\n");
+
+            PromiseValue<int> promise(0);
+
+            Task *task = new AskToConnectAgain_Task(promise, data->name);
+
+            Thread::AddTask(serverlist_associated_window->task_group, task);
+
+            Fl::awake();
+
+            while(!promise.IsReady()){}
+
+            bool again = (promise.Finish()==1);
+            if(again){
+                Destroy_Socket(sock);
+                goto try_connect;
+            }
+        }
+    }
+};
+
+
+void ConnectCallback_CB(Fl_Widget *w, void *p){
+
+    Thread::AddLongRunningTask(new ConnectCallback_Task(p));
+
+}
+
+
 Fl_Group *GenerateServerListFrame(int x, int y, int w, int h){
 
-    EditList<> *servers_editlist = new EditList<>(x, y+24, w, h-24, "Servers");
+    Fl_Group *server_group = new Fl_Group(x, y+24, w, h-24, "Servers");
+
+    EditList<> *servers_editlist = new EditList<>(x, y+24, w, h-52);
     servers_editlist->end();
     Fl_Preferences &prefs = GetPreferences();
 
@@ -258,7 +346,12 @@ Fl_Group *GenerateServerListFrame(int x, int y, int w, int h){
         servers_editlist->AddItem({iter->get()->name.c_str(), iter->get()});
     }
 
-    return servers_editlist;
+    Fl_Button *connect_button = new Fl_Button(x, y+h-24, w, 24, "Connect");
+    connect_button->callback(ConnectCallback_CB, &selected_server_data);
+    server_group->add(connect_button);
+    server_group->end();
+
+    return server_group;
 
 }
 
@@ -278,12 +371,16 @@ struct GroupFrame GenerateGroupFrame(int x, int y, int w, int h){
 void ServerList(Fl_Widget *w, void *p){
     static bool first = true;
 
+    assert(p);
+
+    serverlist_associated_window = static_cast<Window *>(p);
+
     if(first){
         first = false;
 
         serverlist_window.reset(new Fl_Window(WindowWidth, WindowHeight, "Server List"));
         Fl_Tabs *server_property_tab = new Fl_Tabs(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
-        identity_frame = GenerateIdentityFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16, InputCallback_CB<Fl_Input>, InputCallback_CB<Fl_Button, bool>, 1l, 2l, 3l, 7l);
+        identity_frame = GenerateIdentityFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16, {IdentityFrameCallbacks::Long, {InputCallback_CB<Fl_Input>}, {InputCallback_CB<Fl_Button, bool>}, {1l}, {2l}, {3l}, {7l}});
         group_frame = GenerateGroupFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
         server_property_tab->end();
         GenerateServerListFrame(8, 8, WindowWidth/2-12, WindowHeight-16);

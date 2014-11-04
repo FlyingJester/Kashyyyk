@@ -21,6 +21,21 @@ struct IdentityFrame {
     Fl_Input *password;
 };
 
-struct IdentityFrame GenerateIdentityFrame(int x, int y, int w, int h, void (*Input_CB)(Fl_Widget *, long), void (*Button_CB)(Fl_Widget *, long), long NickArg = 0l, long UserArg = 0l, long RealArg = 0l, long GlobalArg = 0l);
+struct IdentityFrameCallbacks{
+
+    enum {Long, Ptr} type;
+
+    union{
+        void (*Long_CB)(Fl_Widget *, long);
+        void (*Ptr_CB)(Fl_Widget *, void *);
+    } Input_CB, Button_CB;
+
+    union{
+        long Long;
+        void *Ptr;
+    } NickArg, UserArg, RealArg, GlobalArg;
+};
+
+struct IdentityFrame GenerateIdentityFrame(int x, int y, int w, int h, struct IdentityFrameCallbacks);
 
 }
