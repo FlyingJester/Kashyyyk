@@ -8,7 +8,7 @@ platform_files = ["launcher.cpp"];
 if sys.platform == 'darwin':
   platform_files += ["cocoa_pling.m"];
   platform_files += ["cocoa_notification.m"];
-  platform_files += ["unix_paths.c"];
+  platform_files += ["cocoa_paths.m"];
   platform_files += ["mac_init.cpp"];
   platform_files += ["cocoa_about.m"];
   platform_files += ["mac_launcher.cpp"];
