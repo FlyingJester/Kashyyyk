@@ -22,13 +22,7 @@ if enabledebug:
 
 def PrepareCompilerGPP(env):
   print "Preparing g++"
-
-  if 'clang' in commands.getoutput('g++ -l') or float(commands.getoutput('g++ -dumpversion')) >= 4.7:
-    version_set = " -std=c++11 "
-  else:
-    version_set = " -std=gnu++0x "
-
-  env.Append(CXXFLAGS = version_set + "-Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH =
+  env.Append(CXXFLAGS = version_set + " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH =
 ["/usr/local/include"])
   if enabledebug:
     env.Append(LINKFLAGS = " -g ")
