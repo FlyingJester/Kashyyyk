@@ -34,9 +34,9 @@ def PrepareCompilerGCC(env):
     env.Append(LINKFLAGS = " -g ")
 
 def PrepareCompilerMSVC(env):
-  env.Append(CFLAGS = " /EHsc /Zi /MDd /DEBUG ", LINKFLAGS = " /DEBUG ")
+  env.Append(CFLAGS = " /EHsc /Zi /MDd /DEBUG ", LINKFLAGS = " /DEBUG /NODEFAULTLIB:MSVCRT ")
 def PrepareCompilerMSVCpp(env):
-  env.Append(CXXFLAGS = " /EHsc /Zi /MDd /DEBUG ", LINKFLAGS = " /DEBUG ")
+  env.Append(CXXFLAGS = " /EHsc /Zi /MDd /DEBUG ", LINKFLAGS = " /DEBUG /NODEFAULTLIB:MSVCRT ")
 
 def PrepareEnvironmentUNIX(env):
   if sys.platform == 'cygwin':

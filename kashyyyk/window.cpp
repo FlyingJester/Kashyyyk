@@ -312,6 +312,7 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
                 items[i++] = {"Disconnect", 0, WindowCallbacks::ChangeNick_CB, this};
                 items[i++] = {"Change Nick", 0, WindowCallbacks::ChangeNick_CB, this};
                 items[i++] = {"Join Channel", 0, WindowCallbacks::JoinChannel_CB, this};
+			items[i++] = {0};
         items[i++] = {0};
 
         menubar = new Fl_Menu_Bar(-2, 0, w+4, 24);
