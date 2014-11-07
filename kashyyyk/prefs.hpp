@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <cstdlib>
 #include <FL/Fl_Preferences.H>
 
 class Fl_Widget;
