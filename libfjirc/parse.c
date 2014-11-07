@@ -128,7 +128,7 @@ void IRC_ParseParameter(const char * to[], const char * const text){
     while(*a==' ')
       a++;
 
-    if(*a=='\0')
+    if((*a=='\0') || (*a=='\r'))
       return;
 
     /* The entire rest of text is a single parameter.
@@ -141,7 +141,7 @@ void IRC_ParseParameter(const char * to[], const char * const text){
 
     b = a;
 
-    while((*b!='\0') && (*b!=' ') && (*b!=':'))
+    while((*b!='\0') && (*b!='\r') && (*b!=' ') && (*b!=':'))
       b++;
 
     to[0] = IRC_Strndup(a, b-a);
