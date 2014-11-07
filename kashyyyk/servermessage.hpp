@@ -4,6 +4,7 @@
 #include "server.hpp"
 #include "channel.hpp"
 #include "message.hpp"
+#include "platform/strcasestr.h"
 #include "message.h"
 #include <atomic>
 
