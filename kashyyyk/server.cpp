@@ -123,7 +123,7 @@ public:
 
             if(should_die){
 
-                printf("ServerTask signalled to deletes.\n");
+                printf("ServerTask signalled to delete.\n");
                 repeating = false;
             }
         }
