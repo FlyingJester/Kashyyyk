@@ -124,7 +124,7 @@ struct ServerData *ServerDB::GenerateServer() const{
     ret->name = '\0';
     ret->address = '\0';
     ret->port = 0;
-    ret->SSL = -1;
+    ret->SSL = false;
     ret->global = true;
     ret->nick = '\0';
     ret->user = '\0';

@@ -21,6 +21,7 @@ struct RawMonitor *Create_RawMonitor(){
 
 void Destroy_RawMonitor(struct RawMonitor *monitor){
 	
+    WakeAllConditionVariable(&(monitor->cv));
 	DeleteCriticalSection(&(monitor->cs));
 
 	assert(monitor);
