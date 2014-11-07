@@ -194,6 +194,7 @@ public:
             printf("Found %s. Not %s.\n", msg->parameters[0], channel_name.c_str());
             return false;
         }
+
         Fl::lock();
         Channel * channel = new Channel(server, msg->parameters[0]);
 

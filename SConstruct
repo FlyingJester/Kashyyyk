@@ -108,8 +108,9 @@ if True:
 if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
   PrepareEnvironmentUNIX(environment)
   conf = Configure(environment)
-
-  if conf.CheckLib("tbb"):
+  if sys.platform == 'darwin':
+    environment.Append(CPPDEFINES = ["USE_PIPE_CONCURRENT_QUEUE"])
+  elif conf.CheckLib("tbb"):
     environment.Append(LIBS = ["tbb"], CPPDEFINES = ["USE_INTEL_TBB"])
   if ((conf.CheckFunc('kqueue') and conf.CheckFunc('kevent') ) or conf.CheckCHeader('sys/kqueue.h') ) and ARGUMENTS.get('poll', 'kqueue') == 'kqueue':
     environment.Append(CPPDEFINES = ["USE_KQUEUE"])
