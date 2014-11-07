@@ -268,7 +268,6 @@ public:
 void WindowCallbacks::WindowCallback(Fl_Widget *w, void *arg){
     Window *window = static_cast<Window *>(arg);
     Thread::AddTask(window->task_group, new WindowKiller(window));
-
 }
 
 
