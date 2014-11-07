@@ -128,6 +128,10 @@ void IRC_ParseParameter(const char * to[], const char * const text){
     while(*a==' ')
       a++;
 
+    /* If we hit a carriage return or a NUL we hit the end of the message.
+      Some IRC servers add a carriage return (freenode), which we don't want
+      to include. Most don't, and so the message will end in a NUL.
+    */
     if((*a=='\0') || (*a=='\r'))
       return;
 
