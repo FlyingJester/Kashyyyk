@@ -21,10 +21,29 @@ class Fl_Group;
 class Fl_Tree_Item;
 struct WSocket;
 
+namespace std {class atomic_flag;}
+
 namespace Kashyyyk{
 
 class Channel;
 class ServerTask;
+
+
+class ServerConnectTask : public Task {
+
+    Server *server;
+    WSocket *socket;
+    bool reconnect_channels;
+    long port;
+public:
+
+    ServerConnectTask(Server *aServer, WSocket *aSocket, long prt = 6665, bool reconnect_chans = true, bool SSL = false);
+
+    void Run() override;
+
+    std::shared_ptr<PromiseValue<bool> > promise;
+
+};
 
 //
 // The MessageHandlers in a Server should only very rarely need to actually see
@@ -42,7 +61,9 @@ class ServerTask;
 class Server : public LockingReciever<Window, std::mutex> {
 public:
 
-    typedef std::list<std::unique_ptr<Channel> >        ChannelList;
+    typedef std::list<std::unique_ptr<Channel> > ChannelList;
+
+    static void ReconnectServer_CB(Fl_Widget *, void *p);
 
 protected:
 
@@ -65,19 +86,24 @@ protected:
 
     void FocusChanged();
 
+    std::shared_ptr<PromiseValue<bool> > last_reconnect;
+    std::atomic_bool connected;
 
 public:
     friend class Channel;
     friend class Window;
+    friend class ServerConnectTask;
     friend class AutoLocker<Server *>;
 
-    Server(WSocket *socket, const std::string &name, Window *w, long prt, const char *uid=nullptr);
+    Server(WSocket *socket, const std::string &name, Window *w, long prt, const char *uid=nullptr, bool SSL=false);
     ~Server();
 
     std::string name;
     std::string nick;
 
     ChannelList Channels;
+
+    bool IsConnected();
 
      // Registers a new chat group.
      // Resizes the group given to the correct proportions.

@@ -112,6 +112,20 @@ public:
 
 };
 
+//! Prints PART messages
+class Part_Handler : public Message_Handler{
+    from_reader r;
+    part_reader t;
+public:
+    Part_Handler(Channel *c)
+      : Message_Handler(c){}
+
+    ~Part_Handler() override {}
+
+    bool HandleMessage(IRC_Message *msg) override;
+
+};
+
 //!
 //! @brief Arbitrary Message printing Handler
 //!
@@ -161,6 +175,7 @@ public:
         }
 
 		t.Reset();
+		r.Reset();
 
         return false;
     }
@@ -169,8 +184,6 @@ public:
 
 //! Prints PRIVMSG messages
 typedef ChannelMessage_Handler<IRC_privmsg, Channel::HighlightLevel::Medium, param_reader<1> > PrivateMessage_Handler;
-//! Prints PART messages
-typedef ChannelMessage_Handler<IRC_part,    Channel::HighlightLevel::Low,    part_reader>      Part_Handler;
 //! Prints NOTIVE messages.
 //! @note The channel doesn't care if it is the Server's `server` channel or
 //! not, so the message should have been correctly routed in the Server.

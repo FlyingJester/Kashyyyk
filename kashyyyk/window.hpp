@@ -1,21 +1,31 @@
 #pragma once
 
+#include "autolocker.hpp"
+#include "background.hpp"
+#include "promise.hpp"
+#include "platform/pling.h"
+
 #include <list>
 #include <vector>
 #include <memory>
 #include <mutex>
-
-#include "autolocker.hpp"
-#include "background.hpp"
-#include "platform/pling.h"
+#include <string>
 
 #include <FL/Fl_Tree.H>
+
+#ifdef __APPLE__
+#define IS_OSX true
+#else
+#define IS_OSX false
+#endif
 
 class Fl_Window;
 class Fl_Group;
 class Fl_Tree;
 class Fl_Tree_Item;
 class Fl_Scroll;
+
+struct Fl_Menu_Item;
 
 namespace Kashyyyk {
 
@@ -36,6 +46,18 @@ public:
 };
 
 
+class AskToConnectAgain_Task : public Task {
+    PromiseValue<int> &promise;
+    const std::string &name;
+public:
+    AskToConnectAgain_Task(PromiseValue<int> &p, const std::string &n)
+      : promise(p)
+      , name(n) {}
+
+    virtual ~AskToConnectAgain_Task(){}
+
+    void Run() override;
+};
 
 
 class Window {
@@ -76,8 +98,11 @@ public:
     friend class WindowCallbacks;
 
     Window();
-    Window(int w, int h, Thread::TaskGroup *g, Launcher *l = nullptr, bool osx = false);
+    Window(int w, int h, Thread::TaskGroup *g, Launcher *l = nullptr, bool osx = IS_OSX);
     ~Window();
+
+    Fl_Menu_Item   *reconnect_item;
+    Fl_Menu_Item   *disconnect_item;
 
     std::list<Channel *> Channels;
     std::list<std::unique_ptr<Server> > Servers;
@@ -110,6 +135,9 @@ public:
     void AutoJoinChannels(void);
 
     void ForgetLauncher();
+
+    // Does not need locking, since all callbacks are on the main thread.
+    static std::list<const Window *> window_order;
 
 };
 

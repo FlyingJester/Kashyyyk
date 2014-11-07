@@ -11,6 +11,7 @@
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Tree_Item.H>
+#include <FL/Fl_Menu.H>
 #include <FL/Fl_Browser.H>
 
 #include <stack>
@@ -41,43 +42,43 @@ bool Server::find_channel::operator () (const std::unique_ptr<Channel> &a){
 }
 
 
-class ServerConnectTask : public Task {
+void Server::ReconnectServer_CB(Fl_Widget *, void *p){
 
-    Server *server;
-    WSocket *socket;
-    bool reconnect_channels;
-    long port;
-public:
+    assert(p);
 
-    ServerConnectTask(Server *aServer, WSocket *aSocket, long prt, bool rc)
-      : server(aServer)
-      , socket(aSocket)
-      , reconnect_channels(rc)
-      , port(prt)
-      , promise(new PromiseValue<bool>(false)) {
+    Server *server = static_cast<Server *>(p);
 
+    server->Reconnect(true);
+
+    server->Parent->reconnect_item->deactivate();
+
+}
+
+
+ServerConnectTask::ServerConnectTask(Server *aServer, WSocket *aSocket, long prt, bool rc, bool SSL)
+  : server(aServer)
+  , socket(aSocket)
+  , reconnect_channels(rc)
+  , port(prt)
+  , promise(new PromiseValue<bool>(false)) {
+
+}
+
+void ServerConnectTask::Run(){
+    int err = Connect_Socket(socket, server->name.c_str(), port, 10000);
+
+    if(err!=eAlreadyConnected){
+        repeating = true;
+        server->connected = false;
+        return;
     }
 
-    void Run() override {
-        int err = Connect_Socket(socket, server->name.c_str(), port, 10000);
-
-        if(err){
-            repeating = true;
-            return;
-        }
-
-        promise->SetReady();
-        promise->Finalize(true);
-        repeating = false;
-        reconnect_channels = true;
-    }
-
-
-    virtual ~ServerConnectTask() {}
-
-    std::shared_ptr<PromiseValue<bool> > promise;
-
-};
+    promise->SetReady();
+    promise->Finalize(true);
+    repeating = false;
+    reconnect_channels = true;
+    server->connected = true;
+}
 
 
 class ServerTask : public Task {
@@ -90,7 +91,6 @@ class ServerTask : public Task {
 
     std::shared_ptr<PromiseValue<bool> > promise;
 
-    FILE *file;
 public:
 
     ServerTask(Server *aServer, WSocket *aSocket, bool *deded)
@@ -101,7 +101,6 @@ public:
     , socket(aSocket)
     , task_died(deded)
     , should_die(false){
-        file = fopen("BUFFER", "w");
         repeating = true;
     }
 
@@ -112,8 +111,6 @@ public:
         free(buffer);
 
         *task_died = true;
-
-        fclose(file);
 
     }
 
@@ -144,9 +141,6 @@ public:
           return;
 
         Read_Socket(socket, &buffer);
-
-        fwrite(buffer, strlen(buffer), 1, file);
-        fwrite("\a", 1, 1, file);
 
         struct IRC_ParseState *state;
         if(old_state==nullptr)
@@ -180,7 +174,6 @@ public:
 
         IRC_DestroyParseState(state);
 
-        fflush(file);
     }
 
 
@@ -188,7 +181,7 @@ public:
 
 };
 
-Server::Server(WSocket *sock, const std::string &n, Window *w, long prt, const char *uid)
+Server::Server(WSocket *sock, const std::string &n, Window *w, long prt, const char *uid, bool SSL)
   : LockingReciever<Window, std::mutex> (w)
   , last_channel(nullptr)
   , socket(sock)
@@ -309,6 +302,9 @@ Server::~Server(){
 
     lock();
     network_task->should_die = true;
+
+    Thread::RemoveSocketFromTaskGroup(socket, Thread::GetShortThreadPool());
+
     while(!task_died){
         unlock();
 
@@ -437,15 +433,32 @@ std::shared_ptr<PromiseValue<Channel *> > Server::JoinChannel(const std::string 
 
 
 std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc){
-    ServerConnectTask *task = new ServerConnectTask(this, socket, port, rc);
 
-    Thread::AddLongRunningTask(task);
+    if((last_reconnect.get()) && (!last_reconnect->IsReady())){
+        ServerConnectTask *task = new ServerConnectTask(this, socket, port, rc);
 
-    return task->promise;
+        Thread::AddLongRunningTask(task);
+
+        last_reconnect.reset(task->promise.get());
+    }
+
+    return last_reconnect;
+
 }
 
+
+bool Server::IsConnected(){
+    return connected;
+}
+
+
 bool Server::SocketStatus(){
-    return State_Socket(socket)==eConnected;
+    WSockErr e = State_Socket(socket);
+    if(e!=eConnected)
+      connected = false;
+    else
+      connected = true;
+    return e==eConnected;
 }
 
 }

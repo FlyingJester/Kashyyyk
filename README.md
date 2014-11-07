@@ -5,6 +5,15 @@ A Work-In-Progress, Full-Featured, Open Source IRC Client
 
 ******
 
+Why You Want To Use Kashyyk
+---------------------------
+ - Kashyyk is lightweight, fast and efficient
+ - Multi-Window, intuitive API
+ - Capable of advanced preference management
+ - Configure by server, by groups, or globally
+ - Native releases for Windows, OS X, and FreeBSD with customized interface
+ elements for each platform
+
 About Kashyyyk
 --------------
 
@@ -15,6 +24,8 @@ OS X, which is still in alpha.
 Kashyyk uses the libfjirc library originally written for the Whittler IRC bot
 and the libfjnet wrapper written for TurboSphere. It has an FLTK-based GUI.
 Kashyyyk is intended to be cross platform and easily compiled.
+It is currently released natively for Windows 32-bit, OS X 10.7+, and FreeBSD
+for amd64.
 
 Compiling Kashyyyk
 ------------------
@@ -39,19 +50,16 @@ Kashyyyk Features
 #### Implemented
  - Multiple Window Support
  - Command Parsing (/nick, /join, etc.)
- - Persistent Preferences
+ - Persistent Preferences and advanced server configuration
  - Font and Theme Selection
+ - Multi-Window UI
  - Partial Numeric Response Support
  - Notification Center Support
 
 #### Planned
  - Chat Logging
- - Multi-Window UI
  - SSL Support
  - Full Numeric Response Support
-
-#### Broken
- - User Lists on Some Channels
 
 #### Won't Add
  - Scripting

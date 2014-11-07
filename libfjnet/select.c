@@ -1,6 +1,7 @@
 #include "poll.h"
 #include "socket.h"
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef USE_WINSOCK
 #include <Winsock2.h>
@@ -27,6 +28,7 @@ struct SocketSet *GenerateSocketSet(struct WSocket **sockets, unsigned num_socke
     struct SocketSet *set = malloc(sizeof(struct SocketSet));
     FD_ZERO(&(set->set));
     set->nfds = 0;
+
     while(i<num_sockets){
         FD_SET(sockets[i]->sock, &(set->set));
         if(sockets[i]->sock>set->nfds) set->nfds = sockets[i]->sock;
@@ -40,8 +42,15 @@ struct SocketSet *GenerateSocketSet(struct WSocket **sockets, unsigned num_socke
 
 void FreeSocketSet(struct SocketSet *set){
     FD_ZERO(&(set->set));
+
     free(set);
 }
+
+
+void PokeSet(struct SocketSet *socket_set){
+
+}
+
 
 void AddToSet(struct WSocket *socket, struct SocketSet *set){
     FD_SET(socket->sock, &(set->set));

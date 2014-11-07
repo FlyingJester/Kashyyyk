@@ -22,14 +22,15 @@ bool Quit_Handler::HandleMessage(IRC_Message *msg){
     if((msg->type!=IRC_quit) || (msg->from==nullptr))
        return false;
 
-    std::string pretty_name = (msg->from[0]==':')?(msg->from+sizeof(char)):msg->from;
-    pretty_name = pretty_name.substr(0, pretty_name.find('!'));
+    from_reader r;
 
-    std::list<User>::const_iterator iter = std::find_if(channel->Users.cbegin(), channel->Users.cend(), Channel::find_user(pretty_name));
+    std::list<User>::const_iterator iter = std::find_if(channel->Users.cbegin(), channel->Users.cend(), Channel::find_user(r(msg)));
     if(iter!=channel->Users.cend()){
-        std::string message = pretty_name + " Quit: " + ((msg->num_parameters>0)?msg->parameters[0]:"");
+        std::string message = std::string(r(msg)) + " " + ((msg->num_parameters>0)?msg->parameters[0]:"");
         channel->WriteLine("", message.c_str());
     }
+
+    channel->RemoveUser_l(r(msg));
 
     return false;
 }
@@ -89,6 +90,28 @@ bool Namelist_Handler::HandleMessage(IRC_Message *msg){
     return false;
 
 }
+
+
+bool Part_Handler::HandleMessage(IRC_Message *msg){
+
+    if((msg->type!=IRC_part) || (msg->num_parameters<1))
+      return false;
+
+    channel->last_msg_type = IRC_part;
+    const char *from = r(msg);
+
+    channel->WriteLine(from, t(msg));
+
+    channel->Highlight(Channel::HighlightLevel::Low);
+
+    channel->RemoveUser_l(from);
+
+    t.Reset();
+    r.Reset();
+
+    return false;
+}
+
 
 
 }

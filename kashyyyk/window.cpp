@@ -27,9 +27,42 @@
 
 namespace Kashyyyk {
 
+std::list<const Window *> Window::window_order;
+
 void Window::WindowDeleteTask::Run(){
     window->widget->do_callback();
 }
+
+template<class T = Fl_Window>
+class K_Window : public T {
+public:
+    const Window *owner;
+
+    K_Window(int x, int y, int w, int h, const Window *own, const char * title = nullptr)
+      : T(x, y, w, h, title)
+      , owner(own){
+        assert(owner);
+    }
+
+    K_Window(int w, int h, const Window *own, const char * title = nullptr)
+      : T(w, h, title)
+      , owner(own){
+        assert(owner);
+    }
+
+    int handle(int event) override {
+        assert(owner);
+        if(event==FL_FOCUS){
+            Window::window_order.remove(owner);
+            Window::window_order.push_back(owner);
+            printf("Focusing %p\n", static_cast<const void *>(owner));
+        }
+        return T::handle(event);
+
+    }
+
+};
+
 
 void WindowCallbacks::JoinChannel_CB(Fl_Widget *, void *p){
 
@@ -81,7 +114,7 @@ void WindowCallbacks::ChangeNick_CB(Fl_Widget *, void *p){
 
     const char *nick = fl_input("Enter New Nick for %s", "", server->name.c_str());
 
-    if(!nick)
+    if((!nick)||(nick[0]=='\0'))
       return;
 
     IRC_Message *msg = IRC_CreateNick(nick);
@@ -117,27 +150,11 @@ void WindowCallbacks::ChannelList_CB(Fl_Widget *w, void *p){
 }
 
 
-class AskToConnectAgain_Task : public Task {
-    PromiseValue<int> &promise;
-    const std::string &name;
-public:
-    AskToConnectAgain_Task(PromiseValue<int> &p, const std::string &n)
-      : promise(p)
-      , name(n) {
-
-    }
-
-    virtual ~AskToConnectAgain_Task(){
-
-    }
-
-    void Run() override {
-        promise.Finalize(fl_choice("Could not connect to %s. Try again?", fl_no, fl_yes, nullptr, name.c_str()));
-        promise.SetReady();
-        Fl::awake();
-    }
-
-};
+void AskToConnectAgain_Task::Run(){
+    promise.Finalize(fl_choice("Could not connect to %s. Try again?", fl_no, fl_yes, nullptr, name.c_str()));
+    promise.SetReady();
+    Fl::awake();
+}
 
 
 // Considered a long-running task.
@@ -146,7 +163,7 @@ class ConnectToServer_Task : public Task {
     std::string server_name;
     long port;
 public:
-    ConnectToServer_Task(Window * win, const char *name, long p = 6667)
+    ConnectToServer_Task(Window * win, const char *name, long p = 6667, bool SSL = false)
         : window(win)
         , server_name(name){
         port = p;
@@ -169,7 +186,9 @@ try_connect:
         err = Connect_Socket(sock, server_name.c_str(), port, 10000);
         if(!err){
             Server * s = new Server(sock, server_name, window, port);
+            Fl::lock();
             window->AddServer(s);
+            Fl::unlock();
         }
         else{
             printf("Couldn't connect. Asking if we should try again.\n");
@@ -249,17 +268,18 @@ public:
 void WindowCallbacks::WindowCallback(Fl_Widget *w, void *arg){
     Window *window = static_cast<Window *>(arg);
     Thread::AddTask(window->task_group, new WindowKiller(window));
-
 }
 
 
 Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
   : task_group(tg)
-  , widget(new Fl_Double_Window(w, h, "Kashyyyk IRC Client"))
+  , widget(new K_Window<Fl_Double_Window>(w, h, this, "Kashyyyk IRC Client"))
   , launcher(l)
   , chat_holder(new Fl_Group(128+8, 8+(osx?0:24), w-128-16, h-16-(osx?0:24)))
   , last_server(nullptr)
   , Servers() {
+
+    window_order.push_back(this);
 
     osx_style = osx;
 
@@ -270,14 +290,35 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
     channel_list->showroot(0);
     channel_list->callback(WindowCallbacks::ChannelList_CB, this);
 
-    Fl_Menu_Bar *menubar = (osx)?new Fl_Sys_Menu_Bar(-2, 0, w+4, 24):new Fl_Menu_Bar(-2, 0, w+4, 24);
+    if(!osx){
 
-    menubar->add("File/Connect To...", 0, WindowCallbacks::ConnectToServer_CB, this);
-    menubar->add("File/Server List", 0, ServerList, this);
-    menubar->add("Edit/Preferences", 0, OpenPreferencesWindow_CB, this);
-    menubar->add("Server/Change Nick", 0, WindowCallbacks::ChangeNick_CB, this);
-    menubar->add("Server/Join Channel", 0, WindowCallbacks::JoinChannel_CB, this);
-    widget->add(menubar);
+        int i = 0;
+
+        Fl_Menu_Bar *menubar;
+
+        Fl_Menu_Item *items = new Fl_Menu_Item[64];
+            items[i++] = {"&File",0,0,0,FL_SUBMENU},
+                items[i++] = {"New Window", 0, Launcher::NewWindow_CB, launcher};
+                items[i++] = {"Server List", 0, ServerList, this};
+                items[i++] = {"Connect To...", 0, WindowCallbacks::ConnectToServer_CB, this};
+                items[i++] = {"Server List", 0, ServerList, this};
+                items[i++] = {"Quit", 0, Launcher::Quit_CB, launcher};
+            items[i++] = {0};
+            items[i++] = {"&Edit",0,0,0,FL_SUBMENU},
+                items[i++] = {"Preferences", 0, OpenPreferencesWindow_CB, this};
+            items[i++] = {0};
+            items[i++] = {"&Server",0,0,0,FL_SUBMENU},
+                items[i++] = {"Reconnect", 0, WindowCallbacks::ChangeNick_CB, this};
+                items[i++] = {"Disconnect", 0, WindowCallbacks::ChangeNick_CB, this};
+                items[i++] = {"Change Nick", 0, WindowCallbacks::ChangeNick_CB, this};
+                items[i++] = {"Join Channel", 0, WindowCallbacks::JoinChannel_CB, this};
+        items[i++] = {0};
+
+        menubar = new Fl_Menu_Bar(-2, 0, w+4, 24);
+        menubar->menu(items);
+
+        widget->add(menubar);
+    }
 
     widget->resizable(chat_holder);
     widget->show();

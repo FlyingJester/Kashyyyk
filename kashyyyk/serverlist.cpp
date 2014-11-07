@@ -1,232 +1,191 @@
+#include "serverdatabase.hpp"
 #include "serverlist.hpp"
-#include "window.hpp"
 #include "editlist.hpp"
 #include "prefs.hpp"
 #include "doubleinput.hpp"
-#include "serverdatabase.hpp"
+#include "identityframe.hpp"
+#include "background.hpp"
+#include "server.hpp"
+#include "window.hpp"
+#include "socket.h"
 #include "csv.h"
-#include <cassert>
-#include <cstdio>
-#include <string>
 
-#include <memory>
+#include <vector>
+#include <string>
+#include <array>
+#include <functional>
 
 #include <FL/Fl_Window.H>
-#include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Pack.H>
-#include <FL/Fl_Box.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Check_Button.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Secret_Input.H>
+#include <FL/Fl_Choice.H>
+#include <FL/Fl_Tabs.H>
 #include <FL/Fl_Preferences.H>
+#include <FL/fl_ask.H>
+
+/*
+struct ServerData {
+
+    const char * UID;
+    std::string name;
+    std::string address;
+    long port;
+
+    std::vector<std::string>group_UIDs;
+    std::vector<std::string>autojoin_channels;
+
+    bool SSL;
+    bool global;
+    std::string nick;
+    std::string user;
+    std::string real;
+};
+*/
+
+static std::unique_ptr<Fl_Window> serverlist_window = nullptr;
+static struct Kashyyyk::ServerData * selected_server_data;
+static Kashyyyk::ServerDB server_db;
+
+
+static const int WindowWidth  = 600;
+static const int WindowHeight = 400;
+
+
+static const char *const server_property_names[] = {
+    "name",           //0
+    "nickname",       //1
+    "username",       //2
+    "realname",       //3
+    "address",        //4
+    "port",           //5
+    "ssl",            //6
+    "globalidentity", //7
+    "autojoin"        //8
+    "groupuids"       //9
+};
+
 
 namespace Kashyyyk {
 
-struct ServerPrefItems {
-    int dummy;
-    Fl_Input_ *Nick;
-    Fl_Input_ *Name;
-    Fl_Input_ *Real;
-    Fl_Button *Global;
-    Fl_Button *SSL;
-    ServerData *Data;
-    EditList<> *AutoJoin;
-    EditList<> *Servers;
-    ServerDB *DataBase;
-};
 
-// The window is associated with the last window passed as `p' into ServerList.
-// Any attempt to join a server will add it to that window.
-static std::unique_ptr<Fl_Window> serverlist_window;
-static Window *serverlist_associated_window;
-//static ServerDB *server_db = nullptr;
+struct IdentityFrame identity_frame;
 
-template <class T = Fl_Input, int w = 80, int h = 24, typename ValueT>
-inline std::pair<Fl_Pack *, T *> CreatePackWidget(const char *title, ValueT value, Fl_Callback *cb = nullptr, void *a = nullptr){
-    Fl_Pack *pack = new Fl_Pack(0, 0, 256-(4*2), 24);
-    pack->type(Fl_Pack::HORIZONTAL);
-
-    Fl_Box *box = new Fl_Box(0, 0, w, h, title);
-    box->box(FL_NO_BOX);
-    T *i = new T(0, 0, pack->w()-w, h);
-
-    i->value();
-
-    if(cb)
-      i->callback(cb, a);
-
-    return {pack, i};
-}
+struct GroupFrame {
+    Fl_Group *group;
+    Kashyyyk::EditList<Fl_Browser> *group_list;
+    Fl_Button *edit_groups;
+} group_frame;
 
 
-static void ServerDataChangedCallback(const struct ServerData* that, void *arg){
-
-    struct ServerPrefItems *pref_items = static_cast<ServerPrefItems *>(arg);
-    const struct ServerData* active = static_cast<const ServerData*>(pref_items->Servers->GetItem().second);
-
-
-    if((active) && strcmp(that->UID, active->UID)!=0)
-      return;
-
-    pref_items->Nick->value(that->Nick);
-    pref_items->Name->value(that->User);
-    pref_items->Real->value(that->Real);
-    pref_items->Global->value(that->UserGlobalIdentity);
-
-    pref_items->Servers->SetText(that->Name);
-    pref_items->AutoJoin->Clear();
-    for(std::vector<std::string>::const_iterator iter = that->AutoJoins.cbegin(); iter!=that->AutoJoins.cend(); iter++){
-        pref_items->AutoJoin->AddItem({iter->c_str(), nullptr});
-    }
-
-}
+struct AutoJoinFrame {
+    Fl_Group *group;
+    Kashyyyk::EditList<> *channel_list;
+} autojoin_frame;
 
 
-static void WindowCallback(Fl_Widget *w, void *p){
-    Fl_Group *that = static_cast<Fl_Group *>(w);
-    that->hide();
-
-    static_cast<ServerDB *>(p)->save(GetPreferences());
-
-}
-
-template<size_t s>
-void InputCallback(Fl_Widget *w, void *p){
-
-    struct ServerPrefItems *pref_items = static_cast<struct ServerPrefItems *>(p);
-    const Fl_Input *input = static_cast<Fl_Input *>(w);
-
-    const char ** value= (const char **)(pref_items->Data)+s;
-
-    GetPreferences().set(*value, input->value());
-
-}
+static Window * serverlist_associated_window;
 
 
-static EditList<>::ItemType AutoJoinAddCallback(EditList<>::ItemType item, void *p){
+void UpdateEnabled(){
 
-    free((void*)item.first);
+    auto func = std::mem_fn(selected_server_data->global?&Fl_Widget::deactivate:&Fl_Widget::activate);
 
-    item.first = fl_input("Add channel", "");
-    if(item.first==nullptr){
-        return {nullptr, nullptr};
-    }
+    func(identity_frame.nick);
+    func(identity_frame.user);
+    func(identity_frame.real);
 
-    item.first = strdup(item.first);
+    int type_enum = *static_cast<int *>(identity_frame.signon_type->menu()[identity_frame.signon_type->value()].user_data_);
 
-    struct ServerPrefItems *pref_items = static_cast<struct ServerPrefItems *>(p);
-
-    pref_items->Data->AutoJoins.push_back(item.first);
-
-    return item;
-}
-
-
-static void AutoJoinDelCallback(EditList<>::ItemType item, void *p){
-
-    struct ServerPrefItems *pref_items = static_cast<struct ServerPrefItems *>(p);
-
-    for(std::vector<std::string>::iterator iter = pref_items->Data->AutoJoins.begin();
-      iter != pref_items->Data->AutoJoins.end(); iter++){
-        if(strcmp(iter->c_str(), item.first)==0){
-            pref_items->Data->AutoJoins.erase(iter);
-            break;
-        }
-    }
-
-    pref_items->Data->owner->MarkDirty(pref_items->Data);
-}
-
-
-static EditList<>::ItemType AutoJoinEdtCallback(EditList<>::ItemType item, void *p){
-
-    struct ServerPrefItems *pref_items = static_cast<struct ServerPrefItems *>(p);
-
-    for(std::vector<std::string>::iterator iter = pref_items->Data->AutoJoins.begin();
-      iter != pref_items->Data->AutoJoins.end(); iter++){
-        printf("AutoJoin %s\n", iter->c_str());
-    }
-
-
-    const char *copy = strdup(item.first);
-    item.first = fl_input("Edit Channel %s", copy, copy);
-
-    if(!item.first)
-      return {nullptr, nullptr};
-
-
-    for(std::vector<std::string>::iterator iter = pref_items->Data->AutoJoins.begin();
-      iter != pref_items->Data->AutoJoins.end(); iter++){
-        if(strcmp(iter->c_str(), copy)==0){
-            iter->assign(item.first);
-            break;
-        }
-    }
-
-    free((void*)copy);
-
-    pref_items->Data->owner->MarkDirty(pref_items->Data);
-
-    return item;
-}
-
-
-static void SSLCheckboxCallback(Fl_Widget *w, void *p){
-    Fl_Button *b = static_cast<Fl_Button *>(w);
-    struct ServerData *d = static_cast<ServerData *>(p);
-    d->SSL = b->value();
-}
-
-static void GlobalCheckboxCallback(Fl_Widget *w, void *p){
-    struct ServerPrefItems *pref_items = static_cast<struct ServerPrefItems *>(p);
-    Fl_Button *button = static_cast<Fl_Check_Button *>(w);
-
-    if(button->value()){
-        pref_items->Nick->deactivate();
-        pref_items->Name->deactivate();
-        pref_items->Real->deactivate();
+    if(type_enum&1){
+        identity_frame.password->value(selected_server_data->password.c_str());
+        identity_frame.password->activate();
     }
     else{
-        pref_items->Nick->activate();
-        pref_items->Name->activate();
-        pref_items->Real->activate();
+        identity_frame.password->value("");
+        identity_frame.password->deactivate();
+    }
+
+    if(type_enum&2){
+        identity_frame.username->value(selected_server_data->username.c_str());
+        identity_frame.username->activate();
+    }
+    else{
+        identity_frame.username->value("");
+        identity_frame.username->deactivate();
     }
 
 }
 
 
-static EditList<>::ItemType ServerListEdtCallback(EditList<>::ItemType item, void *p){
+void UpdateIdentity(){
 
-    struct ServerData *data = static_cast<ServerData *>(item.second);
+    identity_frame.global->value(selected_server_data->global);
 
-    DoubleInput_Return r = DoubleInput("Add a New Server", "Server Name", item.first, "Server Address", "", nullptr);
-
-    if(r.value==0){
-        free((void *)r.one);
-        free((void *)r.two);
-        return item;
+    if(selected_server_data->global){
+        identity_frame.nick->value("");
+        identity_frame.user->value("");
+        identity_frame.real->value("");
+    }
+    else{
+        identity_frame.nick->value(selected_server_data->nick.c_str());
+        identity_frame.user->value(selected_server_data->user.c_str());
+        identity_frame.real->value(selected_server_data->real.c_str());
     }
 
-    free(data->Name);
-    free(data->Address);
+    UpdateEnabled();
 
-    data->Name = strdup(r.one);
-    data->Address = strdup(r.two);
+}
 
-    item.first  = strdup(data->Name);
-    item.second = data;
 
-    free((void *)r.one);
-    free((void *)r.two);
+void UpdateServerIdentity(){
 
-    data->owner->MarkDirty(data);
+    selected_server_data->global = identity_frame.global->value();
+    selected_server_data->nick   = identity_frame.nick->value();
+    selected_server_data->user   = identity_frame.user->value();
+    selected_server_data->real   = identity_frame.real->value();
 
-    return item;
+}
+
+
+void SelectServer(const char * UID){
+
+    struct equals_uid predicate(UID);
+    ServerDB::iterator iter = std::find_if(server_db.begin(), server_db.end(), predicate);
+
+    selected_server_data = iter->get();
+
+    UpdateIdentity();
+
+}
+
+
+template<class T, typename as = const char *>
+void InputCallback_CB(Fl_Widget *w, long index){
+
+    assert(w);
+    assert(index>=0);
+    assert(index<=7);
+
+    UpdateServerIdentity();
+
+    T *widget = static_cast<T *>(w);
+    as value = widget->value();
+
+    std::string to_set = std::string("server.") + selected_server_data->UID + "." + server_property_names[index];
+
+    GetPreferences().set(to_set.c_str(), value);
+
+    UpdateEnabled();
 
 }
 
 
 static EditList<>::ItemType ServerListAddCallback(EditList<>::ItemType item, void *p){
 
-    struct ServerPrefItems *pref_items = static_cast<struct ServerPrefItems *>(p);
-
     DoubleInput_Return r = DoubleInput("Add a New Server", "Server Name", item.first, "Server Address", "", nullptr);
 
     if(r.value==0){
@@ -235,214 +194,222 @@ static EditList<>::ItemType ServerListAddCallback(EditList<>::ItemType item, voi
         return {nullptr, nullptr};
     }
 
-    struct ServerData *data = pref_items->DataBase->GenerateServer();
-    ServerDB::LoadServer(data, GetPreferences());
+    Fl_Preferences &prefs = GetPreferences();
 
-    data->Name = strdup(r.one);
-    data->Address = strdup(r.two);
+    struct ServerData *data = server_db.GenerateServer();
+    assert(data);
 
-    printf("%s|%s(%p)\n", data->Name, data->Address, data->Name);
+    ServerDB::LoadServer(data, prefs);
+    server_db.push_back(data);
 
-    item.first  = strdup(data->Name);
-    item.second = data;
+    data->name = r.one;
+    data->address = r.two;
 
-    pref_items->DataBase->push_back(data);
-    pref_items->DataBase->SaveServer(data, GetPreferences());
-
-    pref_items->Nick->value(data->Nick);
-    pref_items->Name->value(data->User);
-    pref_items->Real->value(data->Real);
-
-    pref_items->Data = data;
-
-    pref_items->Global->value(data->UserGlobalIdentity);
-
-    pref_items->AutoJoin->Clear();
-
-    for(std::vector<std::string>::iterator string_iter=data->AutoJoins.begin();
-    string_iter!=data->AutoJoins.end(); string_iter++){
-        pref_items->AutoJoin->AddItem({string_iter->c_str(), nullptr});
-    }
-
-    free((void *)r.one);
     free((void *)r.two);
 
-    return item;
-}
-
-static void ServerListNumCallback(int i, void *p) {
-    ServerPrefItems *pref_items = static_cast<ServerPrefItems *>(p);
-
-      if(i==0){
-          pref_items->AutoJoin->Deactivate();
-          pref_items->Global->set();
-          pref_items->Global->do_callback();
-          pref_items->Global->deactivate();
-      }
-      else{
-          pref_items->AutoJoin->Activate();
-          pref_items->Global->activate();
-      }
-}
-
-static void ServerListSelCallback(EditList<>::ItemType in, void *p) {
-
-    struct ServerData *data = static_cast<struct ServerData *>(in.second);
-
-    struct ServerPrefItems *pref_items =  static_cast<struct ServerPrefItems *>(p);
-
-    pref_items->Nick->value(data->Nick);
-    pref_items->Name->value(data->User);
-    pref_items->Real->value(data->Real);
-    pref_items->Global->value(data->UserGlobalIdentity);
-
-    pref_items->Global->do_callback();
-
-    /*
-    if(data->UserGlobalIdentity){
-        pref_items->Nick->deactivate();
-        pref_items->Name->deactivate();
-        pref_items->Real->deactivate();
-    }
-    else{
-        pref_items->Nick->activate();
-        pref_items->Name->activate();
-        pref_items->Real->activate();
-    }
-    */
-
-    pref_items->AutoJoin->Clear();
-
-    for(std::vector<std::string>::iterator string_iter=data->AutoJoins.begin();
-    string_iter!=data->AutoJoins.end(); string_iter++){
-        pref_items->AutoJoin->AddItem({string_iter->c_str(), nullptr});
-    }
+    return {r.one, data};
 
 }
+
+
+static EditList<>::ItemType ServerListEdtCallback(EditList<>::ItemType item, void *p){
+
+    struct ServerData *data = static_cast<struct ServerData *>(item.second);
+    assert(data);
+
+    DoubleInput_Return r = DoubleInput("Edit Server", "Server Name", item.first, "Server Address", data->address.c_str());
+
+    if(r.value==0){
+
+        free((void *)r.one);
+        free((void *)r.two);
+        return item;
+
+    }
+
+    data->name    = r.one;
+    data->address = r.two;
+
+    free((void *)r.two);
+
+    return {r.one, data};
+
+}
+
+
+void ServerListDelCallback(EditList<>::ItemType item, void *p){
+
+    struct equals_uid predicate(static_cast<struct ServerData *>(item.second)->UID);
+    server_db.erase(std::find_if(server_db.begin(), server_db.end(), predicate));
+
+}
+
+
+void ServerListSelCallback(EditList<>::ItemType item, void *p){
+
+    const struct ServerData *data = static_cast<struct ServerData*>(item.second);
+    assert(data);
+    SelectServer(data->UID);
+
+}
+
+
+class ConnectCallback_Task : public Task{
+
+    class AddServerTask : public Task{
+
+    WSocket *socket;
+    ServerData *data;
+    public:
+        AddServerTask(WSocket *sock, ServerData *dat)
+          : socket(sock)
+          , data(dat){
+
+        }
+
+        void Run() override {
+            repeating = false;
+            Window *to = const_cast<Window *>(Window::window_order.front());
+            to->AddServer(new Server(socket, data->address, to, data->port, data->UID, data->SSL));
+        }
+
+    };
+
+    void *p;
+public:
+
+    ConnectCallback_Task(void *arg)
+      : p(arg){}
+
+    void Run() override {
+        assert(p);
+
+        repeating = false;
+        ServerData *data = *static_cast<ServerData **>(p);
+        assert(data);
+
+        WSocket *sock;
+        int err;
+
+try_connect:
+        sock = Create_Socket();
+
+        if(!sock){
+            printf("Could not create a socket.\n");
+        }
+
+        err = Connect_Socket(sock, data->address.c_str(), data->port, 10000);
+        if(!err){
+            Task *task = new AddServerTask(sock, data);
+            Thread::AddTask(serverlist_associated_window->task_group, task);
+        }
+        else{
+            printf("Couldn't connect. Asking if we should try again.\n");
+
+            PromiseValue<int> promise(0);
+
+            Task *task = new AskToConnectAgain_Task(promise, data->name);
+
+            Thread::AddTask(serverlist_associated_window->task_group, task);
+
+            Fl::awake();
+
+            while(!promise.IsReady()){}
+
+            bool again = (promise.Finish()==1);
+            if(again){
+                Destroy_Socket(sock);
+                goto try_connect;
+            }
+        }
+    }
+};
+
+
+void ConnectCallback_CB(Fl_Widget *w, void *p){
+
+    Thread::AddLongRunningTask(new ConnectCallback_Task(p));
+
+}
+
+
+Fl_Group *GenerateServerListFrame(int x, int y, int w, int h){
+
+    Fl_Group *server_group = new Fl_Group(x, y+24, w, h-24, "Servers");
+
+    EditList<> *servers_editlist = new EditList<>(x, y+24, w, h-52);
+    servers_editlist->end();
+    Fl_Preferences &prefs = GetPreferences();
+
+    server_db.open(prefs);
+
+    servers_editlist->SetAddCallback(ServerListAddCallback, nullptr);
+    servers_editlist->SetEdtCallback(ServerListEdtCallback, nullptr);
+    servers_editlist->SetDelCallback(ServerListDelCallback, nullptr);
+    servers_editlist->SetSelCallback(ServerListSelCallback, nullptr);
+    servers_editlist->Activate();
+
+    for(ServerDB::iterator iter = server_db.begin(); iter!=server_db.end(); iter++){
+        servers_editlist->AddItem({iter->get()->name.c_str(), iter->get()});
+    }
+
+    Fl_Button *connect_button = new Fl_Button(x, y+h-24, w, 24, "Connect");
+    connect_button->callback(ConnectCallback_CB, &selected_server_data);
+    server_group->add(connect_button);
+    server_group->end();
+
+    return server_group;
+
+}
+
+struct GroupFrame GenerateGroupFrame(int x, int y, int w, int h){
+    struct GroupFrame frame;
+    frame.group  = new Fl_Group(x, y+24, w, h-24, "Groups");
+
+    frame.group_list = new EditList<Fl_Browser>(x+4, y+28, w-8, h-24-28-8);
+
+    frame.edit_groups = new Fl_Button(x+4, y+28+h-24-28-8+4, (w/2)-12, 24, "Edit Groups");
+    frame.edit_groups->deactivate();
+
+    frame.group->end();
+    return frame;
+}
+
+
+struct AutoJoinFrame GenerateAutoJoinFrame(int x, int y, int w, int h){
+    struct AutoJoinFrame frame;
+    frame.group  = new Fl_Group(x, y+24, w, h-24, "AutoJoin");
+
+    frame.channel_list = new EditList<>(x+4, y+28, w-8, h-28);
+
+    frame.group->end();
+    return frame;
+}
+
 
 void ServerList(Fl_Widget *w, void *p){
+    static bool first = true;
 
     assert(p);
 
     serverlist_associated_window = static_cast<Window *>(p);
 
-    static bool first = true;
     if(first){
         first = false;
 
-
-        Fl_Preferences &prefs = GetPreferences();
-
-        struct ServerPrefItems *pref_items = new ServerPrefItems();
-
-        pref_items->DataBase = new ServerDB();
-        pref_items->DataBase->open(prefs);
-        pref_items->DataBase->CallBacks.push_back({ServerDataChangedCallback, pref_items});
-
-        const unsigned H = (24*6)+(16*8)+(8*9);
-
-        Fl_Window *serverlist = new Fl_Window((256*2)+(8*3), H);
-        serverlist_window.reset(serverlist);
-
-        EditList<> *servers = new EditList<>(8, 24, 256, H-32, "Servers");
-
-        pref_items->Servers = servers;
-
-        for(ServerDB::iterator iter = pref_items->DataBase->begin(); iter!=pref_items->DataBase->end(); iter++){
-            servers->AddItem({iter->get()->Name, iter->get()});
-        }
-
-        serverlist->begin();
-
-        Fl_Group *g = new Fl_Group((8*2)+256, 24, 256, H-32, "Server Settings");
-        g->box(FL_DOWN_FRAME);
-
-        serverlist->add(g);
-        Fl_Pack *propertypack = new Fl_Pack((8*2)+4+256, 24, 256-(4*2), H-32);
-        propertypack->spacing(4);
-        propertypack->add(new Fl_Box(0, 0, 0, 0));
-
-
-        {
-
-            struct ServerData *first_server_deleter = nullptr;
-            ServerDB::iterator server_iter = pref_items->DataBase->begin();
-            if(server_iter==pref_items->DataBase->end()){
-                first_server_deleter = new struct ServerData();
-                pref_items->Data = first_server_deleter;
-                pref_items->Data->Name = nullptr;
-                pref_items->Data->Nick = strdup("KashyyykUser");
-                pref_items->Data->User = strdup("KashyyykName");
-                pref_items->Data->Real = strdup("KashyyykReal");
-                pref_items->Data->UserGlobalIdentity = 1;
-            }
-            else{
-                pref_items->Data = server_iter->get();
-            }
-
-            auto NickWidget = CreatePackWidget("Nick", pref_items->Data->Nick);
-            propertypack->add(NickWidget.first);
-            pref_items->Nick = NickWidget.second;
-            NickWidget.first->callback(InputCallback<offsetof(ServerData, Nick)>, pref_items);
-
-            auto NameWidget = CreatePackWidget("Name", pref_items->Data->User);
-            propertypack->add(NameWidget.first);
-            pref_items->Name = NameWidget.second;
-            NameWidget.first->callback(InputCallback<offsetof(ServerData, User)>, pref_items);
-
-            auto RealWidget = CreatePackWidget("Real", pref_items->Data);
-            propertypack->add(RealWidget.first);
-            pref_items->Real = RealWidget.second;
-            RealWidget.first->callback(InputCallback<offsetof(ServerData, Real)>, pref_items);
-
-            auto GlobalWidget = CreatePackWidget<Fl_Check_Button, 224>
-              ("Use Global Settings", pref_items->Data->UserGlobalIdentity,
-              GlobalCheckboxCallback, pref_items);
-
-            propertypack->add(GlobalWidget.first);
-            GlobalWidget.second->do_callback();
-            pref_items->Global = GlobalWidget.second;
-
-
-            auto SSLWidget   = CreatePackWidget<Fl_Check_Button, 224>
-              ("Use SSL", pref_items->Data->SSL);
-            propertypack->add(SSLWidget.first);
-            pref_items->SSL = SSLWidget.second;
-            SSLWidget.first->callback(SSLCheckboxCallback, pref_items->Data);
-
-
-            delete first_server_deleter;
-
-        }
-
-        propertypack->add(new Fl_Box(0, 0, 0, 8));
-
-        EditList<> *autojoin = new EditList<>(8, 24, 256, 156, "AutoJoin Channels");
-        pref_items->AutoJoin = autojoin;
-
-        printf("AutoJoin: %p\n", static_cast<void *>(autojoin));
-
-        servers->SetNumCallback(ServerListNumCallback, pref_items);
-        servers->SetAddCallback(ServerListAddCallback, pref_items);
-        servers->SetSelCallback(ServerListSelCallback, pref_items);
-        servers->SetEdtCallback(ServerListEdtCallback, pref_items);
-        autojoin->SetDelCallback(AutoJoinDelCallback, pref_items);
-        autojoin->SetEdtCallback(AutoJoinEdtCallback, pref_items);
-        autojoin->SetAddCallback(AutoJoinAddCallback, pref_items);
-
-        if(servers->GetNumItems()==0){
-            autojoin->Deactivate();
-            pref_items->Global->deactivate();
-        }
-        propertypack->add(autojoin);
-
-
-        serverlist_window->callback(WindowCallback, pref_items->DataBase);
+        serverlist_window.reset(new Fl_Window(WindowWidth, WindowHeight, "Server List"));
+        Fl_Tabs *server_property_tab = new Fl_Tabs(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
+        identity_frame = GenerateIdentityFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16, {IdentityFrameCallbacks::Long, {InputCallback_CB<Fl_Input>}, {InputCallback_CB<Fl_Button, bool>}, {1l}, {2l}, {3l}, {7l}});
+        group_frame = GenerateGroupFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
+        autojoin_frame = GenerateAutoJoinFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
+        server_property_tab->end();
+        GenerateServerListFrame(8, 8, WindowWidth/2-12, WindowHeight-16);
 
     }
 
     serverlist_window->show();
 
 }
+
 
 }

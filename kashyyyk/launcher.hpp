@@ -4,6 +4,8 @@
 
 #include <FL/Fl_Window.H>
 
+struct Fl_Menu_Item;
+
 namespace Kashyyyk {
 
 class Window;
@@ -27,14 +29,38 @@ public:
 
     Window *NewWindow();
     void DirectConnect();
-    void JoinChannel();
     void ServerList();
     void Preferences();
+    void JoinChannel();
+    void ChangeNick();
     void Quit();
 
     void Release(Window *);
 
     static Launcher *CreatePlatformLauncher(Thread::TaskGroup *a);
+    static const Fl_Menu_Item * const GetLauncherMenu(Launcher *l);
+
+    //! Wraps Launcher::NewWindow for use in an FLTK callback.
+    static void NewWindow_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::DirectConnect for use in an FLTK callback.
+    static void DirectConnect_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::ServerList for use in an FLTK callback.
+    static void ServerList_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::Quit for use in an FLTK callback.
+    static void Quit_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::Preferences for use in an FLTK callback.
+    static void Preferences_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::JoinChannel for use in an FLTK callback.
+    static void JoinChannel_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::ChangeNick for use in an FLTK callback.
+    static void ChangeNick_CB(Fl_Widget *w, void *p);
+
 
 };
 

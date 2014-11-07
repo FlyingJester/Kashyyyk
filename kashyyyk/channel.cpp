@@ -385,22 +385,49 @@ const char *Channel::Nick(){
 }
 
 
-void Channel::RemoveUser(const char *user_c){
-
-    AutoLocker<Channel *> locker(this);
+void Channel::RemoveUser_l(const char *user_c){
 
     std::string user(user_c);
 
     std::list<User>::iterator iter = Users.begin();
     while(iter!=Users.end()){
 
-        if(iter->Name==user){
+        bool skip_first_char = false;
+        char first_char = iter->Name[0];
+        if((first_char=='&') ||
+           (first_char=='@') ||
+           (first_char=='~'))
+           skip_first_char = true;
+
+        if((iter->Name==user) ||
+           (skip_first_char && (iter->Name.substr(1)==user))){
             Users.erase(iter);
+
+            for(int i = 1; i<=userlist->size(); i++){
+                if(std::string(userlist->text(i))==user){
+                    userlist->remove(i);
+                    break;
+                }
+            }
+
+            Fl::lock();
+            userlist->redraw();
+            Fl::unlock();
+
             return;
         }
 
         iter++;
     }
+
+}
+
+
+void Channel::RemoveUser(const char *user_c){
+
+    AutoLocker<Channel *> locker(this);
+
+    RemoveUser_l(user_c);
 
 }
 

@@ -5,6 +5,7 @@
 #include <FL/Fl_Input.H>
 #include <FL/Fl.H>
 #include <FL/fl_ask.H>
+#include <algorithm>
 #include <memory>
 #include <utility>
 #include <cstdlib>
@@ -239,10 +240,10 @@ public:
     EditList(int x, int y, int w, int h, const char *label = 0, int p = 4)
       : Fl_Group(x, y, w, h, label)
       , pad(p)
-      , AddButton(x+pad, h+pad, (w-(pad*3))/3, H, "Add New")
-      , DelButton(((w-pad)/3)+x+pad, h+pad, (w-(pad*3))/3, H, "Remove")
-      , EdtButton(((w-pad)*2/3)+x+pad, h+pad, (w-(pad*3))/3, H, "Edit")
-      , list(x+pad, y+pad, w-(pad*2), h-H-2-(pad*2)-2) {
+      , AddButton(x+pad, y+h-H-(pad*2), (w-(pad*3))/3, H, "Add New")
+      , DelButton(((w-pad)/3)+x+pad, y+h-H-(pad*2), (w-(pad*3))/3, H, "Remove")
+      , EdtButton(((w-pad)*2/3)+x+pad, y+h-H-(pad*2), (w-(pad*3))/3, H, "Edit")
+      , list(x+pad, y+pad, w-(pad*2), h-H-(pad*4)) {
 
         memset(&CallBacks, 0, sizeof(struct CallBacks_T));
 
@@ -254,15 +255,20 @@ public:
 
         assert(this);
 
+        begin();
+
         AddButton.callback(Add_CB, this);
         DelButton.callback(Del_CB, this);
         EdtButton.callback(Edt_CB, this);
+
+        this->add(AddButton);
+        this->add(DelButton);
+        this->add(EdtButton);
 
         list.callback(Sel_CB, this);
 
         NumItemsChanged();
 
-        begin();
 
     }
 
