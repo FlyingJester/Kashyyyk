@@ -189,14 +189,16 @@ public:
         printf("Join handler examining message %s\nWe are looking for %s.\n", str, channel_name.c_str());
         free(str);
 
-        if(std::string(msg->parameters[0])!=channel_name){
+        printf("strstr: %s\tstrcasestr: %s\n", strstr(msg->parameters[0], channel_name.c_str()), strcasestr(msg->parameters[0], channel_name.c_str()));
+
+        if(strcasestr(msg->parameters[0], channel_name.c_str())!=msg->parameters[0]){
             printf("Found %s. Not %s.\n", msg->parameters[0], channel_name.c_str());
             return false;
         }
         else
           printf("Found name\n");
         Fl::lock();
-        Channel * channel = new Channel(server, channel_name);
+        Channel * channel = new Channel(server, msg->parameters[0]);
 
         promise->Finalize(channel);
         server->AddChannel_l(channel);
