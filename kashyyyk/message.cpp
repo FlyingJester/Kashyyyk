@@ -49,7 +49,8 @@ bool Debug_Handler::HandleMessage(IRC_Message *msg){
         putchar(':');
 
     for(int i = 0; i<msg->num_parameters; i++){
-        printf("(%s) ", msg->parameters[i]);
+        if(msg->parameters[i])
+          printf("(%s) ", msg->parameters[i]);
     }
 
     putchar('\n');

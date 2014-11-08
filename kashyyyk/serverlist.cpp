@@ -46,14 +46,6 @@ struct ServerData {
 };
 */
 
-struct Kashyyyk::IdentityFrame identity_frame;
-
-struct GroupFrame {
-    Fl_Group *group;
-    Kashyyyk::EditList<Fl_Browser> *group_list;
-    Fl_Button *edit_groups;
-} group_frame;
-
 static std::unique_ptr<Fl_Window> serverlist_window = nullptr;
 static struct Kashyyyk::ServerData * selected_server_data;
 static Kashyyyk::ServerDB server_db;
@@ -80,7 +72,22 @@ static const char *const server_property_names[] = {
 namespace Kashyyyk {
 
 
-Window * serverlist_associated_window;
+struct IdentityFrame identity_frame;
+
+struct GroupFrame {
+    Fl_Group *group;
+    Kashyyyk::EditList<Fl_Browser> *group_list;
+    Fl_Button *edit_groups;
+} group_frame;
+
+
+struct AutoJoinFrame {
+    Fl_Group *group;
+    Kashyyyk::EditList<> *channel_list;
+} autojoin_frame;
+
+
+static Window * serverlist_associated_window;
 
 
 void UpdateEnabled(){
@@ -364,6 +371,18 @@ struct GroupFrame GenerateGroupFrame(int x, int y, int w, int h){
     frame.edit_groups = new Fl_Button(x+4, y+28+h-24-28-8+4, (w/2)-12, 24, "Edit Groups");
     frame.edit_groups->deactivate();
 
+    frame.group->end();
+    return frame;
+}
+
+
+struct AutoJoinFrame GenerateAutoJoinFrame(int x, int y, int w, int h){
+    struct AutoJoinFrame frame;
+    frame.group  = new Fl_Group(x, y+24, w, h-24, "AutoJoin");
+
+    frame.channel_list = new EditList<>(x+4, y+28, w-8, h-28);
+
+    frame.group->end();
     return frame;
 }
 
@@ -382,6 +401,7 @@ void ServerList(Fl_Widget *w, void *p){
         Fl_Tabs *server_property_tab = new Fl_Tabs(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
         identity_frame = GenerateIdentityFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16, {IdentityFrameCallbacks::Long, {InputCallback_CB<Fl_Input>}, {InputCallback_CB<Fl_Button, bool>}, {1l}, {2l}, {3l}, {7l}});
         group_frame = GenerateGroupFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
+        autojoin_frame = GenerateAutoJoinFrame(12+WindowWidth/2, 8, WindowWidth/2-24, WindowHeight-16);
         server_property_tab->end();
         GenerateServerListFrame(8, 8, WindowWidth/2-12, WindowHeight-16);
 

@@ -114,7 +114,7 @@ void WindowCallbacks::ChangeNick_CB(Fl_Widget *, void *p){
 
     const char *nick = fl_input("Enter New Nick for %s", "", server->name.c_str());
 
-    if(!nick)
+    if((!nick)||(nick[0]=='\0'))
       return;
 
     IRC_Message *msg = IRC_CreateNick(nick);
@@ -268,7 +268,6 @@ public:
 void WindowCallbacks::WindowCallback(Fl_Widget *w, void *arg){
     Window *window = static_cast<Window *>(arg);
     Thread::AddTask(window->task_group, new WindowKiller(window));
-
 }
 
 
