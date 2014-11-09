@@ -31,13 +31,13 @@ class ServerTask;
 
 class ServerConnectTask : public Task {
 
-    Server *server;
+    const Server *server;
     WSocket *socket;
     bool reconnect_channels;
     long port;
 public:
 
-    ServerConnectTask(Server *aServer, WSocket *aSocket, long prt = 6665, bool reconnect_chans = true, bool SSL = false);
+    ServerConnectTask(const Server *aServer, WSocket *aSocket, long prt = 6665, bool reconnect_chans = true, bool SSL = false);
 
     void Run() override;
 
@@ -86,8 +86,8 @@ protected:
 
     void FocusChanged();
 
-    std::shared_ptr<PromiseValue<bool> > last_reconnect;
-    std::atomic_bool connected;
+    mutable std::shared_ptr<PromiseValue<bool> > last_reconnect;
+    //mutable std::atomic_bool connected;
 
 public:
     friend class Channel;
@@ -103,7 +103,7 @@ public:
 
     ChannelList Channels;
 
-    bool IsConnected();
+    bool IsConnected() const;
 
      // Registers a new chat group.
      // Resizes the group given to the correct proportions.
@@ -114,7 +114,7 @@ public:
 
     // Informs us that we will be recieving a JOIN message for this channel.
     std::shared_ptr<PromiseValue<Channel *> > JoinChannel(const std::string &channel);
-    std::shared_ptr<PromiseValue<bool> >  Reconnect(bool reconnect_channels = true);
+    std::shared_ptr<PromiseValue<bool> >  Reconnect(bool reconnect_channels = true) const;
 
     void AddChannel(Channel *);
     void AddChannel_l(Channel *);

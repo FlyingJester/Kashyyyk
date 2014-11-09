@@ -55,7 +55,7 @@ void Server::ReconnectServer_CB(Fl_Widget *, void *p){
 }
 
 
-ServerConnectTask::ServerConnectTask(Server *aServer, WSocket *aSocket, long prt, bool rc, bool SSL)
+ServerConnectTask::ServerConnectTask(const Server *aServer, WSocket *aSocket, long prt, bool rc, bool SSL)
   : server(aServer)
   , socket(aSocket)
   , reconnect_channels(rc)
@@ -69,7 +69,7 @@ void ServerConnectTask::Run(){
 
     if(err!=eAlreadyConnected){
         repeating = true;
-        server->connected = false;
+        //server->connected = false;
         return;
     }
 
@@ -77,7 +77,7 @@ void ServerConnectTask::Run(){
     promise->Finalize(true);
     repeating = false;
     reconnect_channels = true;
-    server->connected = true;
+    //server->connected = true;
 }
 
 
@@ -432,7 +432,7 @@ std::shared_ptr<PromiseValue<Channel *> > Server::JoinChannel(const std::string 
 }
 
 
-std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc){
+std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc) const{
 
     if((last_reconnect.get()) && (!last_reconnect->IsReady())){
         ServerConnectTask *task = new ServerConnectTask(this, socket, port, rc);
@@ -447,17 +447,14 @@ std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc){
 }
 
 
-bool Server::IsConnected(){
-    return connected;
+bool Server::IsConnected() const{
+    WSockErr e = State_Socket(socket);
+    return (e==eConnected);
 }
 
 
 bool Server::SocketStatus(){
     WSockErr e = State_Socket(socket);
-    if(e!=eConnected)
-      connected = false;
-    else
-      connected = true;
     return e==eConnected;
 }
 
