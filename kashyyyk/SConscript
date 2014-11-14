@@ -18,7 +18,7 @@ else:
 if sys.platform == 'darwin':
   localenv.Append(FRAMEWORKS = ["Cocoa"])
 if sys.platform.startswith('linux'):
-  localenv.Append(LIBS = ["dl", "X11", "Xinerama"])
+  localenv.Append(LIBS = ["dl", "X11", "Xfixes", "Xcursor", "Xft", "fontconfig", "Xinerama"])
 
 platformenv = localenv.Clone()
 
