@@ -136,6 +136,8 @@ if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
 elif sys.platform.startswith('win'):
   PrepareEnvironmentWin(environment)
 
+environment.Append(LIBPATH = os.path.join(os.getcwd(), "lib"))
+
 AddOption('--enable-iconlauncher', dest = 'enableicon', default=False, help=\
 "Disable compiling the Icon Launcher.\n"
 "This is useful for when using older or less capable compilers that can't handle string literals longer than 65k characters long.")
