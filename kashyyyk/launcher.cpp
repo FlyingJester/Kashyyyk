@@ -69,6 +69,8 @@ DEFINE_CB(Quit)
 DEFINE_CB(Preferences)
 DEFINE_CB(JoinChannel)
 DEFINE_CB(ChangeNick)
+DEFINE_CB(Disconnect)
+DEFINE_CB(Reconnect)
 
 #undef DEFINE_CB
 
@@ -286,6 +288,19 @@ void Launcher::Quit(){
     std::for_each(guts->windows.begin(), guts->windows.end(), [&](Window *w){Thread::AddTask(guts->group, new Window::WindowDeleteTask(w));});
 
     Thread::AddTask(guts->group, new LauncherImpl::LauncherDeleteTask(this));
+
+}
+
+
+void Launcher::Reconnect(){
+
+    const_cast<Window *>(Window::window_order.back())->ReconnectLastServer();
+
+}
+
+void Launcher::Disconnect(){
+
+    const_cast<Window *>(Window::window_order.back())->DisconnectLastServer();
 
 }
 

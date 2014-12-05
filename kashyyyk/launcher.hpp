@@ -33,6 +33,8 @@ public:
     void Preferences();
     void JoinChannel();
     void ChangeNick();
+    void Disconnect();
+    void Reconnect();
     void Quit();
 
     void Release(Window *);
@@ -60,6 +62,12 @@ public:
 
     //! Wraps Launcher::ChangeNick for use in an FLTK callback.
     static void ChangeNick_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::Disconnect for use in an FLTK callback.
+    static void Disconnect_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::Reconnect for use in an FLTK callback.
+    static void Reconnect_CB(Fl_Widget *w, void *p);
 
 
 };

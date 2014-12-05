@@ -447,6 +447,16 @@ std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc) const{
 }
 
 
+std::shared_ptr<PromiseValue<bool> >  Server::Disconnect() const{
+    Disconnect_Socket(socket);
+
+    std::shared_ptr<PromiseValue<bool> > promise;
+    promise->Finalize(true);
+    promise->SetReady();
+    return promise;
+}
+
+
 bool Server::IsConnected() const{
     WSockErr e = State_Socket(socket);
     return (e==eConnected);

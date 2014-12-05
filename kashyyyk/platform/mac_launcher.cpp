@@ -25,6 +25,8 @@ Kashyyyk::Launcher *CreateLauncher(void /*Thread::TaskGroup*/ *a){
                 items[i++] = {"Preferences", FL_COMMAND + ',', Launcher::Preferences_CB, launcher};
             items[i++] = {0};
             items[i++] = {"&Server",0,0,0,FL_SUBMENU},
+                items[i++] = {"Reconnect", FL_COMMAND + FL_SHIFT + 'a', Launcher::Reconnect_CB, launcher};
+                items[i++] = {"Disconnect", FL_COMMAND + FL_SHIFT + 'w', Launcher::Disconnect_CB, launcher};
                 items[i++] = {"Join Channel", FL_COMMAND + 'j', Launcher::JoinChannel_CB, launcher};
                 items[i++] = {"Change Nick", FL_COMMAND + 'k', Launcher::ChangeNick_CB, launcher};
             items[i++] = {0};

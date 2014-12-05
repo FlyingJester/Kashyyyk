@@ -136,6 +136,9 @@ public:
 
     void ForgetLauncher();
 
+    std::shared_ptr<PromiseValue<bool> >  ReconnectLastServer();
+    std::shared_ptr<PromiseValue<bool> > DisconnectLastServer();
+
     // Does not need locking, since all callbacks are on the main thread.
     static std::list<const Window *> window_order;
 

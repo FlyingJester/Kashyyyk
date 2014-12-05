@@ -489,6 +489,24 @@ void Window::AutoJoinChannels(void){
 }
 
 
+std::shared_ptr<PromiseValue<bool> > Window::ReconnectLastServer(){
+    if(last_server)
+      return last_server->Reconnect();
+
+    return std::shared_ptr<PromiseValue<bool> >(nullptr);
+
+}
+
+
+std::shared_ptr<PromiseValue<bool> > Window::DisconnectLastServer(){
+    if(last_server)
+      return last_server->Disconnect();
+
+    return std::shared_ptr<PromiseValue<bool> >(nullptr);
+
+}
+
+
 Fl_Tree_Item *Window::FindChannel(const char *a){
     return channel_list->find_item(a);
 }

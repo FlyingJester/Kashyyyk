@@ -115,6 +115,8 @@ public:
     // Informs us that we will be recieving a JOIN message for this channel.
     std::shared_ptr<PromiseValue<Channel *> > JoinChannel(const std::string &channel);
     std::shared_ptr<PromiseValue<bool> >  Reconnect(bool reconnect_channels = true) const;
+    // TODO: Make this better than just dropping the connection.
+    std::shared_ptr<PromiseValue<bool> >  Disconnect() const;
 
     void AddChannel(Channel *);
     void AddChannel_l(Channel *);
