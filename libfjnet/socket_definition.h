@@ -1,6 +1,6 @@
 #pragma once
 #ifndef LIBFJNET_INTERNAL
-#error Don't include this file! Only use socket.h!
+#error Do not include this file! Only use socket.h!
 #endif
 
 #if (defined USE_CYGSOCK) || (defined USE_BSDSOCK)

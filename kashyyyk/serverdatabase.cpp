@@ -421,7 +421,7 @@ struct GroupData *ServerDB::GroupDB::GenerateGroup() const {
 
     return ret;
 
-};
+}
 
 
 void ServerDB::GroupDB::push_back(GroupDataP data){

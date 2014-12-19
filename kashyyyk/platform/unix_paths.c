@@ -1,3 +1,7 @@
+#ifdef __GNUC__
+#define _XOPEN_SOURCE 500
+#endif
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>

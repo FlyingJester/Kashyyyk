@@ -32,6 +32,9 @@ const char *ExplainError_Socket(enum WSockErr err){
 #endif
 
 #if defined(USE_BSDSOCK)
+#ifdef __linux__
+#include <sys/select.h>
+#endif
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
@@ -43,6 +46,7 @@ const char *ExplainError_Socket(enum WSockErr err){
 #include <unistd.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <time.h>
 
 void InitSock(){}
 
@@ -54,7 +58,7 @@ void InitSock(){}
 
 static int GetPendingBytes(FJNET_SOCKET socket, unsigned long *len){
 
-#if (defined __APPLE__) || (defined __linux__)
+#if (defined __APPLE__)
 
     unsigned int llen = sizeof(unsigned long);
     return getsockopt(socket, SOL_SOCKET, SO_NREAD, len, &llen);

@@ -9,9 +9,10 @@ conf = Configure(environment)
 
 if conf.CheckCHeader("pthread.h"):
   yyymonitor_files += ["monitor_pthread.c"]
+  environment.Append(LIBS = ["pthread"])
 elif sys.platform.startswith('win'):
   yyymonitor_files += ["monitor_win32.c"]
-  
+
 libyyymonitor = environment.StaticLibrary("yyymonitor", yyymonitor_files)
 
 Return("libyyymonitor")

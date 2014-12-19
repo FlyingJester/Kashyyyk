@@ -33,7 +33,7 @@ Monitor::~Monitor() {
 
 std::shared_ptr<struct Monitor::MutexHolder> &Monitor::GetMutex(){
     return guts;
-};
+}
 
 
 void Monitor::Lock(){
