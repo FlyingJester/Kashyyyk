@@ -29,6 +29,16 @@
     X->parameters[N] = f;\
     }while(0)
 
+
+#define SET_PARAM_WITH_PRECEDING_COLON(X, N, TO)\
+    do{\
+    unsigned long len = strlen(TO)+2;\
+    char * f = Alloc(len);\
+    f[0] = ':';\
+    memcpy(f+1, TO, len);\
+    X->parameters[N] = f;\
+    }while(0)
+
 /* Set's X->parameters[N] to TO if TO is not NULL.
  Otherwise, sets it to "".
 */

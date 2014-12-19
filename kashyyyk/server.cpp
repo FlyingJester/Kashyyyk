@@ -323,9 +323,21 @@ Server::~Server(){
 }
 
 void Server::SendMessage(IRC_Message *msg){
+    const char *swap = nullptr;
+    int swap_n = -1;
+    std::string msg_r;
+
 
     if(msg->type==IRC_nick){
         nick = msg->parameters[0];
+    }
+    if((msg->type==IRC_privmsg) && (msg->num_parameters>1)){
+        // TODO: Stop the evil empire that is freenode.
+        swap_n = 1;
+        swap = msg->parameters[swap_n];
+        msg_r = msg->parameters[swap_n];
+        msg_r.insert(0, ":");
+        msg->parameters[swap_n] = msg_r.c_str();
     }
 
     const char *str = IRC_MessageToString(msg);
@@ -336,6 +348,8 @@ void Server::SendMessage(IRC_Message *msg){
 
     free((void *)str);
 
+    if((swap_n>0) && (msg->num_parameters>swap_n))
+       msg->parameters[swap_n] = swap;
 }
 
 void Server::AddChannel_l(Channel *a){

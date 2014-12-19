@@ -81,6 +81,12 @@ struct IRC_Message *IRC_GenerateMessage(const char *to, const char *input){
         SET_PARAM(msg, 0, input);
         r_msg = msg;
     }
+    else if(type==IRC_privmsg){
+        GENERATE_MSG(msg, 2, type);
+        SET_PARAM(msg, 0, to);
+        SET_PARAM(msg, 1, input);
+        r_msg = msg;
+    }
     else{
         GENERATE_MSG(msg, 2, type);
         SET_PARAM(msg, 0, to);
