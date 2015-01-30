@@ -182,7 +182,7 @@ public:
 };
 
 Server::Server(WSocket *sock, const std::string &n, Window *w, long prt, const char *uid, bool SSL)
-  : LockingReciever<Window, std::mutex> (w)
+  : LockingReciever<Window, Monitor> (w)
   , last_channel(nullptr)
   , socket(sock)
   , port(prt)

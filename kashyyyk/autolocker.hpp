@@ -16,6 +16,7 @@ namespace Kashyyyk{
 //! This is primarily intended for Kashyyyk::LockingReciever objects, although
 //! it will work with any class that has a lock and unlock method. Notably, it
 //! is directly compatible with a std::mutex.
+//! Note that use of a libyyymonitor Monitor is preferred over a mutex.
 template <class T>
 class AutoLocker{
 protected:
@@ -50,7 +51,7 @@ public:
     //! @brief Forget the wrapped object.
     //!
     //! It will not be unlocked when the AutoLocker is destroyed.
-    void forget(){
+    inline void forget(){
       t->unlock();
       know = false;
     }

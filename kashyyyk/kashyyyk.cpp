@@ -107,7 +107,7 @@ int main(int argc, char *argv[]){
 #ifndef NO_ICONLAUNCHER
             case 2:
                 launcher = new Kashyyyk::IconLauncher(group_raw);
-            break
+            break;
 #endif
             break;
             case 0:

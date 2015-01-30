@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <climits>
 #include <ctime>
-#include <mutex>
+#include "monitor.hpp"
 #include <string>
 #include <sstream>
 
@@ -40,7 +40,7 @@ static const unsigned uid_coefficient = 16;
 static const size_t uid_len = uid_coefficient/sizeof(rand_holder);
 
 struct ServerDB::ServerDB_Impl{
-    std::mutex mutex;
+    Monitor mutex;
     ServerData global;
     std::vector<ServerDataP> list;
     std::vector<std::string>groups;
@@ -257,12 +257,12 @@ void ServerDB::SaveServer(struct ServerData *server, Fl_Preferences &prefs){
 
 
 void ServerDB::lock() const{
-    guts->mutex.lock();
+    guts->mutex.Lock();
 }
 
 
 void ServerDB::unlock() const{
-    guts->mutex.unlock();
+    guts->mutex.Unlock();
 }
 
 ServerDB::iterator ServerDB::begin(void) const{
@@ -312,19 +312,19 @@ size_t ServerDB::size() const{
 
 
 struct ServerDB::GroupDB::GroupDB_Impl{
-    std::mutex mutex;
+    Monitor mutex;
     ServerData global;
     std::vector<GroupDataP> list;
 };
 
 
 void ServerDB::GroupDB::lock() const {
-    guts->mutex.lock();
+    guts->mutex.Lock();
 }
 
 
 void ServerDB::GroupDB::unlock() const{
-    guts->mutex.unlock();
+    guts->mutex.Unlock();
 }
 
 

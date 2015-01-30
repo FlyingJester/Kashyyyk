@@ -3,6 +3,7 @@
 #include "prefs.hpp"
 #include "message.hpp"
 #include "channelmessage.hpp"
+#include "monitor.hpp"
 #include "message.h"
 #include "input.h"
 #include "csv.h"
@@ -158,7 +159,7 @@ void Input_CB(Fl_Widget *w, void *p){
 
 
 Channel::Channel(Server *s, const std::string &channel_name)
-  : LockingReciever<Server, std::mutex>(s)
+  : LockingReciever<Server, Monitor>(s)
   , widget()
   , alignment(8)
   , name(channel_name) {

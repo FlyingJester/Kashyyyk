@@ -8,12 +8,12 @@
 
 #include "reciever.hpp"
 #include "autolocker.hpp"
+#include "monitor.hpp"
 
 #include <list>
 #include <vector>
 #include <memory>
 #include <string>
-#include <mutex>
 #include <cmath>
 #include <cassert>
 
@@ -77,7 +77,7 @@ class Server;
 //! @sa Kashyyyk::Server
 //! @sa Kashyyyk::Window
 //! @sa Kashyyyk::Reciever
-class Channel : public LockingReciever<Server, std::mutex>{
+class Channel : public LockingReciever<Server, Monitor>{
 
     struct StyleTable;
     //! Used internally to format text for the chat box

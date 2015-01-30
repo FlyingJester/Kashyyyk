@@ -4,11 +4,11 @@
 #include "background.hpp"
 #include "promise.hpp"
 #include "platform/pling.h"
+#include "monitor.hpp"
 
 #include <list>
 #include <vector>
 #include <memory>
-#include <mutex>
 #include <string>
 
 #include <FL/Fl_Tree.H>
@@ -81,10 +81,10 @@ protected:
     Fl_Group  *chat_holder;
     Fl_Tree   *channel_list;
 
-    std::mutex mutex;
+    Monitor mutex;
 
-    inline void lock(){mutex.lock();}
-    inline void unlock(){mutex.unlock();}
+    inline void lock(){mutex.Lock();}
+    inline void unlock(){mutex.Unlock();}
 
     bool osx_style;
 

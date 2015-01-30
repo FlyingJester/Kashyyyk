@@ -4,9 +4,7 @@
 #include "monitor.hpp"
 #include <TSPR/concurrent_queue.h>
 
-#include <mutex>
 #include <thread>
-#include <condition_variable>
 #include <atomic>
 #include <cassert>
 

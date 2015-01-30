@@ -8,6 +8,7 @@
 #include <cassert>
 #include <forward_list>
 #include <algorithm>
+#include <functional>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Menu.H>

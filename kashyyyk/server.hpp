@@ -9,7 +9,6 @@
 #include <memory>
 #include <atomic>
 #include <string>
-#include <mutex>
 #include <algorithm>
 #include <FL/Fl_Tree_Prefs.H>
 
@@ -58,7 +57,7 @@ public:
 // one-shot reactionary responses for registration.
 //
 
-class Server : public LockingReciever<Window, std::mutex> {
+class Server : public LockingReciever<Window, Monitor> {
 public:
 
     typedef std::list<std::unique_ptr<Channel> > ChannelList;
