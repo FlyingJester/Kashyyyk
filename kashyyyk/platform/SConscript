@@ -46,6 +46,9 @@ else:
 if sys.platform == 'cygwin':
   platform_files += ["strdup.c"];
 
+if ARGUMENTS.get('mingw', '0') == '1':
+    platformenv.Append(CFLAGS = " -Wno-pointer-sign ")
+
 platformlib = platformenv.StaticLibrary("kashyyyk_platform", platform_files)
 
 Return("platformlib")
