@@ -65,7 +65,7 @@ ServerConnectTask::ServerConnectTask(const Server *aServer, WSocket *aSocket, lo
 }
 
 void ServerConnectTask::Run(){
-    int err = Connect_Socket(socket, server->name.c_str(), port, 10000);
+    int err = Connect_Socket(socket, server->GetName().c_str(), port, 10000);
 
     if(err!=eAlreadyConnected){
         repeating = true;
@@ -132,7 +132,7 @@ public:
             }
         }
 
-        if(!server->SocketStatus()){
+        if(State_Socket(socket)!=eConnected){
             promise = server->Reconnect();
             return;
         }
@@ -181,21 +181,17 @@ public:
 
 };
 
-Server::Server(WSocket *sock, const std::string &n, Window *w, long prt, const char *uid, bool SSL)
+Server::Server(const struct ServerState &init_state, Window *w)
   : LockingReciever<Window, Monitor> (w)
   , last_channel(nullptr)
-  , socket(sock)
-  , port(prt)
   , widget(new Fl_Group(0, 0, 800, 600))
   , channel_list(new Fl_Tree_Item(tree_prefs))
   , tree_prefs()
   , task_died(false)
-  , network_task(new ServerTask(this, socket, &task_died))
-  , UID(uid?uid:"")
-  , name(n){
-
-    Fl_Preferences &prefs = GetPreferences();
-
+  , network_task(new ServerTask(this, init_state.socket, &task_died)){
+    
+    CopyState(state, init_state);
+    state.socket = init_state.socket;
 
     Channel *channel = new Channel(this, "server");
 
@@ -210,44 +206,13 @@ Server::Server(WSocket *sock, const std::string &n, Window *w, long prt, const c
 
     Thread::AddShortRunningTask(network_task);
 
-    Thread::AddSocketToTaskGroup(socket, Thread::GetShortThreadPool());
+    Thread::AddSocketToTaskGroup(state.socket, Thread::GetShortThreadPool());
 
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Ping_Handler(this)));
+    // This should all be put in the call before construction
 
-    char *nick_c = nullptr;
-    char *name_c = nullptr;
-    char *real_c = nullptr;
-
-    std::string server_ident("server.");
-    server_ident += name + ".identity.";
-
-    int global = 1;
-
-    prefs.get((server_ident+"use_globals").c_str(), global, global);
-
-    if(!global){
-        prefs.get((server_ident+"nickname").c_str(), nick_c, "KashyyykUser");
-        prefs.get((server_ident+"fullname").c_str(), name_c, "KashyyykName");
-        prefs.get((server_ident+"realname").c_str(), real_c, "KashyyykReal");
-    }
-    else{
-
-        prefs.set((server_ident+"use_globals").c_str(), global);
-
-        prefs.get("sys.identity.nickname", nick_c, "KashyyykUser");
-        prefs.get("sys.identity.fullname", name_c, "KashyyykName");
-        prefs.get("sys.identity.realname", real_c, "KashyyykReal");
-
-    }
-
-    IRC_Message *msg_name = IRC_CreateUser(name_c, "falcon", "millenium", real_c);
-    IRC_Message *msg_nick = IRC_CreateNick(nick_c);
-
-    nick = nick_c;
-
-    free(nick_c);
-    free(name_c);
-    free(real_c);
+    IRC_Message *msg_name = IRC_CreateUser(state.name.c_str(), "falcon", "millenium", state.real.c_str());
+    IRC_Message *msg_nick = IRC_CreateNick(state.nick.c_str());
 
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Debug_Handler()));
 
@@ -303,7 +268,7 @@ Server::~Server(){
     lock();
     network_task->should_die = true;
 
-    Thread::RemoveSocketFromTaskGroup(socket, Thread::GetShortThreadPool());
+    Thread::RemoveSocketFromTaskGroup(state.socket, Thread::GetShortThreadPool());
 
     while(!task_died){
         unlock();
@@ -316,8 +281,8 @@ Server::~Server(){
 
     // Not particularly concerned with whether this fails or not.
     // There's not a lot we can do if it fails.
-    Disconnect_Socket(socket);
-    Destroy_Socket(socket);
+    Disconnect_Socket(state.socket);
+    Destroy_Socket(state.socket);
 
 
 }
@@ -329,7 +294,7 @@ void Server::SendMessage(IRC_Message *msg){
 
 
     if(msg->type==IRC_nick){
-        nick = msg->parameters[0];
+        state.nick = msg->parameters[0];
     }
     if((msg->type==IRC_privmsg) && (msg->num_parameters>1)){
         // TODO: Stop the evil empire that is freenode.
@@ -342,7 +307,7 @@ void Server::SendMessage(IRC_Message *msg){
 
     const char *str = IRC_MessageToString(msg);
 
-    Write_Socket(socket, str);
+    Write_Socket(state.socket, str);
 
     printf("Writing message %s\n", str);
 
@@ -353,7 +318,7 @@ void Server::SendMessage(IRC_Message *msg){
 }
 
 void Server::AddChannel_l(Channel *a){
-
+    
     Channels.push_back(std::move(std::unique_ptr<Channel>(a)));
     Fl_Tree_Item *item = channel_list->add(tree_prefs, a->name.c_str());
     item->user_data(a);
@@ -388,7 +353,7 @@ void Server::Show(){
 }
 
 void Server::Show(Channel *chan){
-
+    
     if(last_channel)
       last_channel->FocusChanged();
 
@@ -449,7 +414,7 @@ std::shared_ptr<PromiseValue<Channel *> > Server::JoinChannel(const std::string 
 std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc) const{
 
     if((last_reconnect.get()) && (!last_reconnect->IsReady())){
-        ServerConnectTask *task = new ServerConnectTask(this, socket, port, rc);
+        ServerConnectTask *task = new ServerConnectTask(this, state.socket, state.port, rc);
 
         Thread::AddLongRunningTask(task);
 
@@ -462,7 +427,7 @@ std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc) const{
 
 
 std::shared_ptr<PromiseValue<bool> >  Server::Disconnect() const{
-    Disconnect_Socket(socket);
+    Disconnect_Socket(state.socket);
 
     std::shared_ptr<PromiseValue<bool> > promise;
     promise->Finalize(true);
@@ -472,14 +437,36 @@ std::shared_ptr<PromiseValue<bool> >  Server::Disconnect() const{
 
 
 bool Server::IsConnected() const{
-    WSockErr e = State_Socket(socket);
+    WSockErr e = State_Socket(state.socket);
     return (e==eConnected);
 }
 
 
 bool Server::SocketStatus(){
-    WSockErr e = State_Socket(socket);
+    WSockErr e = State_Socket(state.socket);
     return e==eConnected;
+}
+
+bool Server::CopyState(struct ServerState &to, const struct ServerState &from){
+    
+    to.name = from.name;
+    
+    to.nick = from.nick;
+    to.user = from.user;
+    to.real = from.real;
+    
+    to.port = from.port;
+    to.socket = nullptr;
+    to.SSL = from.SSL;
+    
+    to.channels.clear();
+    
+    for(auto i = from.channels.cbegin(); i!=from.channels.cend(); i++){
+        to.channels.push_back(*i);
+    }
+    
+    return true;
+    
 }
 
 }

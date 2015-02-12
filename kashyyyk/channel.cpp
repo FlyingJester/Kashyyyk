@@ -150,7 +150,7 @@ void Input_CB(Fl_Widget *w, void *p){
 
     channel->SendMessage(msg);
 
-    msg->from = IRC_Strdup(channel->Nick());
+    msg->from = IRC_Strdup(channel->GetNick());
     channel->GiveMessage(msg);
 
     IRC_FreeMessage(msg);
@@ -247,7 +247,10 @@ void Channel::WriteLine(const char *from, const char *msg){
 
 
 void Channel::GetPath(std::string &path) const{
-    path = Parent->name;
+    
+    assert(Parent);
+    
+    path = Parent->GetName();
     path.push_back('/');
     path+=name;
 }
@@ -381,8 +384,8 @@ void Channel::AddUser(const char *user, const char *mode){
 }
 
 
-const char *Channel::Nick(){
-    return Parent->nick.c_str();
+const char *Channel::GetNick(){
+    return Parent->GetNick().c_str();
 }
 
 

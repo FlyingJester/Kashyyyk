@@ -77,14 +77,14 @@ void WindowCallbacks::JoinChannel_CB(Fl_Widget *, void *p){
         return;
     }
 
-    const char * const channel = fl_input("Enter Channel to Join for %s", "", server->name.c_str());
+    const char * const channel = fl_input("Enter Channel to Join for %s", "", server->GetName().c_str());
 
     if(!channel)
       return;
 
-    Server::ChannelList::iterator iter = server->Channels.begin();
+    Server::ChannelList::const_iterator iter = server->GetChannels().cbegin();
 
-    while(iter!=server->Channels.end()){
+    while(iter!=server->GetChannels().cend()){
         if(std::string(channel)==iter->get()->name)
           return;
 
@@ -112,7 +112,7 @@ void WindowCallbacks::ChangeNick_CB(Fl_Widget *, void *p){
         return;
     }
 
-    const char *nick = fl_input("Enter New Nick for %s", "", server->name.c_str());
+    const char *nick = fl_input("Enter New Nick for %s", "", server->GetName().c_str());
 
     if((!nick)||(nick[0]=='\0'))
       return;
@@ -160,13 +160,11 @@ void AskToConnectAgain_Task::Run(){
 // Considered a long-running task.
 class ConnectToServer_Task : public Task {
     Window *window;
-    std::string server_name;
-    long port;
+    struct Server::ServerState state;
 public:
-    ConnectToServer_Task(Window * win, const char *name, long p = 6667, bool SSL = false)
-        : window(win)
-        , server_name(name){
-        port = p;
+    ConnectToServer_Task(Window * win, const struct Server::ServerState &that_state)
+        : window(win){
+        Server::CopyState(state, that_state);
     }
 
     virtual ~ConnectToServer_Task(){
@@ -174,18 +172,18 @@ public:
     }
 
     void Run() override {
-        WSocket *sock;
         WSockErr err;
 try_connect:
-        sock = Create_Socket();
+        state.socket = Create_Socket();
 
-        if(!sock){
+        if(!state.socket){
             printf("Could not create a socket.\n");
         }
 
-        err = Connect_Socket(sock, server_name.c_str(), port, 10000);
+        err = Connect_Socket(state.socket, state.name.c_str(), state.port, 10000);
         if(!err){
-            Server * s = new Server(sock, server_name, window, port);
+            
+            Server * s = new Server(state, window);
             Fl::lock();
             window->AddServer(s);
             Fl::unlock();
@@ -195,7 +193,7 @@ try_connect:
 
             PromiseValue<int> promise(0);
 
-            Task *task = new AskToConnectAgain_Task(promise, server_name);
+            Task *task = new AskToConnectAgain_Task(promise, state.name);
 
             Thread::AddTask(window->task_group, task);
 
@@ -205,7 +203,7 @@ try_connect:
 
             bool again = (promise.Finish()==1);
             if(again){
-                Destroy_Socket(sock);
+                Destroy_Socket(state.socket);
                 goto try_connect;
             }
         }
@@ -238,7 +236,10 @@ void WindowCallbacks::ConnectToServer(Window *win){
     if(inp.empty())
       return;
 
-    Thread::AddLongRunningTask(new ConnectToServer_Task(win, inp.c_str(), port));
+    // TODO: Make this NOT hardcoded
+    struct Server::ServerState state = {inp, "KashyyykUser", "KashyyykUserName", "KashyyykReal", nullptr, port, false};
+
+    Thread::AddLongRunningTask(new ConnectToServer_Task(win, state));
 
 }
 
@@ -370,7 +371,7 @@ void Window::AddServer(Server *a){
     }
 
     void *d = a->channel_list->user_data();
-    Fl_Tree_Item* i = channel_list->add(a->name.c_str());
+    Fl_Tree_Item* i = channel_list->add(a->GetName().c_str());
 
     i->user_data(d);
 
@@ -433,7 +434,7 @@ void Window::SetChannel(Channel *channel){
     last_server=new_server;
 
     // Make the tree reflect the change.
-    std::string path = new_server->name;
+    std::string path = new_server->GetName();
     path.push_back('/');
     path += channel->name;
 
@@ -445,7 +446,7 @@ void Window::SetChannel(Channel *channel){
 
 }
 
-
+/*
 void Window::AutoJoinServers(void){
     char *autojoin;
 
@@ -467,7 +468,9 @@ void Window::AutoJoinServers(void){
             }
             prefs.get((std::string("server.")+iter+".port").c_str(), port, 6665);
 
-            Thread::AddLongRunningTask(new ConnectToServer_Task(this, address, port));
+            // TODO: Make this NOT hardcoded
+            struct Server::ServerState state = {address, "KashyyykUser", "KashyyykUserName", "KashyyykReal", nullptr, port, false};
+            Thread::AddLongRunningTask(new ConnectToServer_Task(this, state));
 
             iter = servers[++i];
         }
@@ -479,7 +482,6 @@ void Window::AutoJoinServers(void){
     free(autojoin);
 }
 
-
 void Window::AutoJoinChannels(void){
     lock();
     for(std::list<std::unique_ptr<Server> >::iterator iter = Servers.begin(); iter!=Servers.end(); iter++){
@@ -488,6 +490,7 @@ void Window::AutoJoinChannels(void){
     unlock();
 }
 
+*/
 
 std::shared_ptr<PromiseValue<bool> > Window::ReconnectLastServer(){
     if(last_server)

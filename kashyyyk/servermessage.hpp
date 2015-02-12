@@ -102,11 +102,10 @@ public:
 
     bool HandleMessage(IRC_Message *msg) override {
         if( (msg->type==type) && (msg->num_parameters>n)){
-
+            
             Server::ChannelList::const_iterator iter =
-              std::find_if(server->Channels.cbegin(), server->Channels.cend(), Server::find_channel(msg->parameters[n]));
-
-            if(iter!=server->Channels.cend()){
+              std::find_if(server->GetChannels().cbegin(), server->GetChannels().cend(), Server::find_channel(msg->parameters[n]));
+            if(iter!=server->GetChannels().cend()){
                 iter->get()->GiveMessage(msg);
             }
         }
@@ -139,7 +138,7 @@ public:
 
     bool HandleMessage(IRC_Message *msg) override {
         if(msg->type==type) {
-            for(Server::ChannelList::iterator iter = server->Channels.begin(); iter!=server->Channels.end(); iter++){
+            for(Server::ChannelList::const_iterator iter = server->GetChannels().cbegin(); iter!=server->GetChannels().cend(); iter++){
                 iter->get()->GiveMessage(msg);
             }
         }

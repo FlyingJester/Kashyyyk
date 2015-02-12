@@ -42,10 +42,10 @@ bool Notice_Handler::HandleMessage(IRC_Message *msg){
 
     if((msg->type==IRC_notice) || (msg->type==IRC_your_host_num) || (msg->type==IRC_topic_extra_num)){
         Server::ChannelList::const_iterator server_chan =
-          std::find_if(server->Channels.cbegin(), server->Channels.cend(), Server::find_channel(server_s));
+          std::find_if(server->GetChannels().cbegin(), server->GetChannels().cend(), Server::find_channel(server_s));
 
-        if(server_chan==server->Channels.cend()){
-            fprintf(stderr, "Warning: server channel not found for Server %s.\n", server->name.c_str());
+        if(server_chan==server->GetChannels().cend()){
+            fprintf(stderr, "Warning: server channel not found for Server %s.\n", server->GetName().c_str());
             return false; // Wait, what?
         }
 

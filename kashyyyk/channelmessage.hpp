@@ -167,7 +167,7 @@ public:
 
         channel->WriteLine(from, t(msg));
 
-        if(strcasestr(t(msg), channel->server()->nick.c_str())!=nullptr){
+        if(strcasestr(t(msg), channel->server()->GetNick().c_str())!=nullptr){
             channel->Highlight(Channel::HighlightLevel::High);
         }
         else{

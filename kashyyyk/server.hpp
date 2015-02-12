@@ -27,7 +27,6 @@ namespace Kashyyyk{
 class Channel;
 class ServerTask;
 
-
 class ServerConnectTask : public Task {
 
     const Server *server;
@@ -63,13 +62,21 @@ public:
     typedef std::list<std::unique_ptr<Channel> > ChannelList;
 
     static void ReconnectServer_CB(Fl_Widget *, void *p);
-
+    
+    struct ServerState{
+        std::string name;
+        std::string nick;
+        std::string user;
+        std::string real;
+        WSocket *socket;
+        long port;
+        bool SSL;
+        std::list<std::string> channels;
+    };
+    
 protected:
-
+    
     Channel *last_channel;
-
-    WSocket * const socket;
-    const long port;
 
     std::unique_ptr<Fl_Group> widget;
     std::unique_ptr<Fl_Tree_Item> channel_list;
@@ -86,21 +93,26 @@ protected:
     void FocusChanged();
 
     mutable std::shared_ptr<PromiseValue<bool> > last_reconnect;
-    //mutable std::atomic_bool connected;
 
+    ChannelList Channels;
+
+    struct ServerState state;
+    
 public:
+
     friend class Channel;
     friend class Window;
     friend class ServerConnectTask;
     friend class AutoLocker<Server *>;
 
-    Server(WSocket *socket, const std::string &name, Window *w, long prt, const char *uid=nullptr, bool SSL=false);
+    Server(const struct ServerState &init_state, Window *w);
+    //Server(WSocket *socket, const std::string &name, Window *w, long prt, bool SSL=false);
     ~Server();
 
-    std::string name;
-    std::string nick;
+   const std::string &GetName() const {return state.name;}
+   const std::string &GetNick() const {return state.nick;}
 
-    ChannelList Channels;
+    const ChannelList &GetChannels() const{return Channels;}
 
     bool IsConnected() const;
 
@@ -140,6 +152,9 @@ public:
 
     void AutoJoinChannels(void);
     bool SocketStatus();
+    
+    static bool CopyState(struct ServerState &to, const struct ServerState &from);
+    inline bool EnumerateState(struct ServerState &to) const{return CopyState(to, state);}
 
 };
 

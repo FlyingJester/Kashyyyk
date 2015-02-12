@@ -297,7 +297,7 @@ public:
     void RemoveUser(const char *user);
 
     //! @brief Get the nickname for this Channel
-    const char *Nick();
+    const char *GetNick();
 
     static void TextModify_CB(int, int, int, int, const char*, void*);
 

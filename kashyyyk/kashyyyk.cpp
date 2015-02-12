@@ -127,17 +127,6 @@ int main(int argc, char *argv[]){
 
         }
 
-        if(window){
-
-            if(startup_autojoin_servers)
-              window->AutoJoinServers();
-
-            if(startup_autojoin_channels)
-              window->AutoJoinChannels();
-
-        }
-
-
     }
 
     SetTheme(prefs);

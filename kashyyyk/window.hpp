@@ -131,9 +131,6 @@ public:
         Kashyyyk::Pling(widget.get());
     }
 
-    void AutoJoinServers(void);
-    void AutoJoinChannels(void);
-
     void ForgetLauncher();
 
     std::shared_ptr<PromiseValue<bool> >  ReconnectLastServer();
