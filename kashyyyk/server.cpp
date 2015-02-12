@@ -230,37 +230,19 @@ Server::Server(const struct ServerState &init_state, Window *w)
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Nick_Handler(this)));
     Handlers.push_back(std::unique_ptr<MessageHandler>(new Notice_Handler(this)));
 
+    for(std::list<std::string>::const_iterator iter = state.channels.cbegin(); iter!=state.channels.cend(); iter++){
 
-    printf("Creating Server.\n");
+        printf("Joining %s.\n", iter->c_str());
 
-}
-
-
-void Server::AutoJoinChannels(void){
-    char *autojoin;
-
-    if(GetPreferences().get((std::string("server.")+UID+".autojoin").c_str(), autojoin, "")!=0){
-        const char **channels = FJ::CSV::ParseString(autojoin);
-        const char *iter = channels[0];
-        int i = 0;
-        while(iter!=nullptr){
-
-            printf("Joining %s.\n", iter);
-
-            IRC_Message *msg = IRC_CreateJoin(1, iter);
-            SendMessage(msg);
-            JoinChannel(iter);
-            Handlers.push_back(std::unique_ptr<MessageHandler>(new SendMessageOn_Handler<OnMsgType<IRC_welcome_num> >(this, msg)));
-            iter = channels[++i];
-        }
-
-        FJ::CSV::FreeParse(channels);
-
+        IRC_Message *msg = IRC_CreateJoin(1, iter->c_str());
+        SendMessage(msg);
+        JoinChannel(iter->c_str());
+        Handlers.push_back(std::unique_ptr<MessageHandler>(new SendMessageOn_Handler<OnMsgType<IRC_welcome_num> >(this, msg)));
+        
     }
 
-    free(autojoin);
+    printf("Creating Server.\n");
 }
-
 
 Server::~Server(){
     printf("Closing Server.\n");

@@ -150,7 +150,6 @@ public:
         Parent->Pling();
     }
 
-    void AutoJoinChannels(void);
     bool SocketStatus();
     
     static bool CopyState(struct ServerState &to, const struct ServerState &from);
