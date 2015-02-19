@@ -162,9 +162,6 @@ struct IRC_Message *IRC_ConsumeParse(struct IRC_ParseState *state){
     struct IRC_Message *msg;
     unsigned long l = IRC_GetNextLength(state);
 
-    printf("Length is %lu\n", l);
-    printf("Cursor is at %lu\n", state->cursor-state->text);
-
     if(state->status==IRC_unexpectedEnd)
       return NULL;
 
