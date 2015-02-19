@@ -18,7 +18,11 @@ else:
 if sys.platform == 'darwin':
   localenv.Append(FRAMEWORKS = ["Cocoa"])
 if sys.platform.startswith('linux'):
-  localenv.Append(LIBS = ["dl", "X11", "Xfixes", "Xcursor", "Xft", "fontconfig", "Xinerama"])
+  AddOption('--disable-xinerama', dest = 'disablexinerama', default=False, help = 
+  "Disable Xinerama on Linux build. This is normally not necessary or desirable unless you have a minimal X-server installed.")
+  disablexinerama = GetOption('disablexinerama')
+  if not disablexinerama:
+    localenv.Append(LIBS = ["Xinerama"])
 
 platformenv = localenv.Clone()
 
