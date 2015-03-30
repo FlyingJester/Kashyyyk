@@ -48,7 +48,7 @@ void Server::ReconnectServer_CB(Fl_Widget *, void *p){
 
     Server *server = static_cast<Server *>(p);
 
-    server->Reconnect(true);
+    server->Reconnect();
 
     server->Parent->reconnect_item->deactivate();
 
@@ -106,8 +106,6 @@ public:
 
     virtual ~ServerTask(){
 
-        printf("ServerTask is being deleted.\n");
-
         free(buffer);
 
         *task_died = true;
@@ -118,11 +116,9 @@ public:
         {
             AutoLocker<Server *> locker(server);
 
-            if(should_die){
-
-                printf("ServerTask signalled to delete.\n");
+            if(should_die)
                 repeating = false;
-            }
+
         }
 
         if(promise){
@@ -146,7 +142,6 @@ public:
         if(old_state==nullptr)
           state = IRC_InitParse(buffer);
         else{
-            printf("Stitching state.\n");
             state = IRC_StitchParse(old_state, buffer);
             IRC_DestroyParseState(old_state);
             old_state = nullptr;
@@ -170,8 +165,6 @@ public:
 
             msg = IRC_ConsumeParse(state);
         }
-        printf("ServerTask Ren.\n");
-
         IRC_DestroyParseState(state);
 
     }
@@ -392,7 +385,21 @@ std::shared_ptr<PromiseValue<Channel *> > Server::JoinChannel(const std::string 
     return handler_raw->promise;
 }
 
+std::shared_ptr<PromiseValue<bool> > Server::Reconnect() const {
+    
+    if((last_reconnect.get()) && (!last_reconnect->IsReady())){
+        ServerConnectTask *task = new ServerConnectTask(this, state.socket, state.port, true);
 
+        Thread::AddLongRunningTask(task);
+
+        last_reconnect.reset(task->promise.get());
+    }
+
+    return last_reconnect;
+
+}
+
+/*
 std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc) const{
 
     if((last_reconnect.get()) && (!last_reconnect->IsReady())){
@@ -406,7 +413,7 @@ std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc) const{
     return last_reconnect;
 
 }
-
+*/
 
 std::shared_ptr<PromiseValue<bool> >  Server::Disconnect() const{
     Disconnect_Socket(state.socket);
