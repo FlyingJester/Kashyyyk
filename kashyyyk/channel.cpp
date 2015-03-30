@@ -48,13 +48,13 @@ Channel::find_user::find_user(const std::string &s)
 
 
 Channel::find_user::find_user(const User *a)
-  : n(a->Name) {
+  : n(a->name) {
 
 }
 
 
 bool Channel::find_user::operator () (const User &a){
-    return a.Name==n;
+    return a.name==n;
 }
 
 //! @cond
@@ -350,9 +350,9 @@ void Channel::AddUser_l(const char *user, const char *mode){
 void Channel::AddUser_l(const struct User &user){
 
     Users.push_back(user);
-    userlist->add(user.Name.c_str());
+    userlist->add(user.name.c_str());
 
-    alignment = std::max<unsigned>(user.Name.size(), alignment);
+    alignment = std::max<unsigned>(user.name.size(), alignment);
 }
 
 
@@ -397,14 +397,14 @@ void Channel::RemoveUser_l(const char *user_c){
     while(iter!=Users.end()){
 
         bool skip_first_char = false;
-        char first_char = iter->Name[0];
+        char first_char = iter->name[0];
         if((first_char=='&') ||
            (first_char=='@') ||
            (first_char=='~'))
            skip_first_char = true;
 
-        if((iter->Name==user) ||
-           (skip_first_char && (iter->Name.substr(1)==user))){
+        if((iter->name==user) ||
+           (skip_first_char && (iter->name.substr(1)==user))){
             Users.erase(iter);
 
             for(int i = 1; i<=userlist->size(); i++){

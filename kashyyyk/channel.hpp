@@ -53,10 +53,10 @@ namespace Kashyyyk{
 //! Currently, Mode is meaningless.
 struct User {
     //! User's name. This includes the Mode character, if applicable.
-    std::string Name;
+    std::string name;
     //! Currently, Mode is meaningless, and will just be an empty string.
     //! Mode signifiers are prepended to the Name.
-    std::string Mode;
+    std::string mode;
 };
 
 class Server;
