@@ -24,6 +24,9 @@ if sys.platform.startswith('linux'):
   if not disablexinerama:
     localenv.Append(LIBS = ["Xinerama"])
 
+if ARGUMENTS.get('mingw', '0') == '1':
+    localenv.Append(CPPDEFINES = "EPROTO=134")
+
 platformenv = localenv.Clone()
 
 kashyyyk_platform = SConscript(dirs = ["platform"], exports = "platformenv");
