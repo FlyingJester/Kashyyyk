@@ -70,12 +70,12 @@ static void ThreadFunction(ThreadFunctionArg input){
     thimble.monitor.UnboundWait();
     input.second = true;
 
-    Task * task;
+    Task *task;
 
     while(thimble.live){
 
         if(thimble.queue.try_pop(task)){
-
+            
             task->Run();
 
             if(task->repeating)

@@ -19,8 +19,6 @@ class NetworkWatch {
     struct SocketSet *socket_set;
     std::thread thread;
 
-
-
 public:
     NetworkWatch(std::shared_ptr<struct Monitor::MutexHolder> &mutex);
     NetworkWatch(Thread::TaskGroup *group);
@@ -28,6 +26,11 @@ public:
 
     void AddSocket(WSocket *socket);
     void DelSocket(WSocket *socket);
+
+    inline void NotifyAll() {
+        if(socket_set!=nullptr)
+            PokeSet(socket_set);
+    }
 
 };
 

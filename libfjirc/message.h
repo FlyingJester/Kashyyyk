@@ -23,7 +23,7 @@ enum IRC_messageType {IRC_mt_null, IRC_error_m, IRC_ping, IRC_pong, IRC_pass,
   IRC_join, IRC_part, IRC_topic, IRC_privmsg, IRC_notice,
   IRC_namelist_start_num, IRC_namelist_end_num, IRC_topic_num,
   IRC_no_topic_num, IRC_not_registered_num, IRC_welcome_num, IRC_your_host_num,
-  IRC_topic_extra_num,
+  IRC_topic_extra_num, IRC_join_ban_num, IRC_join_invite_only_num,
 /*Aliases*/
   IRC_namelist_num = IRC_namelist_start_num
   };
@@ -72,6 +72,7 @@ struct IRC_Message *IRC_MessageUnwrap(struct IRC_MessageHolder *a);
 #define IRC_PART_PARAM_NUM -1
 #define IRC_TOPIC_PARAM_NUM -1
 #define IRC_PRIVMSG_PARAM_NUM 2
+#define IRC_CHANNELFAIL_PARAM_NUM 1
 
 #define IRC_SetMessageFrom(s, a)\
     s->from = IRC_Strdup(a);

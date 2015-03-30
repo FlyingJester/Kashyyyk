@@ -242,8 +242,9 @@ Server::~Server(){
 
     lock();
     network_task->should_die = true;
-
-    Thread::RemoveSocketFromTaskGroup(state.socket, Thread::GetShortThreadPool());
+    
+    if(IsConnected())
+        Thread::RemoveSocketFromTaskGroup(state.socket, Thread::GetShortThreadPool());
 
     while(!task_died){
         unlock();

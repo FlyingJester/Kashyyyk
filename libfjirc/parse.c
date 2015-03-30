@@ -107,20 +107,23 @@ unsigned long IRC_CountParameters(const char * const text){
 
     /* We are at the end of the message.
     */
-    if(*a=='\0')
-      return 1;
+    {
+        const int changed = (a==text)?0:1;
+        if(*a=='\0')
+          return changed;
 
-    /* Stop if we will hit /r/n
-      We know that a[0] is not NULL from the previous check, so if the string
-      really is null-terminated a[1] is fine to touch, too.
-    */
-    if((a[0]=='\r') && (a[1]=='\n'))
-      return 1;
+        /* Stop if we will hit /r/n
+          We know that a[0] is not NULL from the previous check, so if the string
+          really is null-terminated a[1] is fine to touch, too.
+        */
+        if((a[0]=='\r') && (a[1]=='\n'))
+          return changed;
 
-    /* Count this word and continue.
-      If we have hit a ':', it will be picked up by this new call.
-    */
-    return 1+IRC_CountParameters(a);
+        /* Count this word and continue.
+          If we have hit a ':', it will be picked up by this new call.
+        */
+        return changed+IRC_CountParameters(a);
+    }
 }
 
 void IRC_ParseParameter(const char * to[], const char * const text){
@@ -132,9 +135,11 @@ void IRC_ParseParameter(const char * to[], const char * const text){
       Some IRC servers add a carriage return (freenode), which we don't want
       to include. Most don't, and so the message will end in a NUL.
     */
-    if((*a=='\0') || (*a=='\r'))
-      return;
-
+    if((*a=='\0') || (*a=='\r')){
+        const char z = 0;
+        to[0] = IRC_Strndup(&z, 1);
+        return;
+    }
     /* The entire rest of text is a single parameter.
     */
     if(*a==':'){
@@ -153,6 +158,7 @@ void IRC_ParseParameter(const char * to[], const char * const text){
     a = b;
 
     IRC_ParseParameter(&(to[1]), a);
+    return;
 
 }
 

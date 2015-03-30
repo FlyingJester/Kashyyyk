@@ -188,6 +188,10 @@ const char *IRC_GetMessageToken(enum IRC_messageType a){
         return "001";
       case IRC_your_host_num:
         return "002";
+      case IRC_join_ban_num:
+        return "474";
+      case IRC_join_invite_only_num:
+        return "473";
       default:
         return NULL;
     }
