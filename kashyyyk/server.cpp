@@ -418,10 +418,9 @@ std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc) const{
 std::shared_ptr<PromiseValue<bool> >  Server::Disconnect() const{
     Disconnect_Socket(state.socket);
 
-    std::shared_ptr<PromiseValue<bool> > promise;
-    promise->Finalize(true);
+    PromiseValue<bool> *promise = new PromiseValue<bool>(true);
     promise->SetReady();
-    return promise;
+    return std::shared_ptr<PromiseValue<bool> >(promise);
 }
 
 
