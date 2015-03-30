@@ -299,20 +299,19 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
 
         Fl_Menu_Item *items = new Fl_Menu_Item[64];
             items[i++] = {"&File",0,0,0,FL_SUBMENU},
-                items[i++] = {"New Window", 0, Launcher::NewWindow_CB, launcher};
+                items[i++] = {"New Window", FL_COMMAND + 'n', Launcher::NewWindow_CB, launcher};
                 items[i++] = {"Server List", 0, ServerList, this};
-                items[i++] = {"Connect To...", 0, WindowCallbacks::ConnectToServer_CB, this};
-                items[i++] = {"Server List", 0, ServerList, this};
-                items[i++] = {"Quit", 0, Launcher::Quit_CB, launcher};
+                items[i++] = {"Connect To...", FL_COMMAND + 'g', WindowCallbacks::ConnectToServer_CB, this};
+                items[i++] = {"Quit", FL_COMMAND + 'q', Launcher::Quit_CB, launcher};
             items[i++] = {0};
             items[i++] = {"&Edit",0,0,0,FL_SUBMENU},
-                items[i++] = {"Preferences", 0, OpenPreferencesWindow_CB, this};
+                items[i++] = {"Preferences", FL_COMMAND + FL_SHIFT + 'p', OpenPreferencesWindow_CB, this};
             items[i++] = {0};
             items[i++] = {"&Server",0,0,0,FL_SUBMENU},
-                items[i++] = {"Reconnect", 0, WindowCallbacks::ChangeNick_CB, this};
-                items[i++] = {"Disconnect", 0, WindowCallbacks::ChangeNick_CB, this};
-                items[i++] = {"Change Nick", 0, WindowCallbacks::ChangeNick_CB, this};
-                items[i++] = {"Join Channel", 0, WindowCallbacks::JoinChannel_CB, this};
+                items[i++] = {"Reconnect", FL_F + 5, WindowCallbacks::ChangeNick_CB, this};
+                items[i++] = {"Disconnect", FL_COMMAND + 'w', WindowCallbacks::ChangeNick_CB, this};
+                items[i++] = {"Change Nick", FL_COMMAND + 'k', WindowCallbacks::ChangeNick_CB, this};
+                items[i++] = {"Join Channel", FL_COMMAND + 'j', WindowCallbacks::JoinChannel_CB, this};
 			items[i++] = {0};
         items[i++] = {0};
 
