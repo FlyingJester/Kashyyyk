@@ -107,23 +107,20 @@ unsigned long IRC_CountParameters(const char * const text){
 
     /* We are at the end of the message.
     */
-    {
-        const int changed = (a==text)?0:1;
-        if(*a=='\0')
-          return changed;
+     if(*a=='\0')
+      return 1;
 
-        /* Stop if we will hit /r/n
-          We know that a[0] is not NULL from the previous check, so if the string
-          really is null-terminated a[1] is fine to touch, too.
-        */
-        if((a[0]=='\r') && (a[1]=='\n'))
-          return changed;
+    /* Stop if we will hit /r/n
+      We know that a[0] is not NULL from the previous check, so if the string
+      really is null-terminated a[1] is fine to touch, too.
+    */
+    if((a[0]=='\r') && (a[1]=='\n'))
+      return 1;
 
-        /* Count this word and continue.
-          If we have hit a ':', it will be picked up by this new call.
-        */
-        return changed+IRC_CountParameters(a);
-    }
+    /* Count this word and continue.
+      If we have hit a ':', it will be picked up by this new call.
+    */
+    return 1+IRC_CountParameters(a);
 }
 
 void IRC_ParseParameter(const char * to[], const char * const text){

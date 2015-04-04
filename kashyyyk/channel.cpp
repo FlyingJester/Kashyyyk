@@ -221,6 +221,17 @@ Channel::~Channel(){
     Parent->Parent->RemoveChannel(this);
 }
 
+void Channel::GiveMessage(IRC_Message *msg){
+    
+    LockingReciever<Server, Monitor>::GiveMessage(msg);
+    
+    Fl::lock();
+    chatlist->redraw();
+    Parent->widget->redraw();
+    Fl::unlock();
+    
+    
+}
 
 void Channel::SetTopic(const char *topic){
 

@@ -87,24 +87,26 @@ struct DoubleInput_Return DoubleInput(const char *msg, const char *label1, const
 
     w.show();
 
-show_window:
+    do{
+    
+        while(Fl::wait()){
+          if(r.value!=-1)
+            break;
+        }
 
-    while(Fl::wait()){
-      if(r.value!=-1)
-        break;
-    }
+        r.one = in1.value();
+        r.two = in2.value();
 
-    r.one = in1.value();
-    r.two = in2.value();
+        if(!((r.value==1) || (r.value==0))){
+          if(!cancellable)
+            continue;
 
-    if(!((r.value==1) || (r.value==0))){
-      if(!cancellable)
-        goto show_window;
+          r.value = 0;
 
-      r.value = 0;
-
-    }
-
+        }
+        
+    }while(0);
+    
     assert(r.one);
     assert(r.two);
 

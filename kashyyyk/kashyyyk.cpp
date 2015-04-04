@@ -143,7 +143,7 @@ int main(int argc, char *argv[]){
         while(Fl::wait()){
             Kashyyyk::Thread::PerformTask(group_raw);
         }
-
+        
         Kashyyyk::Close();
     }
     return EXIT_SUCCESS;

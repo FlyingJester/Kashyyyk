@@ -91,7 +91,7 @@ class Channel : public LockingReciever<Server, Monitor>{
     Fl_Output *topiclabel;
     //! User list for the channel
     Fl_Browser *userlist;
-    //! The main char box
+    //! The main chat box
     Fl_Text_Display *chatlist;
     //! Text buffer for the chat box
     Fl_Text_Buffer *buffer;
@@ -123,7 +123,9 @@ public:
     //! @brief All active users.
     //! @warning You must lock this Channel before modifying or iterating this member.
     std::list<User> Users;
-
+    
+    void GiveMessage(IRC_Message *msg) override;
+    
     //!
     //! @brief Send a Message from this Channel, through the owning Server.
     //!
