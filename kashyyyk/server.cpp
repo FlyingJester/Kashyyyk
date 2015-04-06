@@ -72,7 +72,9 @@ void ServerConnectTask::Run(){
         //server->connected = false;
         return;
     }
-
+    
+    server->Enable();
+    
     promise->SetReady();
     promise->Finalize(true);
     repeating = false;
@@ -129,6 +131,7 @@ public:
         }
 
         if(State_Socket(socket)!=eConnected){
+            server->Disable();
             promise = server->Reconnect();
             return;
         }
@@ -363,12 +366,12 @@ void Server::Hide(){
 }
 
 
-void Server::FocusChanged(){
+void Server::FocusChanged() const{
     channel_list->labelcolor(FL_FOREGROUND_COLOR);
 }
 
 
-void Server::Highlight(){
+void Server::Highlight() const{
     channel_list->labelcolor(FL_DARK_BLUE);
 }
 
@@ -400,21 +403,6 @@ std::shared_ptr<PromiseValue<bool> > Server::Reconnect() const {
 
 }
 
-/*
-std::shared_ptr<PromiseValue<bool> > Server::Reconnect(bool rc) const{
-
-    if((last_reconnect.get()) && (!last_reconnect->IsReady())){
-        ServerConnectTask *task = new ServerConnectTask(this, state.socket, state.port, rc);
-
-        Thread::AddLongRunningTask(task);
-
-        last_reconnect.reset(task->promise.get());
-    }
-
-    return last_reconnect;
-
-}
-*/
 
 std::shared_ptr<PromiseValue<bool> >  Server::Disconnect() const{
     Disconnect_Socket(state.socket);
@@ -434,6 +422,18 @@ bool Server::IsConnected() const{
 bool Server::SocketStatus(){
     WSockErr e = State_Socket(state.socket);
     return e==eConnected;
+}
+
+void Server::Disable() const{
+    
+    channel_list->labelcolor(FL_INACTIVE_COLOR);
+    
+}
+    
+void Server::Enable() const{
+        
+    FocusChanged();
+
 }
 
 bool Server::CopyState(struct ServerState &to, const struct ServerState &from){

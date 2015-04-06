@@ -132,11 +132,9 @@ void IRC_ParseParameter(const char * to[], const char * const text){
       Some IRC servers add a carriage return (freenode), which we don't want
       to include. Most don't, and so the message will end in a NUL.
     */
-    if((*a=='\0') || (*a=='\r')){
-        const char z = 0;
-        to[0] = IRC_Strndup(&z, 1);
+    if((*a=='\0') || (*a=='\r'))
         return;
-    }
+
     /* The entire rest of text is a single parameter.
     */
     if(*a==':'){

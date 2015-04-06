@@ -35,8 +35,8 @@ class ServerTask;
 
 class ServerConnectTask : public Task {
 
-    const Server *server;
-    WSocket *socket;
+    const Server * const server;
+    WSocket * const socket;
     bool reconnect_channels;
     long port;
 public:
@@ -75,7 +75,7 @@ public:
 
 class Server : public LockingReciever<Window, Monitor> {
 public:
-    
+    //! Container class for storing channels in
     typedef std::list<std::unique_ptr<Channel> > ChannelList;
     
     //! Callback for reconnecting server.
@@ -107,19 +107,16 @@ protected:
     Channel *last_channel;
 
     std::unique_ptr<Fl_Group> widget;
-    std::unique_ptr<Fl_Tree_Item> channel_list;
+    mutable std::unique_ptr<Fl_Tree_Item> channel_list;
 
     Fl_Tree_Prefs tree_prefs;
 
     bool task_died;
     ServerTask * const network_task;
-    
-    //! Deprecated
-    const std::string UID;
 
     void Show(Channel *chan);
 
-    void FocusChanged();
+    void FocusChanged() const;
 
     //! Deprecated
     mutable std::shared_ptr<PromiseValue<bool> > last_reconnect;
@@ -184,7 +181,7 @@ public:
     void Show();
     void Hide();
 
-    void Highlight();
+    void Highlight() const;
 
     //! Functional-style object for finding a certain Channel in a Server
     class find_channel {
@@ -203,6 +200,15 @@ public:
     //! Returns true of the socket is usable for sending messages or may currently recieve messages,
     //! and false otherwise.
     bool SocketStatus();
+    
+    //! Puts this server into Disabled mode.
+    //! No new input will be accepted until it is enabled.
+    //! @sa Enable()
+    void Disable() const;
+    
+    //! Puts this server into Enabled mode.
+    //! @sa Disable()
+    void Enable() const;
     
     //! Copies a server state
     //! @param to ServerState to copy server state to

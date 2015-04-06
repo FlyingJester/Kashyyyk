@@ -15,7 +15,7 @@ AddOption('--enable-debug', dest = 'enabledebug', default=True, help=\
 
 enabledebug = GetOption('enabledebug')
 
-gcc_ccflags = " -pedantic -Werror -Wall "
+gcc_ccflags = " -pedantic -Werror -Wall -ftrapv "
 
 if enabledebug:
   gcc_ccflags += " -g "
