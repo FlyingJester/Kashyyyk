@@ -13,9 +13,9 @@ const char * Kashyyyk_ConfigDirectory(){
     return [confdir UTF8String];
 }
 
-void Kashyyyk_MakeDir(const char *dir){
+void Kashyyyk_MakeDir(const char *dir_){
     NSFileManager *manager = [NSFileManager defaultManager];
-
-    [manager createDirectoryAtPath:[[NSString alloc] initWithUTF8String:dir] withIntermediateDirectories:YES attributes:nil error:nil];
-
+    NSString *dir = [[NSString alloc] initWithUTF8String:dir_];
+    [manager createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
+    [dir release];
 }

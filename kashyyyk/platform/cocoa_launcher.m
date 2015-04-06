@@ -11,6 +11,7 @@ do{\
     new_item = [new_item initWithTitle:@PHRASE action:@selector(NAME) keyEquivalent:@""];\
     [new_item setTarget:TARGET];\
     [ADD_TO addItem:new_item];\
+    [new_item release];\
 }while(0)
 
 #define DECL_LAUNCHER_WRAPPER(NAME)\
@@ -82,4 +83,9 @@ void Kashyyyk_CreateOSXMenu(void *a){
 
     [NSMenu setMenuBarVisible:YES];
 
+    [file_menu release];
+    [file_menu_item release];
+    [server_menu release];
+    [server_menu_item release];
+    [wrapper release];
 }
