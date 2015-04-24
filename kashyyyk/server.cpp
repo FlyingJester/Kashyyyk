@@ -55,7 +55,7 @@ void Server::ReconnectServer_CB(Fl_Widget *, void *p){
 }
 
 
-ServerConnectTask::ServerConnectTask(const Server *aServer, WSocket *aSocket, long prt, bool rc, bool SSL)
+ServerConnectTask::ServerConnectTask(Server *aServer, WSocket *aSocket, long prt, bool rc, bool SSL)
   : server(aServer)
   , socket(aSocket)
   , reconnect_channels(rc)
@@ -298,7 +298,7 @@ void Server::SendMessage(IRC_Message *msg){
 
 void Server::AddChannel_l(Channel *a){
     
-    Channels.push_back(std::move(std::unique_ptr<Channel>(a)));
+    channels.push_back(std::move(std::unique_ptr<Channel>(a)));
     Fl_Tree_Item *item = channel_list->add(tree_prefs, a->name.c_str());
     item->user_data(a);
 
@@ -389,27 +389,24 @@ std::shared_ptr<PromiseValue<Channel *> > Server::JoinChannel(const std::string 
     return handler_raw->promise;
 }
 
-std::shared_ptr<PromiseValue<bool> > Server::Reconnect() const {
+std::shared_ptr<PromiseValue<bool> > Server::Reconnect(){
     
-    if((last_reconnect.get()) && (!last_reconnect->IsReady())){
+    if((last_connection.get()) && (last_connection->IsReady())){
         ServerConnectTask *task = new ServerConnectTask(this, state.socket, state.port, true);
 
         Thread::AddLongRunningTask(task);
 
-        last_reconnect.reset(task->promise.get());
+        last_connection = task->promise;
     }
 
-    return last_reconnect;
+    return last_connection;
 
 }
 
 
-std::shared_ptr<PromiseValue<bool> >  Server::Disconnect() const{
+void Server::Disconnect() const{
+    last_connection.reset();
     Disconnect_Socket(state.socket);
-
-    PromiseValue<bool> *promise = new PromiseValue<bool>(true);
-    promise->SetReady();
-    return std::shared_ptr<PromiseValue<bool> >(promise);
 }
 
 
@@ -424,14 +421,21 @@ bool Server::SocketStatus(){
     return e==eConnected;
 }
 
-void Server::Disable() const{
+void Server::Disable(){
     
-    channel_list->labelcolor(FL_INACTIVE_COLOR);
+    for(ChannelList::iterator i = channels.begin(); i!=channels.end(); i++){
+        (*i)->Disable();
+    }
+    
+    FocusChanged();
     
 }
     
-void Server::Enable() const{
+void Server::Enable(){
         
+    for(ChannelList::iterator i = channels.begin(); i!=channels.end(); i++){
+        (*i)->Enable();
+    }
     FocusChanged();
 
 }

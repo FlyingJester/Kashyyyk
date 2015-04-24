@@ -30,12 +30,15 @@ Kashyyyk::Launcher *CreateLauncher(void /*Thread::TaskGroup*/ *a){
                 items[i++] = {"Join Channel", FL_COMMAND + 'j', Launcher::JoinChannel_CB, launcher};
                 items[i++] = {"Change Nick", FL_COMMAND + 'k', Launcher::ChangeNick_CB, launcher};
             items[i++] = {0};
+            items[i++] = {"&Debug",0,0,0,FL_SUBMENU},
+                items[i++] = {"G_Reconnect", 0, Launcher::GDebugReconnect_CB, launcher},
+                items[i++] = {"G_Disconnect", 0, Launcher::GDebugDisconnect_CB, launcher},
+            items[i++] = {0};
         items[i++] = {0};
 
         Fl_Sys_Menu_Bar *menubar = new Fl_Sys_Menu_Bar(0, 0, 0, 24);
         menubar->menu(items);
     }
-
 
     return launcher;
 

@@ -301,6 +301,18 @@ public:
     //! @brief Get the nickname for this Channel
     const char *GetNick();
 
+    //! @brief Disables the channel's widgets
+    //! 
+    //! This is primarily used when a server has disconnected.
+    //! @sa Enable
+    void Disable();
+    
+    //! @brief Enables the channel's widgets
+    //! 
+    //! This is primarily used when a server has been disconnected, and is now reconnected.
+    //! @sa Disable
+    void Enable();
+    
     static void TextModify_CB(int, int, int, int, const char*, void*);
 
     //! @brief Functional-style object for finding certain Users in a Channel

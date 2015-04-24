@@ -35,6 +35,8 @@ public:
     void ChangeNick();
     void Disconnect();
     void Reconnect();
+    void GDebugDisconnect();
+    void GDebugReconnect();
     void Quit();
 
     void Release(Window *);
@@ -68,6 +70,12 @@ public:
 
     //! Wraps Launcher::Reconnect for use in an FLTK callback.
     static void Reconnect_CB(Fl_Widget *w, void *p);
+    
+    //! Wraps Launcher::GDebugDisconnect for use in an FLTK callback.
+    static void GDebugDisconnect_CB(Fl_Widget *w, void *p);
+
+    //! Wraps Launcher::GDebugReconnect for use in an FLTK callback.
+    static void GDebugReconnect_CB(Fl_Widget *w, void *p);
 
 
 };

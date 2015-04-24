@@ -278,7 +278,7 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
   , launcher(l)
   , chat_holder(new Fl_Group(128+8, 8+(osx?0:24), w-128-16, h-16-(osx?0:24)))
   , last_server(nullptr)
-  , Servers() {
+  , servers() {
 
     window_order.push_back(this);
 
@@ -342,13 +342,13 @@ void Window::AddServer(Server *a){
 
     assert(a);
 
-    Servers.push_back(std::unique_ptr<Server>(a));
+    servers.push_back(std::unique_ptr<Server>(a));
 
     AutoLocker<Server *> lock(a);
-    Server::ChannelList::iterator iter = a->Channels.begin();
+    Server::ChannelList::iterator iter = a->channels.begin();
 
-    while(iter!=a->Channels.end()){
-        Channels.push_back(iter->get());
+    while(iter!=a->channels.end()){
+        channels.push_back(iter->get());
         iter++;
     }
 
@@ -407,10 +407,10 @@ void Window::RemoveChannel(Channel *a){
 
     assert(a);
 
-    std::list<Channel *>::iterator iter = Channels.begin();
-    while(iter!=Channels.end()){
+    std::list<Channel *>::iterator iter = channels.begin();
+    while(iter!=channels.end()){
         if(*iter==a){
-            Channels.erase(iter);
+            channels.erase(iter);
             return;
         }
         iter++;
@@ -499,13 +499,19 @@ std::shared_ptr<PromiseValue<bool> > Window::ReconnectLastServer(){
 
 }
 
-
-std::shared_ptr<PromiseValue<bool> > Window::DisconnectLastServer(){
+void  Window::DisconnectLastServer(){
     if(last_server)
-      return last_server->Disconnect();
+      last_server->Disconnect();
+}
 
-    return std::shared_ptr<PromiseValue<bool> >(nullptr);
+void  Window::GDebugReconnectLastServer(){
+    if(last_server)
+      last_server->GDebugReconnect();
+}
 
+void  Window::GDebugDisconnectLastServer(){
+    if(last_server)
+      last_server->GDebugDisconnect();
 }
 
 

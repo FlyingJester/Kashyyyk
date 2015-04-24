@@ -35,13 +35,13 @@ class ServerTask;
 
 class ServerConnectTask : public Task {
 
-    const Server * const server;
+    Server *const server;
     WSocket * const socket;
     bool reconnect_channels;
     long port;
 public:
 
-    ServerConnectTask(const Server *aServer, WSocket *aSocket, long prt = 6665, bool reconnect_chans = true, bool SSL = false);
+    ServerConnectTask(Server *aServer, WSocket *aSocket, long prt = 6665, bool reconnect_chans = true, bool SSL = false);
 
     void Run() override;
 
@@ -118,10 +118,7 @@ protected:
 
     void FocusChanged() const;
 
-    //! Deprecated
-    mutable std::shared_ptr<PromiseValue<bool> > last_reconnect;
-
-    ChannelList Channels;
+    ChannelList channels;
 
     struct ServerState state;
     
@@ -146,11 +143,14 @@ public:
     const std::string &GetReal() const {return state.real;}
     
     //! Retrieves a list of channels that are currently joined on this server. 
-    const ChannelList &GetChannels() const{return Channels;}
+    const ChannelList &GetChannels() const{return channels;}
 
     //! @brief Returns if this server is connected
     bool IsConnected() const;
-
+    
+    //! Maintains the state of the last attempt to connect (in progress, succeeded, failed)
+    mutable std::shared_ptr<PromiseValue<bool> > last_connection;
+    
     //! @brief Add a new chat widget group.
     //! This whill resize the group given to the correct proportions.
     void AddChild(Fl_Group *);
@@ -168,13 +168,25 @@ public:
     std::shared_ptr<PromiseValue<Channel *> > JoinChannel(const std::string &channel);
     
     //! Attempt to rejoin
-    std::shared_ptr<PromiseValue<bool> >  Reconnect() const;
+    std::shared_ptr<PromiseValue<bool> >  Reconnect();
     //! Attempt to rejoin with a new state
-    std::shared_ptr<PromiseValue<bool> >  Reconnect(const struct ServerState &init_state) const;
+    std::shared_ptr<PromiseValue<bool> >  Reconnect(const struct ServerState &init_state);
     //! Disconnect this server.
     //! @todo Make this better than just dropping the connection.
-    std::shared_ptr<PromiseValue<bool> >  Disconnect() const;
+    void Disconnect() const;
 
+    //! Used to test the graphical states that signify disconnection.
+    //! @sa GDebugDisconnect
+    void GDebugReconnect(){
+        Disable();
+    }
+    
+    //! Used to test the graphical states that signify disconnection.
+    //! @sa GDebugReconnect
+    void GDebugDisconnect(){
+        Enable();
+    }
+    
     void AddChannel(Channel *);
     void AddChannel_l(Channel *);
 
@@ -204,11 +216,11 @@ public:
     //! Puts this server into Disabled mode.
     //! No new input will be accepted until it is enabled.
     //! @sa Enable()
-    void Disable() const;
+    void Disable();
     
     //! Puts this server into Enabled mode.
     //! @sa Disable()
-    void Enable() const;
+    void Enable();
     
     //! Copies a server state
     //! @param to ServerState to copy server state to

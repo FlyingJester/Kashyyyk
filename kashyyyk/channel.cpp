@@ -446,6 +446,14 @@ void Channel::RemoveUser(const char *user_c){
 
 }
 
+void Channel::Enable(){
+    
+}
+
+void Channel::Disable(){
+    topiclabel->deactivate();
+}
+
 void Channel::Pling(){
     Parent->Pling();
 }

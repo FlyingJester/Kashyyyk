@@ -104,8 +104,8 @@ public:
     Fl_Menu_Item   *reconnect_item;
     Fl_Menu_Item   *disconnect_item;
 
-    std::list<Channel *> Channels;
-    std::list<std::unique_ptr<Server> > Servers;
+    std::list<Channel *> channels;
+    std::list<std::unique_ptr<Server> > servers;
 
     void AddServer(Server *);
     void RemoveChannel(Channel *);
@@ -134,7 +134,10 @@ public:
     void ForgetLauncher();
 
     std::shared_ptr<PromiseValue<bool> >  ReconnectLastServer();
-    std::shared_ptr<PromiseValue<bool> > DisconnectLastServer();
+    void DisconnectLastServer();
+
+    void GDebugReconnectLastServer();
+    void GDebugDisconnectLastServer();
 
     // Does not need locking, since all callbacks are on the main thread.
     static std::list<const Window *> window_order;
