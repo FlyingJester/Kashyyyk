@@ -22,8 +22,7 @@ if enabledebug:
 
 def PrepareCompilerGPP(env):
   print "Preparing g++"
-  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags, CPPPATH =
-["/usr/local/include"])
+  env.Append(CXXFLAGS = " -std=c++11 -Wsign-promo -fno-rtti -fno-exceptions -fstrict-enums -fno-threadsafe-statics " + gcc_ccflags)
   if enabledebug:
     env.Append(LINKFLAGS = " -g ")
 
@@ -42,7 +41,8 @@ def PrepareEnvironmentUNIX(env):
   if sys.platform == 'cygwin':
     env.Append(CPPDEFINES = ["USE_CYGSOCK", "WIN32"], CCFLAGS = " -mwindows ")
   else:
-    env.Append(CPPDEFINES = ["USE_BSDSOCK"], LIBPATH=["/usr/local/lib"])
+    env.Append(CPPDEFINES = ["USE_BSDSOCK"])
+
 def PrepareEnvironmentWin(env):
   env.Append(LIBPATH = [os.path.join(os.getcwd(), "lib")], LIBS = ["Gdi32.lib", "User32.lib", "Ole32.lib", "Advapi32.lib", "Shell32.lib", "Ws2_32.lib"], CPPDEFINES = ["WIN32"])
   env.Append(CPPDEFINES = ["USE_WINSOCK"])
@@ -135,8 +135,6 @@ if os.name=='posix' or ARGUMENTS.get('posix', '0') == '1':
   conf.Finish()
 elif sys.platform.startswith('win'):
   PrepareEnvironmentWin(environment)
-
-environment.Append(LIBPATH = os.path.join(os.getcwd(), "lib"))
 
 AddOption('--enable-iconlauncher', dest = 'enableicon', default=False, help=\
 "Disable compiling the Icon Launcher.\n"

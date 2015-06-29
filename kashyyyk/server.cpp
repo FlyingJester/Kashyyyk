@@ -181,22 +181,18 @@ Server::Server(const struct ServerState &init_state, Window *w)
   : LockingReciever<Window, Monitor> (w)
   , last_channel(nullptr)
   , widget(new Fl_Group(0, 0, 800, 600))
-  , channel_list(new Fl_Tree_Item(tree_prefs))
-  , tree_prefs()
   , task_died(false)
   , network_task(new ServerTask(this, init_state.socket, &task_died)){
     
     CopyState(state, init_state);
     state.socket = init_state.socket;
-
+    
     Channel *channel = new Channel(this, "server");
 
     channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::YourHost_Handler(channel)));
     channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::Notice_Handler(channel)));
     channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::TopicExtra_Handler(channel)));
     AddChannel(channel);
-
-    channel_list->user_data(channel);
 
     w->SetChannel(channel);
 
@@ -256,8 +252,6 @@ Server::~Server(){
     }
     unlock();
 
-    channel_list.release();
-
     // Not particularly concerned with whether this fails or not.
     // There's not a lot we can do if it fails.
     Disconnect_Socket(state.socket);
@@ -299,8 +293,6 @@ void Server::SendMessage(IRC_Message *msg){
 void Server::AddChannel_l(Channel *a){
     
     channels.push_back(std::move(std::unique_ptr<Channel>(a)));
-    Fl_Tree_Item *item = channel_list->add(tree_prefs, a->name.c_str());
-    item->user_data(a);
 
     Parent->SetChannel(a);
     Parent->RedrawChannels();
@@ -367,12 +359,12 @@ void Server::Hide(){
 
 
 void Server::FocusChanged() const{
-    channel_list->labelcolor(FL_FOREGROUND_COLOR);
+
 }
 
 
 void Server::Highlight() const{
-    channel_list->labelcolor(FL_DARK_BLUE);
+
 }
 
 

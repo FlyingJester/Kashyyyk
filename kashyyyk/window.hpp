@@ -79,8 +79,8 @@ protected:
     std::unique_ptr<Fl_Window>  widget;
     Launcher *launcher;
     Fl_Group  *chat_holder;
-    Fl_Tree   *channel_list;
-
+//    Fl_Tree   *channel_list;
+    
     Monitor mutex;
 
     inline void lock(){mutex.Lock();}
@@ -121,7 +121,7 @@ public:
     void RedrawChat();
     void Redraw();
 
-    Fl_Tree_Item *FindChannel(const char *);
+   // Fl_Tree_Item *FindChannel(const char *);
 
     inline const Fl_Window *Handle(){
       return widget.get();

@@ -100,12 +100,12 @@ class Channel : public LockingReciever<Server, Monitor>{
 
     bool focus;
     int font;
-
+/*
     //! @brief Gets the item that represents the channel
     //!
     //! Gets the item from the owning Server's owning Window's channel_list.
     Fl_Tree_Item *GetWindowItem();
-
+*/
     //! @brief Used for aligning usernames with messages in the chat box
     unsigned alignment;
 

@@ -185,7 +185,7 @@ Channel::Channel(Server *s, const std::string &channel_name)
 
     chatlist->buffer(buffer);
     chatlist->highlight_data(stylebuffer, table.styletable, table.NumEntries, 'A', nullptr, 0);
-    chatlist->color(FL_BACKGROUND2_COLOR);
+    chatlist->color(FL_BACKGROUND_COLOR);
 
     tiler->begin();
 
@@ -266,7 +266,7 @@ void Channel::GetPath(std::string &path) const{
     path+=name;
 }
 
-
+/*
 Fl_Tree_Item *Channel::GetWindowItem(){
 
     std::string path;
@@ -276,7 +276,7 @@ Fl_Tree_Item *Channel::GetWindowItem(){
 
     return i;
 }
-
+*/
 
 void Channel::Highlight(HighlightLevel level){
 
@@ -285,14 +285,14 @@ void Channel::Highlight(HighlightLevel level){
 
     Parent->Highlight();
 
-    Fl_Tree_Item *i = GetWindowItem();
+//    Fl_Tree_Item *i = GetWindowItem();
 
 
     Fl_Preferences &prefs = GetPreferences();
 
     int do_pling = 1;
     prefs.get("sys.pling.enabled", do_pling, 1);
-
+/*
     if(i)
       switch(level){
       case High:
@@ -308,16 +308,17 @@ void Channel::Highlight(HighlightLevel level){
       default:
         i->labelcolor(FL_DARK_BLUE);
       }
-
+*/
 }
 
 
 void Channel::FocusChanged(){
+/*
     Fl_Tree_Item *i = GetWindowItem();
 
     if(i)
       i->labelcolor(FL_FOREGROUND_COLOR);
-
+*/
 }
 
 void Channel::SendMessage(IRC_Message *msg){
@@ -447,11 +448,15 @@ void Channel::RemoveUser(const char *user_c){
 }
 
 void Channel::Enable(){
-    
+    printf("Enabling channel %s\n", name.c_str());
+    widget->activate();
+    widget->redraw();
 }
 
 void Channel::Disable(){
-    topiclabel->deactivate();
+    printf("Disabling channel %s\n", name.c_str());
+    widget->deactivate();
+    widget->redraw();
 }
 
 void Channel::Pling(){

@@ -287,9 +287,9 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
     widget->callback(WindowCallbacks::WindowCallback, this);
     widget->begin();
 
-    channel_list = new Fl_Tree(8, 8+(osx?0:24), 128-8, h-16-(osx?0:24));
-    channel_list->showroot(0);
-    channel_list->callback(WindowCallbacks::ChannelList_CB, this);
+    //channel_list = new Fl_Tree(8, 8+(osx?0:24), 128-8, h-16-(osx?0:24));
+    //channel_list->showroot(0);
+    //channel_list->callback(WindowCallbacks::ChannelList_CB, this);
 
     if(!osx){
 
@@ -358,7 +358,7 @@ void Window::AddServer(Server *a){
     std::stack<void *> items;
     std::stack<std::string> labels;
 
-    int n_children = a->channel_list->children();
+    /*int n_children = a->channel_list->children();
 
     while(a->channel_list->has_children()){
         items.push(a->channel_list->next()->user_data());
@@ -375,14 +375,14 @@ void Window::AddServer(Server *a){
     i->user_data(d);
 
     a->channel_list.reset(i);
-
+    
     while(!items.empty()){
         Fl_Tree_Item* e =i->add(a->tree_prefs, labels.top().c_str());
         e->user_data(items.top());
         labels.pop();
         items.pop();
     }
-
+    */
     Fl::lock();
 
     if(a!=last_server){
@@ -394,7 +394,7 @@ void Window::AddServer(Server *a){
         a->Show();
     }
 
-    channel_list->redraw();
+//    channel_list->redraw();
     chat_holder->redraw();
     Fl::unlock();
 
@@ -436,13 +436,13 @@ void Window::SetChannel(Channel *channel){
     std::string path = new_server->GetName();
     path.push_back('/');
     path += channel->name;
-
+/*
     Fl_Tree_Item *i = channel_list->find_item(path.c_str());
     if(i){
         channel_list->deselect_all(channel_list->root(), 0);
         channel_list->select(i, 0);
     }
-
+*/
 }
 
 /*
@@ -514,10 +514,11 @@ void  Window::GDebugDisconnectLastServer(){
       last_server->GDebugDisconnect();
 }
 
-
+/*
 Fl_Tree_Item *Window::FindChannel(const char *a){
     return channel_list->find_item(a);
 }
+*/
 
 void Window::ForgetLauncher(){
     printf("Forgot launcher.\n");
@@ -526,7 +527,7 @@ void Window::ForgetLauncher(){
 
 void Window::Show(){widget->show();}
 void Window::Hide(){widget->hide();}
-void Window::RedrawChannels() { channel_list->redraw(); }
+void Window::RedrawChannels() {/* channel_list->redraw(); */ }
 void Window::RedrawChat()     { chat_holder->redraw();  }
 void Window::Redraw()         { widget->redraw();       }
 

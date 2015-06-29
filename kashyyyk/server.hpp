@@ -107,9 +107,6 @@ protected:
     Channel *last_channel;
 
     std::unique_ptr<Fl_Group> widget;
-    mutable std::unique_ptr<Fl_Tree_Item> channel_list;
-
-    Fl_Tree_Prefs tree_prefs;
 
     bool task_died;
     ServerTask * const network_task;

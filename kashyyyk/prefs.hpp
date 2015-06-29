@@ -21,6 +21,8 @@ inline void OpenPreferencesWindow_CB(Fl_Widget *w, void *p){
     OpenPreferencesWindow();
 }
 
+void LoadScheme(const char *s);
+
 template <typename T1, typename T2>
 inline void GetAndExist(Fl_Preferences &prefs, const std::string &name, T1 &item, const T2 def){
     if(!prefs.get(name.c_str(), item, def))

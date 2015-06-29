@@ -63,7 +63,7 @@ void SetTheme(Fl_Preferences &prefs){
     char *theme = nullptr;
     prefs.get("sys.appearance.theme", theme, "gtk+");
 
-    Fl::scheme(theme);
+    Kashyyyk::LoadScheme(theme);
     free(theme);
 }
 

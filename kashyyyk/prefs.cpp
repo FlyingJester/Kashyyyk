@@ -12,6 +12,7 @@
 #include <FL/Fl_Preferences.H>
 #include <FL/Fl.H>
 #include <FL/Fl_Color_Chooser.H>
+#include <FL/fl_draw.h>
 
 #include "platform/paths.h"
 
@@ -70,7 +71,6 @@ static void Prefs_OKButton_CB(Fl_Widget *w, void *p){
     static_cast<Fl_Window *>(p)->hide();
 }
 
-
 static void Prefs_Theme_CB(Fl_Widget *w, void *p){
     Fl_Choice *choice = static_cast<Fl_Choice *>(w);
 
@@ -79,8 +79,9 @@ static void Prefs_Theme_CB(Fl_Widget *w, void *p){
     if(item!=nullptr){
         Kashyyyk::GetPreferences().set("sys.appearance.theme", item->label());
         Kashyyyk::GetPreferences().flush();
+        
         printf("Set theme to %s\n", item->label());
-        Fl::scheme(item->label());
+        Kashyyyk::LoadScheme(item->label());
     }
 }
 
@@ -170,7 +171,13 @@ Fl_Preferences &Kashyyyk::GetPreferences(){
     return prefs;
 }
 
-void Kashyyyk::OpenPreferencesWindow(){
+namespace Kashyyyk {
+
+void LoadScheme(const char *s){
+    Fl::scheme(s);
+}
+
+void OpenPreferencesWindow(){
 
     static bool first = true;
 
@@ -209,6 +216,7 @@ void Kashyyyk::OpenPreferencesWindow(){
         theme_input->add("gtk+");
         theme_input->add("plastic");
         theme_input->add("gleam");
+
         {
             char *theme = nullptr;
             prefs.get("sys.appearance.theme", theme, "gtk+");
@@ -325,4 +333,6 @@ void Kashyyyk::OpenPreferencesWindow(){
 
     }
     window->show();
+}
+
 }
