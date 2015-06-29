@@ -16,7 +16,7 @@
 #include <atomic>
 #include <string>
 #include <algorithm>
-#include <FL/Fl_Tree_Prefs.H>
+#include <FL/Fl_Hold_Browser.H>
 
 #ifdef SendMessage
 #undef SendMessage
@@ -107,6 +107,8 @@ protected:
     Channel *last_channel;
 
     std::unique_ptr<Fl_Group> widget;
+    
+    std::unique_ptr<Fl_Hold_Browser> channel_list;
 
     bool task_died;
     ServerTask * const network_task;
@@ -170,7 +172,7 @@ public:
     std::shared_ptr<PromiseValue<bool> >  Reconnect(const struct ServerState &init_state);
     //! Disconnect this server.
     //! @todo Make this better than just dropping the connection.
-    void Disconnect() const;
+    void Disconnect();
 
     //! Used to test the graphical states that signify disconnection.
     //! @sa GDebugDisconnect

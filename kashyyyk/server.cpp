@@ -181,6 +181,7 @@ Server::Server(const struct ServerState &init_state, Window *w)
   : LockingReciever<Window, Monitor> (w)
   , last_channel(nullptr)
   , widget(new Fl_Group(0, 0, 800, 600))
+  , channel_list(nullptr)
   , task_died(false)
   , network_task(new ServerTask(this, init_state.socket, &task_died)){
     
@@ -188,7 +189,9 @@ Server::Server(const struct ServerState &init_state, Window *w)
     state.socket = init_state.socket;
     
     Channel *channel = new Channel(this, "server");
-
+    
+    channel_list.reset(Parent->GenerateChannelBrowser());
+    
     channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::YourHost_Handler(channel)));
     channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::Notice_Handler(channel)));
     channel->Handlers.push_back(std::unique_ptr<MessageHandler>(new ChannelMessage::TopicExtra_Handler(channel)));
@@ -297,6 +300,8 @@ void Server::AddChannel_l(Channel *a){
     Parent->SetChannel(a);
     Parent->RedrawChannels();
 
+    channel_list->add(a->name.c_str());
+
     printf("Added channel %s\n", a->name.c_str());
 
 }
@@ -321,6 +326,7 @@ void Server::AddChild(Fl_Group *a){
 
 void Server::Show(){
     Show(last_channel);
+    channel_list->show();
 }
 
 void Server::Show(Channel *chan){
@@ -340,6 +346,7 @@ void Server::Show(Channel *chan){
     last_channel = chan;
 
     widget->show();
+    channel_list->show();
 
     FocusChanged();
 
@@ -353,6 +360,7 @@ void Server::Hide(){
     if(group && group->visible())
       group->hide();
 
+    channel_list->hide();
     FocusChanged();
 
 }
@@ -396,15 +404,16 @@ std::shared_ptr<PromiseValue<bool> > Server::Reconnect(){
 }
 
 
-void Server::Disconnect() const{
+void Server::Disconnect(){
     last_connection.reset();
     Disconnect_Socket(state.socket);
+    Disable();
 }
 
 
 bool Server::IsConnected() const{
     WSockErr e = State_Socket(state.socket);
-    return (e==eConnected);
+    return e==eConnected;
 }
 
 

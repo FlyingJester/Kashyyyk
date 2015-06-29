@@ -15,8 +15,8 @@
 #include <cassert>
 
 #include <FL/Fl_Double_Window.H>
-#include <FL/Fl_Tree.H>
 #include <FL/Fl_Scroll.H>
+#include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Sys_Menu_Bar.H>
 #include <FL/fl_ask.H>
@@ -128,8 +128,7 @@ void WindowCallbacks::ChannelList_CB(Fl_Widget *w, void *p){
 
     assert(w);
     assert(p);
-
-    Fl_Tree *tree   = static_cast<Fl_Tree *>(w);
+        /*
     Window *window = static_cast<Window *>(p);
 
     Fl_Tree_Item *item = tree->callback_item();
@@ -146,7 +145,7 @@ void WindowCallbacks::ChannelList_CB(Fl_Widget *w, void *p){
         default:
         break;
     }
-
+    */
 }
 
 
@@ -271,6 +270,21 @@ void WindowCallbacks::WindowCallback(Fl_Widget *w, void *arg){
     Thread::AddTask(window->task_group, new WindowKiller(window));
 }
 
+void Window::ChannelListPosition(int &x_, int &y_, int &w_, int &h_){
+    x_ = 8;
+    y_ = 8+(osx_style?0:24) + (256-16-(osx_style?0:24)) + 8;
+    w_ = 128-8;
+    h_ = widget->h() - 16 - y_;
+}
+
+Fl_Hold_Browser *Window::GenerateChannelBrowser(){
+    int x, y, w, h;
+    widget->begin();
+    ChannelListPosition(x, y, w, h);
+    Fl_Hold_Browser *channel_list = new Fl_Hold_Browser(x, y, w, h);
+    widget->end();
+    return channel_list;
+}
 
 Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
   : task_group(tg)
@@ -278,15 +292,18 @@ Window::Window(int w, int h, Thread::TaskGroup *tg, Launcher *l, bool osx)
   , launcher(l)
   , chat_holder(new Fl_Group(128+8, 8+(osx?0:24), w-128-16, h-16-(osx?0:24)))
   , last_server(nullptr)
+  , server_list(nullptr)
   , servers() {
 
     window_order.push_back(this);
 
     osx_style = osx;
-
+    
     widget->callback(WindowCallbacks::WindowCallback, this);
     widget->begin();
-
+    
+    server_list = new Fl_Select_Browser(8, 8+(osx?0:24), 128-8, 256-16-(osx?0:24));
+    
     //channel_list = new Fl_Tree(8, 8+(osx?0:24), 128-8, h-16-(osx?0:24));
     //channel_list->showroot(0);
     //channel_list->callback(WindowCallbacks::ChannelList_CB, this);

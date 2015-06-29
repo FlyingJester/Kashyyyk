@@ -266,18 +266,6 @@ void Channel::GetPath(std::string &path) const{
     path+=name;
 }
 
-/*
-Fl_Tree_Item *Channel::GetWindowItem(){
-
-    std::string path;
-    GetPath(path);
-
-    Fl_Tree_Item * i = Parent->Parent->FindChannel(path.c_str());
-
-    return i;
-}
-*/
-
 void Channel::Highlight(HighlightLevel level){
 
     if(level==HighlightLevel::None)
@@ -285,40 +273,16 @@ void Channel::Highlight(HighlightLevel level){
 
     Parent->Highlight();
 
-//    Fl_Tree_Item *i = GetWindowItem();
-
-
     Fl_Preferences &prefs = GetPreferences();
 
     int do_pling = 1;
     prefs.get("sys.pling.enabled", do_pling, 1);
-/*
-    if(i)
-      switch(level){
-      case High:
-        i->labelcolor(FL_RED);
-        if(do_pling==1){
-          Pling();
-        }
-        break;
-      case Medium:
-        i->labelcolor(FL_DARK_RED);
-      break;
-      case Low:
-      default:
-        i->labelcolor(FL_DARK_BLUE);
-      }
-*/
+
 }
 
 
 void Channel::FocusChanged(){
-/*
-    Fl_Tree_Item *i = GetWindowItem();
 
-    if(i)
-      i->labelcolor(FL_FOREGROUND_COLOR);
-*/
 }
 
 void Channel::SendMessage(IRC_Message *msg){

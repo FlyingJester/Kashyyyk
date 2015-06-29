@@ -11,7 +11,7 @@
 #include <memory>
 #include <string>
 
-#include <FL/Fl_Tree.H>
+#include <FL/Fl_Select_Browser.H>
 
 #ifdef __APPLE__
 #define IS_OSX true
@@ -21,9 +21,8 @@
 
 class Fl_Window;
 class Fl_Group;
-class Fl_Tree;
-class Fl_Tree_Item;
 class Fl_Scroll;
+class Fl_Hold_Browser;
 
 struct Fl_Menu_Item;
 
@@ -79,7 +78,6 @@ protected:
     std::unique_ptr<Fl_Window>  widget;
     Launcher *launcher;
     Fl_Group  *chat_holder;
-//    Fl_Tree   *channel_list;
     
     Monitor mutex;
 
@@ -88,11 +86,14 @@ protected:
 
     bool osx_style;
 
-    Fl_Tree_Prefs prefs;
-
     Server *last_server;
 
+    Fl_Select_Browser *server_list;
 public:
+
+    void ChannelListPosition(int &x, int &y, int &w, int &h);
+    
+    Fl_Hold_Browser *GenerateChannelBrowser();
 
     friend class AutoLocker<Window *>;
     friend class WindowCallbacks;
@@ -120,8 +121,6 @@ public:
     void RedrawChannels();
     void RedrawChat();
     void Redraw();
-
-   // Fl_Tree_Item *FindChannel(const char *);
 
     inline const Fl_Window *Handle(){
       return widget.get();
